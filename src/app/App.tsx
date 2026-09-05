@@ -17,18 +17,11 @@ import './app-root.scss';
 const Layout = lazy(() => import('../components/layout'));
 const AppRoot = lazy(() => import('./app-root'));
 
-/**
- * Component wrapper to handle language URL parameter
- * Uses the useLanguageFromURL hook to process language switching
- */
 const LanguageHandler = ({ children }: { children: React.ReactNode }) => {
     useLanguageFromURL();
     return <>{children}</>;
 };
 
-// The static preview build is served under /bot/preview (see rsbuild.config.ts
-// assetPrefix), so React Router must resolve routes under that prefix. Standalone
-// partner deploys are served at the root, so no basename there.
 const routerBasename = isPreviewMode() ? PREVIEW_BASE_PATH : undefined;
 
 const router = createBrowserRouter(
@@ -54,25 +47,14 @@ const router = createBrowserRouter(
                 </Suspense>
             }
         >
-            {/* All child routes will be passed as children to Layout */}
             <Route index element={<AppRoot />} />
-            {/* App Builder embeds the template at /preview — render the same app shell */}
             <Route path='preview' element={<AppRoot />} />
         </Route>
     ),
     { basename: routerBasename }
 );
 
-/**
- * Main App component
- *
- * Responsibilities:
- * 1. OAuth callback handling (via vendored deriv-core handleOAuthCallback)
- * 2. Account switching from URL (via useAccountSwitching hook)
- * 3. Router provider setup
- */
 function App() {
-    // Handle account switching via URL parameter
     useAccountSwitching();
 
     React.useEffect(() => {
@@ -80,37 +62,50 @@ function App() {
         if (!urlParams.has('code')) return;
 
         const handleCallback = async () => {
+            const clientId = process.env.NEXT_PUBLIC_DERIV_OAUTH_CLIENT_ID;
+            const redirectUri = process.env.NEXT_PUBLIC_DERIV_REDIRECT_URL;
+            const scopes = process.env.NEXT_PUBLIC_DERIV_OAUTH_SCOPE || 'trade';
+
+            if (!clientId || !redirectUri) {
+                console.error('[OAuth] Callback cannot be completed: missing OAuth client ID or redirect URI');
+                return;
+            }
+
             try {
                 const authInfo = await handleOAuthCallback(window.location.href, {
-                    clientId: process.env.NEXT_PUBLIC_DERIV_APP_ID || '',
-                    redirectUri: window.location.origin,
-                    scopes: 'trade',
+                    clientId,
+                    redirectUri,
+                    scopes,
                 });
 
                 const { DerivWSAccountsService } = await import('@/services/derivws-accounts.service');
                 const accounts = await DerivWSAccountsService.fetchAccountsList(authInfo.access_token);
 
-                if (accounts && accounts.length > 0) {
-                    DerivWSAccountsService.storeAccounts(accounts);
-                    const firstAccount = accounts[0];
-                    localStorage.setItem('active_loginid', firstAccount.account_id);
-                    const isDemo =
-                        firstAccount.account_id.startsWith('VRT') || firstAccount.account_id.startsWith('VRTC');
-                    localStorage.setItem('account_type', isDemo ? 'demo' : 'real');
-
-                    const { api_base } = await import('@/external/bot-skeleton');
-                    await api_base.init(true);
-                } else {
-                    console.error('No accounts returned after authentication');
+                if (!accounts || accounts.length === 0) {
+                    throw new Error('No Deriv trading accounts were returned for the authenticated user');
                 }
+
+                DerivWSAccountsService.storeAccounts(accounts);
+
+                const activeLoginId = localStorage.getItem('active_loginid');
+                const selectedAccount =
+                    (activeLoginId && accounts.find(account => account.account_id === activeLoginId)) || accounts[0];
+
+                localStorage.setItem('active_loginid', selectedAccount.account_id);
+                localStorage.setItem('account_type', selectedAccount.account_type);
+
+                // api_base obtains the selected account's fresh authenticated WebSocket URL
+                // through getSocketURL() → DerivWSAccountsService → account OTP endpoint.
+                const { api_base } = await import('@/external/bot-skeleton');
+                await api_base.init(true);
             } catch (error) {
-                console.error('OAuth callback error:', error);
+                console.error('[OAuth] Callback/account connection failed:', error);
             } finally {
-                cleanupUrl(window.location.origin);
+                cleanupUrl(redirectUri);
             }
         };
 
-        handleCallback();
+        void handleCallback();
     }, []);
 
     return <RouterProvider router={router} />;
