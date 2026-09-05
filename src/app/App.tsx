@@ -62,12 +62,15 @@ function App() {
         if (!urlParams.has('code')) return;
 
         const handleCallback = async () => {
-            const clientId = process.env.NEXT_PUBLIC_DERIV_OAUTH_CLIENT_ID;
+            // The current Deriv OAuth flow uses the registered application's
+            // App ID as OAuth client_id. There is no separate OAuth client ID
+            // required for this app.
+            const clientId = process.env.NEXT_PUBLIC_DERIV_APP_ID;
             const redirectUri = process.env.NEXT_PUBLIC_DERIV_REDIRECT_URL;
             const scopes = process.env.NEXT_PUBLIC_DERIV_OAUTH_SCOPE || 'trade';
 
             if (!clientId || !redirectUri) {
-                console.error('[OAuth] Callback cannot be completed: missing OAuth client ID or redirect URI');
+                console.error('[OAuth] Callback cannot be completed: missing DERIV_APP_ID or DERIV_REDIRECT_URL');
                 return;
             }
 
