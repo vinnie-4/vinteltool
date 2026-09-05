@@ -10,6 +10,23 @@ class ErrorBoundary extends React.Component {
 
     componentDidCatch = (error, info) => {
         if (window.TrackJS) window.TrackJS.console.log(this.props.root_store);
+        console.error('[ErrorBoundary] Caught render error:', error, info);
+
+        // Do not turn an expected bot-stop exception into the global
+        // "Sorry for the interruption. Refresh" screen. The stop action is
+        // already guarded by the run-panel store; this is the final UI guard.
+        const message = String(error?.message || error || '').toLowerCase();
+        const stopRelated =
+            message.includes('stopbot') ||
+            message.includes('terminatebot') ||
+            message.includes('bot stop') ||
+            message.includes('bot-stop') ||
+            message.includes('execution stopped');
+
+        if (stopRelated) {
+            this.setState({ hasError: false });
+            return;
+        }
 
         this.setState({
             hasError: true,
@@ -17,6 +34,7 @@ class ErrorBoundary extends React.Component {
             info,
         });
     };
+
     render = () => (this.state.hasError ? <ErrorComponent should_show_refresh={true} /> : this.props.children);
 }
 
