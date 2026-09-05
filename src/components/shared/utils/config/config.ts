@@ -10,35 +10,19 @@ import type { AuthConfig } from '@/external/deriv-core';
 import { DerivWSAccountsService } from '@/services/derivws-accounts.service';
 import brandConfig from '../../../../../brand.config.json';
 
-// =============================================================================
-// Constants - Domain & Server Configuration (from brand.config.json)
-// =============================================================================
-
-// Production app domains
 export const PRODUCTION_DOMAINS = {
     COM: brandConfig.platform.hostname.production.com,
 } as const;
 
-// Staging app domains
 export const STAGING_DOMAINS = {
     COM: brandConfig.platform.hostname.staging.com,
 } as const;
 
-// WebSocket server URLs
 export const WS_SERVERS = {
     STAGING: `${brandConfig.platform.derivws.url.staging}options/ws/public`,
     PRODUCTION: `${brandConfig.platform.derivws.url.production}options/ws/public`,
 } as const;
 
-// =============================================================================
-// Helper Functions
-// =============================================================================
-
-// Helper to check if we're on production.
-// NEXT_PUBLIC_DERIV_ENV is the authoritative signal (set at build/deploy time and
-// also read by vendored deriv-core for OAuth), so a deployed partner domain resolves the
-// same environment for WebSocket and OAuth. Falls back to hostname detection when
-// the env var is unset (e.g. local dev).
 export const isProduction = () => {
     const env = process.env.NEXT_PUBLIC_DERIV_ENV;
     if (env === 'production') return true;
@@ -63,13 +47,6 @@ const getDefaultServerURL = () => {
     return isProductionEnv ? WS_SERVERS.PRODUCTION : WS_SERVERS.STAGING;
 };
 
-/**
- * Gets the WebSocket URL using the authenticated flow
- * 1. Get access token from auth_info (localStorage via vendored deriv-core)
- * 2. Fetch OTP WebSocket URL from DerivWSAccountsService
- *
- * @returns Promise with WebSocket URL or fallback to default server
- */
 export const getSocketURL = async (): Promise<string> => {
     try {
         const authInfo = getAuthInfo();
@@ -93,23 +70,27 @@ export const getDebugServiceWorker = () => {
 };
 
 /**
- * Generates the OAuth login or sign-up URL using vendored deriv-core
- *
- * @param prompt - Optional prompt parameter ('registration' for sign-up flow)
- * @returns Promise with the OAuth URL string
+ * Generates the OAuth login or sign-up URL from the Vercel environment configuration.
+ * OAuth client ID, redirect URI and scope are intentionally separate from the Deriv
+ * App ID used by the trading/API layer.
  */
 export const generateOAuthURL = async (prompt?: string): Promise<string> => {
     try {
-        const clientId = process.env.NEXT_PUBLIC_DERIV_APP_ID;
-        if (!clientId) return '';
+        const clientId = process.env.NEXT_PUBLIC_DERIV_OAUTH_CLIENT_ID;
+        const redirectUri = process.env.NEXT_PUBLIC_DERIV_REDIRECT_URL;
+        const scopes = process.env.NEXT_PUBLIC_DERIV_OAUTH_SCOPE || 'trade';
+
+        if (!clientId || !redirectUri) {
+            console.error('[OAuth] Missing DERIV_OAUTH_CLIENT_ID or DERIV_REDIRECT_URL');
+            return '';
+        }
 
         const config: AuthConfig = {
             clientId,
-            redirectUri: window.location.origin,
-            scopes: 'trade',
+            redirectUri,
+            scopes,
         };
 
-        // Static referral link (fallback for direct visits without affiliate click)
         const referralLink = process.env.NEXT_PUBLIC_DERIV_REFERRAL_LINK;
         if (referralLink) {
             const referral = parseReferralLink(referralLink);
@@ -122,13 +103,8 @@ export const generateOAuthURL = async (prompt?: string): Promise<string> => {
             }
         }
 
-        // Override with live per-click params from landing URL (e.g. Scaleo t= token)
         const landing = parseLandingParams();
         if (landing) {
-            // Only override the token when the landing URL actually carries one
-            // (t=). parseLandingParams returns non-null for any utm_* param, so an
-            // unguarded write would clobber a valid env token with '' on generic
-            // marketing links (e.g. ?utm_source=google with no t=).
             if (landing.affiliateToken) {
                 config.affiliateToken = landing.affiliateToken;
                 config.affiliateTokenParam = landing.affiliateTokenParam;
@@ -138,8 +114,6 @@ export const generateOAuthURL = async (prompt?: string): Promise<string> => {
             if (landing.utmCampaign) config.utmCampaign = landing.utmCampaign;
         }
 
-        // If we still have no token and the referral link is a Scaleo click link,
-        // resolve a fresh per-user token via the BFF proxy (non-blocking).
         if (!config.affiliateToken && referralLink) {
             const resolved = await resolveReferralViaProxy(referralLink);
             if (resolved) {
@@ -151,10 +125,9 @@ export const generateOAuthURL = async (prompt?: string): Promise<string> => {
             }
         }
 
-        if (prompt === 'registration') {
-            return await buildSignUpUrl(config);
-        }
-        return await buildAuthorizationUrl(config);
+        return prompt === 'registration'
+            ? await buildSignUpUrl(config)
+            : await buildAuthorizationUrl(config);
     } catch (error) {
         console.error('Error generating OAuth URL:', error);
         return '';
