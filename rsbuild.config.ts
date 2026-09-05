@@ -24,8 +24,7 @@ export default defineConfig({
     entry: { index: './src/main.tsx' },
     define: {
       'process.env': {
-        NEXT_PUBLIC_DERIV_APP_ID: JSON.stringify(process.env.NEXT_PUBLIC_DERIV_APP_ID ?? ''),
-        NEXT_PUBLIC_DERIV_OAUTH_CLIENT_ID: JSON.stringify(process.env.DERIV_OAUTH_CLIENT_ID ?? process.env.NEXT_PUBLIC_DERIV_OAUTH_CLIENT_ID ?? ''),
+        NEXT_PUBLIC_DERIV_APP_ID: JSON.stringify(process.env.DERIV_APP_ID ?? process.env.NEXT_PUBLIC_DERIV_APP_ID ?? ''),
         NEXT_PUBLIC_DERIV_REDIRECT_URL: JSON.stringify(process.env.DERIV_REDIRECT_URL ?? process.env.NEXT_PUBLIC_DERIV_REDIRECT_URL ?? ''),
         NEXT_PUBLIC_DERIV_OAUTH_SCOPE: JSON.stringify(process.env.DERIV_OAUTH_SCOPE ?? process.env.NEXT_PUBLIC_DERIV_OAUTH_SCOPE ?? 'trade'),
         NEXT_PUBLIC_DERIV_ENV: JSON.stringify(process.env.NEXT_PUBLIC_DERIV_ENV ?? ''),
