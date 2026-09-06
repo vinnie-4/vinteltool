@@ -6,11 +6,7 @@ import { observer as globalObserver } from '../../../utils/observer';
 import { api_base } from '../../api/api-base';
 import { checkBlocksForProposalRequest, doUntilDone } from '../utils/helpers';
 import { expectInitArg } from '../utils/sanitize';
-import {
-    getFastExecutionConfig,
-    isFastExecution,
-    shouldFastPoll,
-} from '../execution/execution-mode';
+import { isFastExecution } from '../execution/execution-mode';
 import { proposalsReady, start } from './state/actions';
 import * as constants from './state/constants';
 import rootReducer from './state/reducers';
@@ -48,11 +44,11 @@ const watchScope = ({ store, scope, symbol, stopScope, passScope, passFlag, fast
 
     return new Promise(resolve => {
         let settled = false;
-        const timers = [];
+        let removeFastListener = () => {};
         let unsubscribe;
 
         const cleanup = () => {
-            timers.forEach(timer => clearTimeout(timer));
+            removeFastListener();
             unsubscribe?.();
         };
 
@@ -63,10 +59,35 @@ const watchScope = ({ store, scope, symbol, stopScope, passScope, passFlag, fast
             resolve(value);
         };
 
+        // FAST uses the live tick callback directly. NORMAL keeps the original
+        // Redux subscription path. This makes FAST meaningfully different while
+        // preserving the exact same strategy and market-tick source.
+        if (fast && scope?.tradeEngine?.addFastTickListener) {
+            removeFastListener = scope.tradeEngine.addFastTickListener(epoch => {
+                if (epoch === prevTick) return;
+                prevTick = epoch;
+
+                const state = store.getState();
+                if (state.scope === passScope && state[passFlag]) {
+                    finish(true);
+                }
+            });
+        } else if (fast && scope?.addFastTickListener) {
+            removeFastListener = scope.addFastTickListener(epoch => {
+                if (epoch === prevTick) return;
+                prevTick = epoch;
+
+                const state = store.getState();
+                if (state.scope === passScope && state[passFlag]) {
+                    finish(true);
+                }
+            });
+        }
+
         unsubscribe = store.subscribe(() => {
             const newState = store.getState();
 
-            if (newState.newTick !== prevTick) {
+            if (!fast && newState.newTick !== prevTick) {
                 prevTick = newState.newTick;
                 if (newState.scope === passScope && newState[passFlag]) {
                     finish(true);
@@ -77,49 +98,10 @@ const watchScope = ({ store, scope, symbol, stopScope, passScope, passFlag, fast
             if (newState.scope === stopScope) finish(false);
         });
 
-        if (!fast || !scope?.ticksService || !symbol) return;
-
-        // Non-1s volatility indices already stream ticks as quickly as the
-        // market produces them. Do not add polling latency or duplicate work.
-        // FAST therefore naturally executes on every distinct incoming tick.
-        if (!shouldFastPoll(symbol)) return;
-
-        // 1s indices cannot produce more than one market tick per second.
-        // Instead of pretending there are extra ticks, aggressively check the
-        // live tick service for a short period. The first genuinely new tick
-        // immediately advances the existing strategy/purchase pipeline.
-        const { pollIntervalMs, windowDurationMs } = getFastExecutionConfig();
-        const startedAt = Date.now();
-        let probing = false;
-
-        const probe = async () => {
-            if (settled || store.getState().scope === stopScope) return;
-            if (Date.now() - startedAt >= windowDurationMs) return;
-            if (probing) return;
-
-            probing = true;
-            try {
-                const ticks = await scope.ticksService.request({ symbol });
-                const lastTick = ticks?.[ticks.length - 1];
-                const epoch = lastTick?.epoch;
-
-                if (typeof epoch === 'number' && epoch !== prevTick) {
-                    store.dispatch({ type: constants.NEW_TICK, payload: epoch });
-                }
-            } catch (error) {
-                globalObserver.emit('execution.fast.probe_error', error);
-            } finally {
-                probing = false;
-                if (!settled && Date.now() - startedAt < windowDurationMs) {
-                    timers.push(setTimeout(probe, pollIntervalMs));
-                }
-            }
-        };
-
-        // Start immediately, then retry every 25ms. This is intentionally
-        // bounded so FAST remains responsive without creating an uncontrolled
-        // request loop.
-        probe();
+        // The live tick subscription is owned by TradeEngine/Ticks. FAST must
+        // never create a second API polling loop or fabricate a market tick.
+        void scope;
+        void symbol;
     });
 };
 
@@ -128,6 +110,7 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
         super();
         this.observer = $scope.observer;
         this.$scope = $scope;
+        this.fastTickListeners = new Set();
         this.observe();
         this.data = { contract: {}, proposals: [] };
         this.subscription_id_for_accumulators = null;
@@ -187,7 +170,7 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
     }
 
     watch(watchName) {
-        if (watchName === 'before') return watchBefore(this.store, this.$scope, this.options?.symbol);
+        if (watchName === 'before') return watchBefore(this.store, this, this.options?.symbol);
         return watchDuring(this.store);
     }
 
