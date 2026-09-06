@@ -8,8 +8,7 @@ import Interface from '../Interface';
 import { createScope } from './cliTools';
 
 JSInterpreter.prototype.takeStateSnapshot = function () {
-    const newStateStack = cloneThorough(this.stateStack, undefined, undefined, undefined, true);
-    return newStateStack;
+    return cloneThorough(this.stateStack, undefined, undefined, undefined, true);
 };
 
 JSInterpreter.prototype.restoreStateSnapshot = function (snapshot) {
@@ -20,15 +19,8 @@ JSInterpreter.prototype.restoreStateSnapshot = function (snapshot) {
 
 const botInitialized = bot => bot && bot.tradeEngine.options;
 const botStarted = bot => botInitialized(bot) && bot.tradeEngine.tradeOptions;
-const shouldRestartOnError = (bot, errorName = '') =>
-    !unrecoverable_errors.includes(errorName) && botInitialized(bot) && bot.tradeEngine.options.shouldRestartOnError;
-
-const shouldStopOnError = (bot, errorName = '') => {
-    const stopErrors = ['SellNotAvailableCustom', 'ContractCreationFailure', 'InvalidtoBuy'];
-    if (stopErrors.includes(errorName) && botInitialized(bot)) return true;
-    return false;
-};
-
+const shouldRestartOnError = (bot, errorName = '') => !unrecoverable_errors.includes(errorName) && botInitialized(bot) && bot.tradeEngine.options.shouldRestartOnError;
+const shouldStopOnError = (bot, errorName = '') => ['SellNotAvailableCustom', 'ContractCreationFailure', 'InvalidtoBuy'].includes(errorName) && botInitialized(bot);
 const timeMachineEnabled = bot => botInitialized(bot) && bot.tradeEngine.options.timeMachineEnabled;
 
 const Interpreter = () => {
@@ -36,11 +28,8 @@ const Interpreter = () => {
     let bot = Interface($scope);
     let interpreter = {};
     let onFinish;
-    // Only one interpreter continuation may be outstanding at a time.  While
-    // paused, keep that continuation pending instead of executing it.  This is
-    // what prevents a completed purchase/tick from advancing into another trade.
     let async_operation_pending = false;
-    let async_completion_waiting_for_resume = false;
+    let paused_async_continuation = null;
 
     $scope.observer.register('REVERT', watchName => revert(watchName === 'before' ? $scope.beforeState : $scope.duringState));
 
@@ -50,14 +39,14 @@ const Interpreter = () => {
         interpreter = {};
         onFinish = () => {};
         async_operation_pending = false;
-        async_completion_waiting_for_resume = false;
+        paused_async_continuation = null;
     }
 
     function revert(state) {
         interpreter.restoreStateSnapshot(state);
         interpreter.paused_ = false;
         async_operation_pending = false;
-        async_completion_waiting_for_resume = false;
+        paused_async_continuation = null;
         loop();
     }
 
@@ -74,38 +63,42 @@ const Interpreter = () => {
             const function_args = first_defined_arg_idx < 0 ? [] : reversed_args.slice(first_defined_arg_idx).reverse();
 
             async_operation_pending = true;
-            async_completion_waiting_for_resume = false;
+            paused_async_continuation = null;
 
             Promise.resolve(func(...function_args.map(arg => js_interpreter.pseudoToNative(arg))))
                 .then(rv => {
                     if ($scope.stopped) {
                         async_operation_pending = false;
-                        async_completion_waiting_for_resume = false;
+                        paused_async_continuation = null;
                         return;
                     }
 
-                    // Do not resolve the interpreter's async continuation while
-                    // paused. The underlying Deriv request may finish, but the bot
-                    // must remain frozen until Resume is explicitly pressed.
+                    const continueInterpreter = () => {
+                        if ($scope.stopped) return;
+                        callback(js_interpreter.nativeToPseudo(rv));
+                        async_operation_pending = false;
+                        paused_async_continuation = null;
+                        loop();
+                    };
+
                     if (interpreter.paused_) {
-                        async_completion_waiting_for_resume = true;
+                        // Keep the completed result and its continuation parked.
+                        // Nothing after the async trade operation may execute until
+                        // Resume explicitly releases this continuation.
+                        paused_async_continuation = continueInterpreter;
                         return;
                     }
 
-                    callback(js_interpreter.nativeToPseudo(rv));
-                    async_operation_pending = false;
-                    async_completion_waiting_for_resume = false;
-                    loop();
+                    continueInterpreter();
                 })
                 .catch(e => {
                     async_operation_pending = false;
-                    async_completion_waiting_for_resume = false;
+                    paused_async_continuation = null;
                     $scope.observer.emit('Error', e.error || e);
                 });
         };
 
-        const MAX_ACCEPTABLE_FUNC_ARGS = 100;
-        Object.defineProperty(asyncFunc, 'length', { value: MAX_ACCEPTABLE_FUNC_ARGS + 1 });
+        Object.defineProperty(asyncFunc, 'length', { value: 101 });
         return js_interpreter.createAsyncFunction(asyncFunc);
     }
 
@@ -124,8 +117,7 @@ const Interpreter = () => {
 
         js_interpreter.setProperty(pseudo_bot_interface, 'start', js_interpreter.nativeToPseudo((...args) => {
             if (shouldRestartOnError(bot)) $scope.startState = js_interpreter.takeStateSnapshot();
-            const { start } = bot_interface;
-            start(...args);
+            bot_interface.start(...args);
         }));
         js_interpreter.setProperty(pseudo_bot_interface, 'purchase', createAsync(js_interpreter, bot_interface.purchase));
         js_interpreter.setProperty(pseudo_bot_interface, 'sellAtMarket', createAsync(js_interpreter, bot_interface.sellAtMarket));
@@ -170,11 +162,10 @@ const Interpreter = () => {
                 $scope.is_error_triggered = false;
                 interpreter.paused_ = false;
                 async_operation_pending = false;
-                async_completion_waiting_for_resume = false;
+                paused_async_continuation = null;
                 globalObserver.emit('bot.stop');
-                const { ticksService } = $scope;
                 api_base.clearSubscriptions();
-                ticksService.unsubscribeFromTicksService().then(() => resolve());
+                $scope.ticksService.unsubscribeFromTicksService().then(() => resolve());
             } catch (error) { reject(error); }
         });
     }
@@ -199,19 +190,14 @@ const Interpreter = () => {
         interpreter.paused_ = false;
         globalObserver.emit('bot.resumed');
 
-        // If the async request completed while paused, its continuation has not
-        // been delivered yet. Deliver it once, then let that continuation call
-        // loop(). If the request is still pending, its promise will resume the
-        // interpreter when it completes. There is deliberately no unconditional
-        // loop() here, eliminating the double-step/double-trade race.
-        if (async_completion_waiting_for_resume) {
-            async_completion_waiting_for_resume = false;
-            async_operation_pending = false;
-            // The actual callback value is not retained by this flag, so this
-            // path is only safe when the async operation itself has completed.
-            // The completion callback is handled below through the retained
-            // continuation state.
-            loop();
+        // Exactly one continuation is released. If the async request is still
+        // pending, its promise will release it later. If it completed while
+        // paused, release the parked continuation now. No unconditional loop()
+        // means Resume cannot execute the interpreter twice.
+        if (paused_async_continuation) {
+            const continuation = paused_async_continuation;
+            paused_async_continuation = null;
+            continuation();
         }
         return true;
     }
@@ -235,14 +221,13 @@ const Interpreter = () => {
                 $scope.observer.register('Error', onError);
                 bot.tradeEngine.init(...initArgs);
                 bot.tradeEngine.start(tradeOptions);
-                const canRestoreState = $scope.startState && interpreter?.restoreStateSnapshot instanceof Function;
-                if (canRestoreState) revert($scope.startState);
+                if ($scope.startState && interpreter?.restoreStateSnapshot instanceof Function) revert($scope.startState);
             };
             $scope.observer.register('Error', onError);
             interpreter = new JSInterpreter(code, initFunc);
             interpreter.paused_ = false;
             async_operation_pending = false;
-            async_completion_waiting_for_resume = false;
+            paused_async_continuation = null;
             onFinish = resolve;
             loop();
         });
