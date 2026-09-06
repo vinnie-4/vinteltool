@@ -78,45 +78,42 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
     const is_disabled = is_stop_button_visible ? false : shouldDisable || should_disable_run;
     const should_show_tooltip = !is_stop_button_visible && !is_bot_builder_tab && has_no_bots;
 
+    // Keep the existing Run action completely untouched. Once the bot is running,
+    // the same physical button becomes Pause/Resume and only calls the existing
+    // pause/resume store action. Stop remains a separate control.
     const runButton = (
         <Button
-            is_disabled={is_stop_button_visible || ((is_disabled && !is_unavailable_for_payment_agent) || contract_stage === 3)}
-            className='animation__run-button'
+            is_disabled={is_stop_button_visible ? false : ((is_disabled && !is_unavailable_for_payment_agent) || contract_stage === 3)}
+            className={is_stop_button_visible ? 'animation__pause-resume-button' : 'animation__run-button'}
             id='db-animation__run-button'
-            icon={<LabelPairedPlayLgFillIcon fill='#fff' />}
+            icon={
+                is_stop_button_visible ? (
+                    <span className='animation__pause-resume-icon' aria-hidden='true'>{is_paused ? '⏸' : '⏹'}</span>
+                ) : (
+                    <LabelPairedPlayLgFillIcon fill='#fff' />
+                )
+            }
             onClick={() => {
+                if (is_stop_button_visible && is_running) {
+                    onPauseResumeButtonClick();
+                    return;
+                }
                 setShouldDisable(true);
                 onRunButtonClick();
             }}
             has_effect
             {...(!is_unavailable_for_payment_agent ? { primary: true } : { green: true })}
+            aria-pressed={is_stop_button_visible && is_running ? is_paused : undefined}
+            aria-label={is_stop_button_visible && is_running ? (is_paused ? localize('Resume bot') : localize('Pause bot')) : localize('Run bot')}
+            title={is_stop_button_visible && is_running ? (is_paused ? localize('Resume bot') : localize('Pause bot')) : localize('Run bot')}
         >
-            <Localize i18n_default_text='Run' />
+            {is_stop_button_visible && is_running ? (
+                is_paused ? <Localize i18n_default_text='Resume' /> : <Localize i18n_default_text='Pause' />
+            ) : (
+                <Localize i18n_default_text='Run' />
+            )}
         </Button>
     );
-
-    // One physical control is used for both states. Pausing never calls stopBot;
-    // it only freezes the existing interpreter. Resume releases that same
-    // interpreter so execution continues from its current state.
-    const pauseResumeButton = is_stop_button_visible && is_running ? (
-        <Button
-            is_disabled={false}
-            className='animation__pause-resume-button'
-            id='db-animation__pause-resume-button'
-            icon={<span className='animation__pause-resume-icon' aria-hidden='true'>{is_paused ? '⏸' : '⏯'}</span>}
-            onClick={() => {
-                if (!is_running) return;
-                onPauseResumeButtonClick();
-            }}
-            has_effect
-            primary
-            aria-pressed={is_paused}
-            aria-label={is_paused ? localize('Resume bot') : localize('Pause bot')}
-            title={is_paused ? localize('Resume bot') : localize('Pause bot')}
-        >
-            {is_paused ? <Localize i18n_default_text='Resume' /> : <Localize i18n_default_text='Pause' />}
-        </Button>
-    ) : null;
 
     const stopButton = is_stop_button_visible ? (
         <Button
@@ -176,7 +173,6 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
                             {status_classes.map((status_class, i) => <CircularWrapper key={`status_class-${status_class}-${i}`} className={status_class} />)}
                         </div>
                     </div>
-                    {pauseResumeButton}
                     {stopButton}
                 </>
             )}
