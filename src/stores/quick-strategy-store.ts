@@ -97,7 +97,6 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
         });
         this.root_store = root_store;
 
-        // Initialize selected_strategy_for_notofy from localStorage if available
         const savedStrategy = getSetting('selected_strategy_for_notofy');
         if (savedStrategy) {
             this.selected_strategy_for_notofy = savedStrategy;
@@ -156,13 +155,16 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
     onSubmit = async (data: TFormData) => {
         const { contracts_for } = ApiHelpers?.instance ?? {};
         if (!contracts_for) return;
+
         const market = await contracts_for.getMarketBySymbol(data.symbol);
         const submarket = await contracts_for.getSubmarketBySymbol(data.symbol);
         const trade_type_cat = await contracts_for.getTradeTypeCategoryByTradeType(data.tradetype);
         const selected_strategy = STRATEGIES()[this.selected_strategy];
+        if (!selected_strategy) return;
+
         this.selected_strategy_for_notofy = this.selected_strategy;
-        // Persist the selected strategy for notifications in localStorage
         storeSetting('selected_strategy_for_notofy', this.selected_strategy);
+
         const strategy_xml = await import(/* webpackChunkName: `[request]` */ `../xml/${selected_strategy.name}.xml`);
         const strategy_dom = window.Blockly.utils.xml.textToDom(strategy_xml.default);
         addDynamicBlockToDOM('PREDICTION', 'last_digit_prediction', trade_type_cat, strategy_dom);
@@ -187,6 +189,7 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
                 el_block.innerHTML = value;
             });
         };
+
         const { unit, action, type, growth_rate, ...rest_data } = data;
         const fields_to_update = {
             market,
@@ -210,19 +213,19 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             }
         });
 
-        const { derivWorkspace: workspace } = Blockly;
+        // Blockly is mounted separately from the Quick Strategy modal. On fast loads,
+        // the modal can submit before derivWorkspace exists. Wait for the actual shared
+        // workspace instead of silently passing undefined to load().
+        const waitForWorkspace = async (timeout = 10000) => {
+            const started_at = Date.now();
+            while (!window.Blockly?.derivWorkspace && Date.now() - started_at < timeout) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+            return window.Blockly?.derivWorkspace;
+        };
 
-        if (action === 'RUN') {
-            workspace
-                ?.waitForBlockEvent({
-                    block_type: 'trade_definition',
-                    event_type: window.Blockly.Events.BLOCK_CREATE,
-                    timeout: 5000,
-                })
-                .then(() => {
-                    this.root_store.run_panel.onRunButtonClick();
-                });
-        }
+        const workspace = await waitForWorkspace();
+        if (!workspace) return;
 
         this.setFormVisibility(false);
 
@@ -235,6 +238,12 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             strategy_id: null,
             showIncompatibleStrategyDialog: null,
         });
+
+        // Run only after the strategy has actually finished loading into the workspace.
+        // This removes the race between waitForBlockEvent and loadWorkspace().
+        if (action === 'RUN') {
+            this.root_store.run_panel.onRunButtonClick();
+        }
     };
 
     toggleStopBotDialog = (): void => {
