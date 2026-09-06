@@ -29,11 +29,11 @@ export default class RunPanelStore {
     constructor(root_store: RootStore, core: TStores) {
         makeObservable(this, {
             active_index: observable, contract_stage: observable, dialog_options: observable, has_open_contract: observable,
-            is_running: observable, is_statistics_info_modal_open: observable, is_drawer_open: observable, is_dialog_open: observable,
+            is_running: observable, is_paused: observable, is_statistics_info_modal_open: observable, is_drawer_open: observable, is_dialog_open: observable,
             is_sell_requested: observable, run_id: observable, error_type: observable, show_bot_stop_message: observable,
             is_stop_button_visible: computed, is_stop_button_disabled: computed, is_clear_stat_disabled: computed,
-            toggleDrawer: action, onBotSellEvent: action, setContractStage: action, setHasOpenContract: action, setIsRunning: action,
-            onRunButtonClick: action, is_contract_buying_in_progress: observable, SetpurchaseInProgress: action, onStopButtonClick: action,
+            toggleDrawer: action, onBotSellEvent: action, setContractStage: action, setHasOpenContract: action, setIsRunning: action, setIsPaused: action,
+            onRunButtonClick: action, onPauseResumeButtonClick: action, is_contract_buying_in_progress: observable, SetpurchaseInProgress: action, onStopButtonClick: action,
             onClearStatClick: action, clearStat: action, toggleStatisticsInfoModal: action, setActiveTabIndex: action, onCloseDialog: action,
             stopMyBot: action, closeMultiplierContract: action, showStopMultiplierContractDialog: action, showLoginDialog: action,
             showRealAccountDialog: action, showClearStatDialog: action, showIncompatibleStrategyDialog: action, showContractUpdateErrorDialog: action,
@@ -46,7 +46,7 @@ export default class RunPanelStore {
     }
 
     active_index = 0; contract_stage: TContractStage = contract_stages.NOT_RUNNING; dialog_options = {}; has_open_contract = false;
-    is_running = false; is_statistics_info_modal_open = false; is_drawer_open = true; is_dialog_open = false; is_sell_requested = false;
+    is_running = false; is_paused = false; is_statistics_info_modal_open = false; is_drawer_open = true; is_dialog_open = false; is_sell_requested = false;
     show_bot_stop_message = false; is_contract_buying_in_progress = false; run_id = '';
     onOkButtonClick: (() => void) | null = null; onCancelButtonClick: (() => void) | null = null;
     error_type: ErrorTypes | undefined = undefined;
@@ -71,8 +71,17 @@ export default class RunPanelStore {
         if (is_ios || isSafari()) this.preloadAudio(); this.registerBotListeners();
         if (!this.dbot.shouldRunBot()) { this.unregisterBotListeners(); return; }
         ui?.setAccountSwitcherDisabledMessage(localize('Account switching is disabled while your bot is running. Please stop your bot before switching accounts.'));
-        runInAction(() => { this.setIsRunning(true); ui.setPromptHandler(true); this.toggleDrawer(true); this.run_id = `run-${Date.now()}`; summary_card.clear(); this.setContractStage(contract_stages.STARTING); this.dbot.runBot(); });
+        runInAction(() => { this.setIsRunning(true); this.setIsPaused(false); ui.setPromptHandler(true); this.toggleDrawer(true); this.run_id = `run-${Date.now()}`; summary_card.clear(); this.setContractStage(contract_stages.STARTING); this.dbot.runBot(); });
         this.setShowBotStopMessage(false);
+    };
+
+    onPauseResumeButtonClick = () => {
+        if (!this.is_running) return;
+        if (this.is_paused) {
+            if (this.dbot.resumeBot()) this.setIsPaused(false);
+        } else if (this.dbot.pauseBot()) {
+            this.setIsPaused(true);
+        }
     };
 
     onStopButtonClick = () => { this.is_contract_buying_in_progress = false; if (this.root_store.summary_card.is_multiplier) this.showStopMultiplierContractDialog(); else this.stopBot(); };
@@ -80,11 +89,9 @@ export default class RunPanelStore {
 
     stopBot = () => {
         const { ui } = this.core;
-        // A normal Stop is a bot lifecycle action, not a WebSocket/app failure.
-        // Never allow bot-engine cleanup/statistics exceptions to reach ErrorBoundary.
         try { this.dbot.stopBot(); } catch (error) { console.warn('[RunPanel] Bot stop cleanup failed; keeping app alive.', error); }
         try { ui.setPromptHandler(false); } catch (error) { console.warn('[RunPanel] Prompt cleanup failed.', error); }
-        this.setIsRunning(false); this.setHasOpenContract(false); this.error_type = undefined;
+        this.setIsRunning(false); this.setIsPaused(false); this.setHasOpenContract(false); this.error_type = undefined;
         this.setContractStage(contract_stages.NOT_RUNNING); this.setShowBotStopMessage(false);
         try { ui.setAccountSwitcherDisabledMessage(); } catch (error) { console.warn('[RunPanel] Account-switch cleanup failed.', error); }
         this.unregisterBotListeners();
@@ -93,7 +100,7 @@ export default class RunPanelStore {
     };
 
     onClearStatClick = () => this.showClearStatDialog();
-    clearStat = () => { const { summary_card, journal, transactions } = this.root_store; this.setIsRunning(false); this.setHasOpenContract(false); this.clear(); journal.clear(); summary_card.clear(); transactions.clear(); this.setContractStage(contract_stages.NOT_RUNNING); };
+    clearStat = () => { const { summary_card, journal, transactions } = this.root_store; this.setIsRunning(false); this.setIsPaused(false); this.setHasOpenContract(false); this.clear(); journal.clear(); summary_card.clear(); transactions.clear(); this.setContractStage(contract_stages.NOT_RUNNING); };
     toggleStatisticsInfoModal = () => { this.is_statistics_info_modal_open = !this.is_statistics_info_modal_open; };
     toggleDrawer = (is_open: boolean) => { this.is_drawer_open = is_open; };
     setActiveTabIndex = (index: number) => { this.active_index = index; };
@@ -103,7 +110,7 @@ export default class RunPanelStore {
         const { summary_card, quick_strategy } = this.root_store; const { ui } = this.core;
         try { ui.setPromptHandler(false); } catch (error) { console.warn('[RunPanel] Prompt cleanup failed.', error); }
         try { this.dbot.terminateBot(); } catch (error) { console.warn('[RunPanel] Bot termination failed; keeping app alive.', error); }
-        this.onCloseDialog(); summary_card.clear(); quick_strategy.toggleStopBotDialog(); this.setIsRunning(false); this.setHasOpenContract(false); this.error_type = undefined; this.setContractStage(contract_stages.NOT_RUNNING); this.unregisterBotListeners();
+        this.onCloseDialog(); summary_card.clear(); quick_strategy.toggleStopBotDialog(); this.setIsRunning(false); this.setIsPaused(false); this.setHasOpenContract(false); this.error_type = undefined; this.setContractStage(contract_stages.NOT_RUNNING); this.unregisterBotListeners();
         if (this.timer) { clearInterval(this.timer); this.timer = null; }
         if (window.sendRequestsStatistic) { try { window.sendRequestsStatistic(true); } catch (error) { console.warn('[RunPanel] Stop statistics failed.', error); } performance.clearMeasures(); }
     };
@@ -117,7 +124,7 @@ export default class RunPanelStore {
             try { this.dbot.terminateBot(); } catch (error) { console.warn('[RunPanel] Multiplier termination failed.', error); }
             if (this.timer) { clearInterval(this.timer); this.timer = null; }
             if (window.sendRequestsStatistic) { try { window.sendRequestsStatistic(true); } catch (error) { console.warn('[RunPanel] Stop statistics failed.', error); } performance.clearMeasures(); }
-            this.onCloseDialog(); summary_card.clear(); this.setIsRunning(false); this.setHasOpenContract(false); this.error_type = undefined; this.setContractStage(contract_stages.NOT_RUNNING); this.unregisterBotListeners();
+            this.onCloseDialog(); summary_card.clear(); this.setIsRunning(false); this.setIsPaused(false); this.setHasOpenContract(false); this.error_type = undefined; this.setContractStage(contract_stages.NOT_RUNNING); this.unregisterBotListeners();
         };
         this.onCancelButtonClick = () => { this.onClickSell(); this.stopBot(); this.onCloseDialog(); };
         this.dialog_options = { title: localize('Keep your current contract?'), message: helpers.keep_current_contract, ok_button_text: localize('Keep my contract'), cancel_button_text: localize('Close my contract') };
@@ -145,14 +152,14 @@ export default class RunPanelStore {
     onBotSellEvent = () => { this.is_sell_requested = true; };
     onBotStopEvent = () => {
         const { summary_card } = this.root_store; const { ui } = this.core;
-        const indicateBotStopped = () => { this.error_type = undefined; this.setIsRunning(false); this.setHasOpenContract(false); this.setContractStage(contract_stages.NOT_RUNNING); ui.setAccountSwitcherDisabledMessage(); this.unregisterBotListeners(); };
+        const indicateBotStopped = () => { this.error_type = undefined; this.setIsRunning(false); this.setIsPaused(false); this.setHasOpenContract(false); this.setContractStage(contract_stages.NOT_RUNNING); ui.setAccountSwitcherDisabledMessage(); this.unregisterBotListeners(); };
         if (this.error_type === ErrorTypes.RECOVERABLE_ERRORS) { const { shouldRestartOnError = false, timeMachineEnabled = false } = this.dbot?.interpreter?.bot?.tradeEngine?.options ?? {}; if (shouldRestartOnError || timeMachineEnabled) { this.error_type = undefined; this.setContractStage(contract_stages.PURCHASE_SENT); } else indicateBotStopped(); }
         else if (this.error_type === ErrorTypes.UNRECOVERABLE_ERRORS) indicateBotStopped();
         else if (this.has_open_contract) { this.error_type = undefined; this.is_sell_requested = false; this.setContractStage(contract_stages.CONTRACT_CLOSED); ui.setAccountSwitcherDisabledMessage(); this.unregisterBotListeners(); this.setHasOpenContract(false); }
         else indicateBotStopped();
         summary_card.clearContractUpdateConfigValues(); document.dispatchEvent(new Event('ListenPWAUpdate'));
     };
-    onBotReadyEvent = () => { this.setIsRunning(false); observer.unregisterAll('bot.bot_ready'); };
+    onBotReadyEvent = () => { this.setIsRunning(false); this.setIsPaused(false); observer.unregisterAll('bot.bot_ready'); };
     onBotTradeAgain = (is_trade_again: boolean) => { if (!is_trade_again) this.stopBot(); };
     onContractStatusEvent = (contract_status: TContractState) => { switch (contract_status.id) { case 'contract.purchase_sent': this.setContractStage(contract_stages.PURCHASE_SENT); break; case 'contract.purchase_received': { this.is_contract_buying_in_progress = false; this.setContractStage(contract_stages.PURCHASE_RECEIVED); const { buy } = contract_status; const { is_virtual } = this.core.client; if (!is_virtual && buy) GTM?.pushDataLayer?.({ event: 'dbot_purchase', buy_price: buy.buy_price }); break; } case 'contract.sold': this.is_sell_requested = false; this.setContractStage(contract_stages.CONTRACT_CLOSED); if (contract_status.contract) GTM.onTransactionClosed(contract_status.contract); break; default: break; } };
     onClickSell = () => { const { is_multiplier } = this.root_store.summary_card; if (is_multiplier) this.setContractStage(contract_stages.IS_STOPPING); this.dbot.interpreter.bot.getInterface().sellAtMarket(); };
@@ -165,6 +172,7 @@ export default class RunPanelStore {
     setContractStage = (contract_stage: TContractStage) => { this.contract_stage = contract_stage; };
     setHasOpenContract = (has_open_contract: boolean) => { this.has_open_contract = has_open_contract; };
     setIsRunning = (is_running: boolean) => { this.is_running = is_running; };
+    setIsPaused = (is_paused: boolean) => { this.is_paused = is_paused; };
     onMount = () => { const { journal } = this.root_store; const handleUiLogError = (errorMessage: string) => { if (typeof errorMessage === 'string' && errorMessage.includes('Minimum stake') && errorMessage.includes('maximum payout')) { const stakeMatch = errorMessage.match(/Minimum stake of ([\d.]+)/); const payoutMatch = errorMessage.match(/maximum payout of ([\d.]+)/); const currentMatch = errorMessage.match(/Current (?:payout|stake) is ([\d.]+)/); if (stakeMatch && payoutMatch && currentMatch) { const details = { param1: stakeMatch[1], param2: payoutMatch[1], param3: currentMatch[1] }; let errorCode = 'InvalidtoBuy'; if (errorMessage.includes('Current payout')) errorCode = errorMessage.includes('stake') ? 'StakeLimits' : 'PayoutLimits'; else if (errorMessage.includes('Current stake')) errorCode = 'StakeLimits'; this.showErrorMessage(require('@/constants/backend-error-messages').getLocalizedErrorMessage(errorCode, details)); return; } } if (typeof errorMessage === 'string' && errorMessage.includes('[_')) { const { getLocalizedErrorMessage, getBackendErrorMessages } = require('@/constants/backend-error-messages'); const errorMessages = getBackendErrorMessages(); const normalizedMessage = errorMessage.replace(/\[_(\d+)\]/g, '{{param$1}}'); let matchedErrorCode: string | null = null; for (const [errorCode, errorTemplate] of Object.entries(errorMessages)) if (typeof errorTemplate === 'string' && errorTemplate === normalizedMessage) { matchedErrorCode = errorCode; break; } if (matchedErrorCode) { this.showErrorMessage(getLocalizedErrorMessage(matchedErrorCode)); return; } } this.showErrorMessage(errorMessage); }; observer.register('ui.log.error', handleUiLogError); observer.register('ui.log.notify', journal.onNotify); observer.register('ui.log.success', journal.onLogSuccess); observer.register('client.invalid_token', this.handleInvalidToken); };
     onUnmount = () => { const { journal, summary_card, transactions } = this.root_store; if (!this.is_running) { this.unregisterBotListeners(); this.disposeReactionsFn(); journal.disposeReactionsFn(); summary_card.disposeReactionsFn(); transactions.disposeReactionsFn(); } observer.unregisterAll('ui.log.error'); observer.unregisterAll('ui.log.notify'); observer.unregisterAll('ui.log.success'); observer.unregisterAll('client.invalid_token'); };
     handleInvalidToken = async () => { this.setActiveTabIndex(run_panel.SUMMARY); };
