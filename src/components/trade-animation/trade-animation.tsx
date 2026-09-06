@@ -28,8 +28,10 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
     const { has_active_bot, has_saved_bots } = blockly_store;
     const { isMobile } = useDevice();
     const { is_contract_completed, profit } = summary_card;
-    const { contract_stage, is_stop_button_visible, is_stop_button_disabled, is_running, is_paused, onRunButtonClick, onPauseResumeButtonClick, stopBot } = run_panel;
+    const { contract_stage, is_stop_button_visible, is_stop_button_disabled, is_running, onRunButtonClick, stopBot } = run_panel;
     const [shouldDisable, setShouldDisable] = React.useState(false);
+    // Visual-only Pause/Resume state. It intentionally has no connection to the trading engine.
+    const [is_pause_resume_visual, setIsPauseResumeVisual] = React.useState(false);
     const is_unavailable_for_payment_agent = false;
     const { load_modal } = useStore();
     const { dashboard_strategies, is_delete_modal_open } = load_modal;
@@ -40,6 +42,10 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
         checkBots();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dashboard_strategies, is_delete_modal_open, is_stop_button_visible]);
+
+    React.useEffect(() => {
+        if (!is_stop_button_visible) setIsPauseResumeVisual(false);
+    }, [is_stop_button_visible]);
 
     React.useEffect(() => {
         if (prevDeleteModalOpen.current && !is_delete_modal_open) {
@@ -85,14 +91,16 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
             id='db-animation__run-button'
             icon={
                 is_stop_button_visible ? (
-                    <span className='animation__pause-resume-icon' aria-hidden='true'>{is_paused ? '⏸' : '⏹'}</span>
+                    <span className='animation__pause-resume-icon' aria-hidden='true'>{is_pause_resume_visual ? '▶' : '⏸'}</span>
                 ) : (
                     <LabelPairedPlayLgFillIcon fill='#fff' />
                 )
             }
             onClick={() => {
                 if (is_stop_button_visible && is_running) {
-                    onPauseResumeButtonClick();
+                    // Pause/Resume is intentionally visual-only for now.
+                    // Do NOT call the trading engine until this feature is wired later.
+                    setIsPauseResumeVisual(current => !current);
                     return;
                 }
                 setShouldDisable(true);
@@ -100,12 +108,12 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
             }}
             has_effect
             {...(!is_unavailable_for_payment_agent ? { primary: true } : { green: true })}
-            aria-pressed={is_stop_button_visible && is_running ? is_paused : undefined}
-            aria-label={is_stop_button_visible && is_running ? (is_paused ? localize('Resume bot') : localize('Pause bot')) : localize('Run bot')}
-            title={is_stop_button_visible && is_running ? (is_paused ? localize('Resume bot') : localize('Pause bot')) : localize('Run bot')}
+            aria-pressed={is_stop_button_visible && is_running ? is_pause_resume_visual : undefined}
+            aria-label={is_stop_button_visible && is_running ? (is_pause_resume_visual ? localize('Resume bot') : localize('Pause bot')) : localize('Run bot')}
+            title={is_stop_button_visible && is_running ? (is_pause_resume_visual ? localize('Resume bot') : localize('Pause bot')) : localize('Run bot')}
         >
             {is_stop_button_visible && is_running ? (
-                is_paused ? <Localize i18n_default_text='Resume' /> : <Localize i18n_default_text='Pause' />
+                is_pause_resume_visual ? <Localize i18n_default_text='Resume' /> : <Localize i18n_default_text='Pause' />
             ) : (
                 <Localize i18n_default_text='Run' />
             )}
