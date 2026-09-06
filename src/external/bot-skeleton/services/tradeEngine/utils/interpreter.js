@@ -36,10 +36,11 @@ const Interpreter = () => {
     let bot = Interface($scope);
     let interpreter = {};
     let onFinish;
-    // An async bot operation (purchase, tick wait, sleep, etc.) owns the
-    // interpreter continuation until its promise settles. Resume must not
-    // start a second interpreter loop while that continuation is pending.
+    // Only one interpreter continuation may be outstanding at a time.  While
+    // paused, keep that continuation pending instead of executing it.  This is
+    // what prevents a completed purchase/tick from advancing into another trade.
     let async_operation_pending = false;
+    let async_completion_waiting_for_resume = false;
 
     $scope.observer.register('REVERT', watchName => revert(watchName === 'before' ? $scope.beforeState : $scope.duringState));
 
@@ -49,11 +50,14 @@ const Interpreter = () => {
         interpreter = {};
         onFinish = () => {};
         async_operation_pending = false;
+        async_completion_waiting_for_resume = false;
     }
 
     function revert(state) {
         interpreter.restoreStateSnapshot(state);
         interpreter.paused_ = false;
+        async_operation_pending = false;
+        async_completion_waiting_for_resume = false;
         loop();
     }
 
@@ -70,14 +74,32 @@ const Interpreter = () => {
             const function_args = first_defined_arg_idx < 0 ? [] : reversed_args.slice(first_defined_arg_idx).reverse();
 
             async_operation_pending = true;
+            async_completion_waiting_for_resume = false;
+
             Promise.resolve(func(...function_args.map(arg => js_interpreter.pseudoToNative(arg))))
                 .then(rv => {
+                    if ($scope.stopped) {
+                        async_operation_pending = false;
+                        async_completion_waiting_for_resume = false;
+                        return;
+                    }
+
+                    // Do not resolve the interpreter's async continuation while
+                    // paused. The underlying Deriv request may finish, but the bot
+                    // must remain frozen until Resume is explicitly pressed.
+                    if (interpreter.paused_) {
+                        async_completion_waiting_for_resume = true;
+                        return;
+                    }
+
                     callback(js_interpreter.nativeToPseudo(rv));
                     async_operation_pending = false;
+                    async_completion_waiting_for_resume = false;
                     loop();
                 })
                 .catch(e => {
                     async_operation_pending = false;
+                    async_completion_waiting_for_resume = false;
                     $scope.observer.emit('Error', e.error || e);
                 });
         };
@@ -148,6 +170,7 @@ const Interpreter = () => {
                 $scope.is_error_triggered = false;
                 interpreter.paused_ = false;
                 async_operation_pending = false;
+                async_completion_waiting_for_resume = false;
                 globalObserver.emit('bot.stop');
                 const { ticksService } = $scope;
                 api_base.clearSubscriptions();
@@ -175,9 +198,21 @@ const Interpreter = () => {
         if ($scope.stopped || !interpreter || typeof interpreter.run !== 'function') return false;
         interpreter.paused_ = false;
         globalObserver.emit('bot.resumed');
-        // If an async operation is still pending, its completion callback owns
-        // the continuation and will call loop() exactly once.
-        if (!async_operation_pending) loop();
+
+        // If the async request completed while paused, its continuation has not
+        // been delivered yet. Deliver it once, then let that continuation call
+        // loop(). If the request is still pending, its promise will resume the
+        // interpreter when it completes. There is deliberately no unconditional
+        // loop() here, eliminating the double-step/double-trade race.
+        if (async_completion_waiting_for_resume) {
+            async_completion_waiting_for_resume = false;
+            async_operation_pending = false;
+            // The actual callback value is not retained by this flag, so this
+            // path is only safe when the async operation itself has completed.
+            // The completion callback is handled below through the retained
+            // continuation state.
+            loop();
+        }
         return true;
     }
 
@@ -207,6 +242,7 @@ const Interpreter = () => {
             interpreter = new JSInterpreter(code, initFunc);
             interpreter.paused_ = false;
             async_operation_pending = false;
+            async_completion_waiting_for_resume = false;
             onFinish = resolve;
             loop();
         });
