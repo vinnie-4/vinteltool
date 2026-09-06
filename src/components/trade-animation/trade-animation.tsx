@@ -28,8 +28,7 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
     const { isMobile } = useDevice();
 
     const { is_contract_completed, profit } = summary_card;
-    const { contract_stage, is_stop_button_visible, is_stop_button_disabled, onRunButtonClick, onStopBotClick } =
-        run_panel;
+    const { contract_stage, is_stop_button_visible, is_stop_button_disabled, onRunButtonClick, stopBot } = run_panel;
     const [shouldDisable, setShouldDisable] = React.useState(false);
     const is_unavailable_for_payment_agent = false;
 
@@ -169,9 +168,9 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
                     onClick={() => {
                         setShouldDisable(true);
                         if (is_stop_button_visible) {
-                            // Mark the lifecycle transition before invoking bot cleanup.
-                            // This lets the global error boundary distinguish an expected
-                            // stop-time exception from a genuine application crash.
+                            // The visible Run-panel Stop button performs one operation only:
+                            // stop the bot. It must not clear the summary, transactions,
+                            // journal, or any other Run-panel data.
                             try {
                                 window.__vinteltool_stopping = true;
                                 window.setTimeout(() => {
@@ -181,9 +180,9 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
                                 console.warn('[TradeAnimation] Could not set stop guard.', error);
                             }
                             try {
-                                onStopBotClick();
+                                stopBot();
                             } catch (error) {
-                                console.warn('[TradeAnimation] Stop action failed; keeping the app alive.', error);
+                                console.warn('[TradeAnimation] Stop action failed; keeping app alive.', error);
                             }
                             return;
                         }
