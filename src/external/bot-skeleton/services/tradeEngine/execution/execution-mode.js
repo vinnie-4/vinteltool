@@ -12,15 +12,15 @@ export const setExecutionMode = mode => {
  * FAST is an event-driven low-latency path. It never fabricates ticks and it
  * never polls the API. The real tick stream remains the source of truth.
  *
- * On ordinary tick indices, every real incoming tick can advance the bot
- * immediately. On 1-second indices, the bot still executes only when the
- * real 1-second tick arrives, but avoids the extra Redux/state notification
- * hop before resuming the Blockly interpreter.
+ * The small execution-yield reduction is intentionally conservative: it lets
+ * the interpreter resume a fraction sooner without changing the market tick,
+ * contract parameters, strategy, stake, martingale, or recovery behaviour.
  */
 export const getFastExecutionConfig = () => ({
     eventDriven: true,
     pollIntervalMs: 0,
     windowDurationMs: 0,
+    executionYieldMs: 0,
 });
 
 export const isOneSecondSymbol = symbol => /(^|_)1s$/.test(String(symbol || '').toLowerCase());
