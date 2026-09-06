@@ -286,6 +286,7 @@ class DBot {
     disableStrayBlocks() {
         const top_blocks = this.workspace.getTopBlocks();
         top_blocks.forEach(block => { if (!block.isMainBlock() && !block.isIndependentBlock()) this.disableBlocksRecursively(block); });
+        return true;
     }
 
     disableBlocksRecursively(block) {
