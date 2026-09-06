@@ -46,6 +46,7 @@
     }
 
     &__run-button,
+    &__pause-resume-button,
     &__stop-button {
         width: fit-content;
         height: 100% !important;
@@ -66,21 +67,44 @@
         }
     }
 
-    &__stop-button {
-        background-color: var(--button-primary-default) !important;
+    &__pause-resume-button {
+        background-color: #f59e0b !important;
         color: #fff !important;
 
         &:hover,
         &:focus,
         &:active {
-            background-color: var(--button-primary-default) !important;
+            background-color: #f59e0b !important;
+            color: #fff !important;
+            opacity: 1 !important;
+        }
+    }
+
+    &__pause-resume-icon {
+        color: #fff !important;
+        font-size: 18px;
+        line-height: 1;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    &__stop-button {
+        background-color: #e02020 !important;
+        color: #fff !important;
+
+        &:hover,
+        &:focus,
+        &:active {
+            background-color: #e02020 !important;
             color: #fff !important;
             opacity: 1 !important;
         }
 
         svg {
-            fill: #e02020 !important;
-            color: #e02020 !important;
+            fill: #0066ff !important;
+            color: #0066ff !important;
         }
     }
 
