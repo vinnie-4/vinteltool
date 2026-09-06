@@ -62,6 +62,11 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
     loss_threshold_warning_data: TLossThresholdWarningData = { show: false };
     additional_data = {};
 
+    // Quick Strategy can be opened repeatedly. Keep workspace imports serialized so a
+    // second import can never clear/replace the workspace while the first import is
+    // still finishing its Blockly lifecycle work.
+    workspace_load_queue: Promise<void> = Promise.resolve();
+
     constructor(root_store: RootStore) {
         makeObservable(this, {
             additional_data: observable,
@@ -111,83 +116,95 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
     setCurrentDurationMinMax = (min = 0, max = 10) => { this.current_duration_min_max = { min, max }; };
 
     onSubmit = async (data: TFormData) => {
-        const { contracts_for } = ApiHelpers?.instance ?? {};
-        if (!contracts_for) return;
-        const market = await contracts_for.getMarketBySymbol(data.symbol);
-        const submarket = await contracts_for.getSubmarketBySymbol(data.symbol);
-        const trade_type_cat = await contracts_for.getTradeTypeCategoryByTradeType(data.tradetype);
-        const selected_strategy = STRATEGIES()[this.selected_strategy];
-        if (!selected_strategy) return;
-        this.selected_strategy_for_notofy = this.selected_strategy;
-        storeSetting('selected_strategy_for_notofy', this.selected_strategy);
-        const strategy_xml = await import(/* webpackChunkName: `[request]` */ `../xml/${selected_strategy.name}.xml`);
-        const strategy_dom = window.Blockly.utils.xml.textToDom(strategy_xml.default);
-        addDynamicBlockToDOM('PREDICTION', 'last_digit_prediction', trade_type_cat, strategy_dom);
+        const runImport = async () => {
+            const { contracts_for } = ApiHelpers?.instance ?? {};
+            if (!contracts_for) return;
+            const market = await contracts_for.getMarketBySymbol(data.symbol);
+            const submarket = await contracts_for.getSubmarketBySymbol(data.symbol);
+            const trade_type_cat = await contracts_for.getTradeTypeCategoryByTradeType(data.tradetype);
+            const selected_strategy = STRATEGIES()[this.selected_strategy];
+            if (!selected_strategy) return;
+            this.selected_strategy_for_notofy = this.selected_strategy;
+            storeSetting('selected_strategy_for_notofy', this.selected_strategy);
+            const strategy_xml = await import(/* webpackChunkName: `[request]` */ `../xml/${selected_strategy.name}.xml`);
+            const strategy_dom = window.Blockly.utils.xml.textToDom(strategy_xml.default);
+            addDynamicBlockToDOM('PREDICTION', 'last_digit_prediction', trade_type_cat, strategy_dom);
 
-        const modifyValueInputs = (key: string, value: number) => {
-            const el_value_inputs = strategy_dom?.querySelectorAll(`value[strategy_value="${key}"]`);
-            el_value_inputs?.forEach((el_value_input: HTMLElement) => {
-                if (key.includes('boolean')) {
-                    el_value_input.innerHTML = value
-                        ? `<block type="logic_boolean"><field name="BOOL">TRUE</field></block>`
-                        : `<block type="logic_boolean"><field name="BOOL">FALSE</field></block>`;
-                } else {
-                    el_value_input.innerHTML = `<shadow type="math_number"><field name="NUM">${value}</field></shadow>`;
+            const modifyValueInputs = (key: string, value: number) => {
+                const el_value_inputs = strategy_dom?.querySelectorAll(`value[strategy_value="${key}"]`);
+                el_value_inputs?.forEach((el_value_input: HTMLElement) => {
+                    if (key.includes('boolean')) {
+                        el_value_input.innerHTML = value
+                            ? `<block type="logic_boolean"><field name="BOOL">TRUE</field></block>`
+                            : `<block type="logic_boolean"><field name="BOOL">FALSE</field></block>`;
+                    } else {
+                        el_value_input.innerHTML = `<shadow type="math_number"><field name="NUM">${value}</field></shadow>`;
+                    }
+                });
+            };
+            const modifyFieldDropdownValues = (name: string, value: string) => {
+                const name_list = `${name.toUpperCase()}_LIST`;
+                strategy_dom?.querySelectorAll(`field[name="${name_list}"]`)?.forEach((el_block: HTMLElement) => {
+                    el_block.innerHTML = value;
+                });
+            };
+            const { unit, action, type, growth_rate, ...rest_data } = data;
+            const fields_to_update = {
+                market,
+                submarket,
+                tradetypecat: trade_type_cat,
+                dalembert_unit: unit,
+                oscar_unit: unit,
+                type: 'both',
+                ...rest_data,
+                purchase: type,
+                growthrate: growth_rate ? growth_rate.toString() : undefined,
+            };
+            Object.keys(fields_to_update).forEach(key => {
+                const value = fields_to_update[key as keyof typeof fields_to_update];
+                if (!isNaN(value as number) && key !== 'growthrate') modifyValueInputs(key, value as number);
+                else if (typeof value === 'string') modifyFieldDropdownValues(key, value);
+            });
+
+            // Capture the workspace immediately before the destructive clear/load cycle.
+            // Never run a strategy against a missing or replaced workspace instance.
+            const workspace = window.Blockly?.derivWorkspace;
+            if (!workspace) return;
+
+            this.setFormVisibility(false);
+
+            await load({
+                block_string: window.Blockly.Xml.domToText(strategy_dom),
+                file_name: selected_strategy.label,
+                workspace,
+                from: save_types.UNSAVED,
+                drop_event: null,
+                strategy_id: null,
+                showIncompatibleStrategyDialog: null,
+            });
+
+            // load() performs asyncClear() and repopulates the workspace. Confirm the
+            // same live workspace is still installed before allowing the Run cycle to
+            // read it. This protects the import lifecycle without changing bot execution.
+            if (window.Blockly?.derivWorkspace !== workspace) return;
+
+            if (action === 'RUN') {
+                await new Promise(resolve => setTimeout(resolve, 0));
+                if (window.Blockly?.derivWorkspace !== workspace) return;
+                try {
+                    await this.root_store.run_panel.onRunButtonClick();
+                } catch (error) {
+                    console.error('Quick Strategy auto-run failed after workspace import:', error);
                 }
-            });
-        };
-        const modifyFieldDropdownValues = (name: string, value: string) => {
-            const name_list = `${name.toUpperCase()}_LIST`;
-            strategy_dom?.querySelectorAll(`field[name="${name_list}"]`)?.forEach((el_block: HTMLElement) => {
-                el_block.innerHTML = value;
-            });
-        };
-        const { unit, action, type, growth_rate, ...rest_data } = data;
-        const fields_to_update = {
-            market,
-            submarket,
-            tradetypecat: trade_type_cat,
-            dalembert_unit: unit,
-            oscar_unit: unit,
-            type: 'both',
-            ...rest_data,
-            purchase: type,
-            growthrate: growth_rate ? growth_rate.toString() : undefined,
-        };
-        Object.keys(fields_to_update).forEach(key => {
-            const value = fields_to_update[key as keyof typeof fields_to_update];
-            if (!isNaN(value as number) && key !== 'growthrate') modifyValueInputs(key, value as number);
-            else if (typeof value === 'string') modifyFieldDropdownValues(key, value);
-        });
-
-        const { derivWorkspace: workspace } = Blockly;
-        this.setFormVisibility(false);
-
-        // Finish the complete Blockly import first. The previous implementation started
-        // a waitForBlockEvent callback before load() completed, which could make the Run
-        // panel execute against a workspace that was still being cleared/populated. That
-        // race caused the first import to hit the application's error screen, while a
-        // refresh appeared to fix it because the strategy had already been persisted.
-        await load({
-            block_string: window.Blockly.Xml.domToText(strategy_dom),
-            file_name: selected_strategy.label,
-            workspace,
-            from: save_types.UNSAVED,
-            drop_event: null,
-            strategy_id: null,
-            showIncompatibleStrategyDialog: null,
-        });
-
-        if (action === 'RUN') {
-            // Give React/MobX one browser turn to observe the completed workspace load
-            // before the Run panel reads the workspace and starts execution.
-            await new Promise(resolve => setTimeout(resolve, 0));
-            try {
-                await this.root_store.run_panel.onRunButtonClick();
-            } catch (error) {
-                console.error('Quick Strategy auto-run failed after workspace import:', error);
             }
-        }
+        };
+
+        // Serialize only Quick Strategy workspace imports. Existing manual bot loading,
+        // editing, and the bot run cycle are untouched.
+        const previous = this.workspace_load_queue;
+        const current = previous.catch(() => undefined).then(runImport);
+        this.workspace_load_queue = current.then(() => undefined, () => undefined);
+        await current;
     };
 
     toggleStopBotDialog = (): void => {
