@@ -33,14 +33,10 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
     const [shouldDisable, setShouldDisable] = React.useState(false);
     const is_unavailable_for_payment_agent = false;
 
-    // Get the load_modal store to monitor strategy deletions
     const { load_modal } = useStore();
     const { dashboard_strategies, is_delete_modal_open } = load_modal;
-
-    // Track previous state of delete modal to detect when it closes
     const prevDeleteModalOpen = React.useRef(is_delete_modal_open);
 
-    // Check for saved bots whenever the component renders or when strategies are deleted
     React.useEffect(() => {
         const checkBots = async () => {
             await blockly_store.checkForSavedBots();
@@ -49,15 +45,11 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dashboard_strategies, is_delete_modal_open, is_stop_button_visible]);
 
-    // Force re-render when delete modal is closed (which happens after deletion)
     React.useEffect(() => {
-        // If delete modal was open and is now closed, force a re-check
         if (prevDeleteModalOpen.current && !is_delete_modal_open) {
             const checkBotsAfterDelete = async () => {
-                // Small delay to ensure the deletion has completed
                 await new Promise(resolve => setTimeout(resolve, 100));
                 await blockly_store.checkForSavedBots();
-                // Force component to re-render
                 if (!is_stop_button_visible) {
                     setShouldDisable(true);
                     setTimeout(() => setShouldDisable(false), 0);
@@ -65,7 +57,6 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
             };
             checkBotsAfterDelete();
         }
-        // Update ref for next render
         prevDeleteModalOpen.current = is_delete_modal_open;
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [is_delete_modal_open, is_stop_button_visible]);
@@ -98,19 +89,10 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
         }
     }
 
-    // Check if there are no active or saved bots
     const has_no_bots = !has_active_bot && !has_saved_bots;
     const is_bot_builder_tab = active_tab === DBOT_TABS.BOT_BUILDER;
-
-    // Disable the RUN button if:
-    // 1. There are no active or saved bots AND the user is not in the bot builder tab
     const should_disable_run = has_no_bots && !is_bot_builder_tab;
-
     const is_disabled = is_stop_button_visible ? false : shouldDisable || should_disable_run;
-
-    // Show the tooltip when:
-    // 1. The user is NOT in the bot builder tab, AND
-    // 2. There are no bots
     const should_show_tooltip = !is_stop_button_visible && !is_bot_builder_tab && has_no_bots;
 
     const button_props = React.useMemo(() => {
@@ -130,36 +112,24 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
         };
     }, [is_stop_button_visible, is_stop_button_disabled]);
     const show_overlay = should_show_overlay && is_contract_completed;
-
-    // Fix TypeScript error by ensuring active_tab is a number
-    // Use a fallback to dashboard if active_tab is undefined
     const safeActiveTab = typeof active_tab === 'number' ? active_tab : DBOT_TABS.DASHBOARD;
 
-    // Function to determine tooltip alignment based on run panel position
     const determineTooltipAlignment = (): string => {
-        // Force tooltip to always appear on top for mobile devices
         if (isMobile) {
             return 'top';
         } else {
-            // On desktop, determine based on run panel position
             try {
                 const runPanelElement = document.querySelector('.run__button_wrapper');
                 if (runPanelElement) {
                     const rect = runPanelElement.getBoundingClientRect();
-                    // Ensure we have valid numbers for the comparison
                     const rectBottom = typeof rect.bottom === 'number' ? rect.bottom : 0;
                     const windowHeight = typeof window.innerHeight === 'number' ? window.innerHeight : 0;
-                    const isNearBottom = rectBottom > windowHeight - 150; // 150px threshold from bottom
-
-                    // If the run panel is near the bottom of the screen, show tooltip on top
-                    // Otherwise, show it on the left
+                    const isNearBottom = rectBottom > windowHeight - 150;
                     return isNearBottom ? 'top' : 'left';
                 }
             } catch (error) {
                 console.error('Error determining tooltip position:', error);
             }
-
-            // Default to left if we can't determine position
             return 'left';
         }
     };
@@ -180,9 +150,7 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
                             className={button_props.class}
                             id={button_props.id}
                             icon={button_props.icon}
-                            onClick={() => {
-                                // Disabled button, no action
-                            }}
+                            onClick={() => {}}
                             has_effect
                             {...(is_stop_button_visible || !is_unavailable_for_payment_agent
                                 ? { primary: true }
@@ -200,13 +168,17 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
                     icon={button_props.icon}
                     onClick={() => {
                         setShouldDisable(true);
+                        // Stop is a user lifecycle action. Protect the React click boundary so
+                        // an unexpected bot-engine cleanup error cannot turn into the refresh UI.
                         if (is_stop_button_visible) {
-                            onStopBotClick();
+                            try {
+                                onStopBotClick();
+                            } catch (error) {
+                                console.warn('[TradeAnimation] Stop action failed; keeping the app alive.', error);
+                            }
                             return;
                         }
                         onRunButtonClick();
-                        /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
-                        /* [/AI] */
                     }}
                     has_effect
                     {...(is_stop_button_visible || !is_unavailable_for_payment_agent
