@@ -31,11 +31,9 @@ import {
     setModalStateChangeCallback,
 } from '@/utils/trade-type-modal-handler';
 import {
-    LabelPairedChartLineCaptionRegularIcon,
     LabelPairedObjectsColumnCaptionRegularIcon,
     LabelPairedPuzzlePieceTwoCaptionBoldIcon,
 } from '@deriv/quill-icons/LabelPaired';
-import { LegacyGuide1pxIcon } from '@deriv/quill-icons/Legacy';
 import { Localize, localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
 import RunPanel from '../../components/run-panel';
@@ -94,18 +92,8 @@ const AppWrapper = observer(() => {
     const [left_tab_shadow, setLeftTabShadow] = useState<boolean>(false);
     const [right_tab_shadow, setRightTabShadow] = useState<boolean>(false);
 
-    // Trade type modal state
     const [tradeTypeModalState, setTradeTypeModalState] = useState(getModalState());
 
-    /**
-     * Helper function to get modal props with enhanced type safety and clear documentation
-     *
-     * Props serve distinct purposes:
-     * - current_trade_type: Technical identifier for API/internal use (format: "category/type")
-     * - current_trade_type_display_name: Human-readable name for UI display
-     *
-     * This separation ensures proper data flow between technical systems and modal content
-     */
     const getTradeTypeModalProps = () => {
         const { tradeTypeData } = tradeTypeModalState;
 
@@ -121,8 +109,6 @@ const AppWrapper = observer(() => {
         };
     };
 
-    // App Builder embeds the bot at /bot/preview — open the bot builder there by
-    // default (instead of the dashboard) when no explicit #tab hash is present.
     const is_preview_mode = window.location.pathname.includes('/preview');
     let tab_value: number | string = active_tab;
     const GetHashedValue = (tab: number) => {
@@ -279,7 +265,6 @@ const AppWrapper = observer(() => {
                 mainElement.classList.remove('no-scroll');
             }
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [active_tab]);
 
     React.useEffect(() => {
@@ -388,23 +373,7 @@ const AppWrapper = observer(() => {
                                 id='id-ultimate-bot-2026'
                             />
 
-                            <div
-                                label={
-                                    <>
-                                        <LabelPairedChartLineCaptionRegularIcon
-                                            height='24px'
-                                            width='24px'
-                                            fill='var(--text-general)'
-                                        />
-                                        <Localize i18n_default_text='Charts' />
-                                    </>
-                                }
-                                id={
-                                    is_chart_modal_visible || is_trading_view_modal_visible
-                                        ? 'id-charts--disabled'
-                                        : 'id-charts'
-                                }
-                            >
+                            <div label={<>📉 <Localize i18n_default_text='Charts' /></>} id='id-charts'>
                                 <Suspense
                                     fallback={<ChunkLoader message={localize('Please wait, loading chart...')} />}
                                 >
@@ -413,17 +382,7 @@ const AppWrapper = observer(() => {
                             </div>
 
                             <div
-                                label={
-                                    <>
-                                        <LegacyGuide1pxIcon
-                                            height='16px'
-                                            width='16px'
-                                            fill='var(--text-general)'
-                                            className='icon-general-fill-g-path'
-                                        />
-                                        <Localize i18n_default_text='Deriv Course' />
-                                    </>
-                                }
+                                label={<>🎓 <Localize i18n_default_text='Deriv Course' /></>}
                                 id='id-tutorials'
                             >
                                 <div className='tutorials-wrapper'>
