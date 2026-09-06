@@ -8,7 +8,7 @@ import Toolbox from './toolbox';
 import './workspace.scss';
 
 const WorkspaceWrapper = observer(() => {
-    const { blockly_store } = useStore();
+    const { blockly_store, quick_strategy } = useStore();
     const { onMount, onUnmount, is_loading } = blockly_store;
 
     React.useEffect(() => {
@@ -17,6 +17,12 @@ const WorkspaceWrapper = observer(() => {
             onUnmount();
         };
     }, []);
+
+    React.useEffect(() => {
+        if (!is_loading && window.Blockly?.derivWorkspace && quick_strategy.pending_free_bot) {
+            void quick_strategy.consumePendingFreeBot();
+        }
+    }, [is_loading, quick_strategy.pending_free_bot]);
 
     if (is_loading) return null;
 
