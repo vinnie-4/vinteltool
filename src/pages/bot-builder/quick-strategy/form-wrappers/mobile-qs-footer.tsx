@@ -3,27 +3,24 @@ import { observer } from 'mobx-react-lite';
 import Button from '@/components/shared_ui/button';
 import { useStore } from '@/hooks/useStore';
 import { localize } from '@deriv-com/translations';
-import useQsSubmitHandler from '../form-wrappers/useQsSubmitHandler';
-import { TFormValues } from '../types';
+import { TFormData, TFormValues } from '../types';
 import { QsSteps } from './trade-constants';
 
-type TMobileQSFooter = {
+ type TMobileQSFooter = {
     current_step: QsSteps;
     setCurrentStep: (current_step: QsSteps) => void;
 };
 
 export const MobileQSFooter = observer(({ current_step, setCurrentStep }: TMobileQSFooter) => {
     const { quick_strategy } = useStore();
-    const { isValid } = useFormikContext<TFormValues>();
-    const { handleSubmit } = useQsSubmitHandler();
-    const is_verified_or_completed_step =
-        current_step === QsSteps.StrategyVerified || current_step === QsSteps.StrategyCompleted;
+    const { isValid, submitForm, setFieldValue, validateForm } = useFormikContext<TFormValues>();
+    const is_verified_or_completed_step = current_step === QsSteps.StrategyVerified || current_step === QsSteps.StrategyCompleted;
     const is_selected_strategy_step = current_step === QsSteps.StrategySelect;
 
-    const onRun = () => {
-        /* [AI] - Analytics removed - rudderstack event call removed */
-        /* [/AI] */
-        handleSubmit();
+    const onLoad = async () => {
+        await setFieldValue('action', 'EDIT');
+        validateForm();
+        submitForm();
     };
 
     const onBack = () => {
@@ -39,15 +36,15 @@ export const MobileQSFooter = observer(({ current_step, setCurrentStep }: TMobil
                     </Button>
                     <Button
                         primary
-                        data-testid='qs-run-button'
+                        data-testid='qs-load-button'
                         type='submit'
                         onClick={e => {
                             e.preventDefault();
-                            onRun();
+                            onLoad();
                         }}
                         disabled={!isValid || quick_strategy.is_options_loading}
                     >
-                        {localize('Run')}
+                        {localize('Load')}
                     </Button>
                 </div>
             )}
