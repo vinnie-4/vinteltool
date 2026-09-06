@@ -28,12 +28,31 @@ export default Engine =>
                     }
                     const lastTick = ticks.slice(-1)[0];
                     const { epoch } = lastTick;
+
+                    // FAST listeners are notified directly from the live tick
+                    // callback, before Redux dispatch and its subscribers. This
+                    // keeps the normal event-driven stream but removes the
+                    // avoidable state-notification hop from the hot path.
+                    this.fastTickListeners?.forEach(listener => {
+                        try {
+                            listener(epoch);
+                        } catch (error) {
+                            globalObserver.emit('execution.fast.listener_error', error);
+                        }
+                    });
+
                     this.store.dispatch({ type: constants.NEW_TICK, payload: epoch });
                 };
 
                 const key = await ticksService.monitor({ symbol, callback });
                 tickListenerKey = key;
             }
+        }
+
+        addFastTickListener(listener) {
+            if (!this.fastTickListeners || typeof listener !== 'function') return () => {};
+            this.fastTickListeners.add(listener);
+            return () => this.fastTickListeners.delete(listener);
         }
 
         checkTicksPromiseExists() {
@@ -156,7 +175,6 @@ export default Engine =>
                     if (data.msg_type === 'proposal') {
                         try {
                             this.subscription_id_for_accumulators = data.subscription.id;
-                            // this was done because we can multile arrays in the respone and the list comes in reverse order
                             const stat_list = (data.proposal.contract_details.ticks_stayed_in || []).flat().reverse();
                             ticks_stayed_in_list = [...stat_list, ...ticks_stayed_in_list];
                             if (ticks_stayed_in_list.length > 0) resolve(ticks_stayed_in_list);
@@ -171,17 +189,14 @@ export default Engine =>
 
         async fetchStatsForAccumulators() {
             try {
-                // request stats for accumulators
                 const debouncedAccumulatorsRequest = debounce(() => this.requestAccumulatorStats(), 300);
                 debouncedAccumulatorsRequest();
-                // wait for proposal response
                 const ticks_stayed_in_list = await this.handleOnMessageForAccumulators();
                 return ticks_stayed_in_list;
             } catch (error) {
                 globalObserver.emit('Error in subscription promise:', error);
                 throw error;
             } finally {
-                // forget all proposal subscriptions so we can fetch new stats data on new call
                 await api_base?.api?.send({ forget_all: 'proposal' });
                 this.is_proposal_requested_for_accumulators = false;
                 this.subscription_id_for_accumulators = null;
@@ -200,7 +215,6 @@ export default Engine =>
         async getStatList() {
             try {
                 const ticks_stayed_in = await this.fetchStatsForAccumulators();
-                // we need to send only lastest 100 ticks
                 return ticks_stayed_in?.slice(0, 100);
             } catch (error) {
                 globalObserver.emit('Error fetching current stat:', error);
