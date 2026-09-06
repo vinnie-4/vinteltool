@@ -67,15 +67,20 @@
     }
 
     &__stop-button {
-        background-color: #e02020 !important;
+        background-color: var(--button-primary-default) !important;
         color: #fff !important;
 
         &:hover,
         &:focus,
         &:active {
-            background-color: #c91818 !important;
+            background-color: var(--button-primary-default) !important;
             color: #fff !important;
             opacity: 1 !important;
+        }
+
+        svg {
+            fill: #e02020 !important;
+            color: #e02020 !important;
         }
     }
 
