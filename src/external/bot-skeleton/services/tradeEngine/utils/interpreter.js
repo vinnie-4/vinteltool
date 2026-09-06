@@ -39,6 +39,7 @@ const Interpreter = () => {
     let bot = Interface($scope);
     let interpreter = {};
     let onFinish;
+    let pausedAsyncCallbacks = [];
 
     $scope.observer.register('REVERT', watchName =>
         revert(watchName === 'before' ? $scope.beforeState : $scope.duringState)
@@ -49,21 +50,34 @@ const Interpreter = () => {
         bot = Interface($scope);
         interpreter = {};
         onFinish = () => {};
+        pausedAsyncCallbacks = [];
     }
 
     function revert(state) {
         interpreter.restoreStateSnapshot(state);
         interpreter.paused_ = false;
+        pausedAsyncCallbacks = [];
         loop();
     }
 
     function loop() {
-        // Pause deliberately leaves the interpreter/session alive. This guard only
-        // prevents the next interpreter step from executing while paused.
+        // A paused bot keeps its interpreter and subscriptions alive, but no new
+        // interpreter step is allowed to execute until resume() is called.
         if ($scope.stopped || interpreter.paused_ || !interpreter.run()) {
             if (!$scope.stopped && interpreter.paused_) return;
             onFinish(interpreter.pseudoToNative(interpreter.value));
         }
+    }
+
+    function flushPausedAsyncCallbacks() {
+        if (interpreter.paused_ || $scope.stopped) return;
+
+        // Resolve the async continuation only after Resume. This is important for
+        // trade blocks: a completed tick/proposal/purchase promise cannot advance
+        // the bot into another trade while the user has paused it.
+        const callbacks = pausedAsyncCallbacks;
+        pausedAsyncCallbacks = [];
+        callbacks.forEach(callback => callback());
     }
 
     function createAsync(js_interpreter, func) {
@@ -80,10 +94,18 @@ const Interpreter = () => {
 
             func(...function_args.map(arg => js_interpreter.pseudoToNative(arg)))
                 .then(rv => {
-                    callback(js_interpreter.nativeToPseudo(rv));
-                    // Async operations may complete while paused. loop() will remain
-                    // blocked until resume() is explicitly called.
-                    loop();
+                    const continueInterpreter = () => {
+                        if ($scope.stopped) return;
+                        callback(js_interpreter.nativeToPseudo(rv));
+                        loop();
+                    };
+
+                    if (interpreter.paused_) {
+                        pausedAsyncCallbacks.push(continueInterpreter);
+                        return;
+                    }
+
+                    continueInterpreter();
                 })
                 .catch(e => {
                     // e.error for errors get from API, e for code errors
@@ -210,6 +232,7 @@ const Interpreter = () => {
                 $scope.stopped = true;
                 $scope.is_error_triggered = false;
                 interpreter.paused_ = false;
+                pausedAsyncCallbacks = [];
                 globalObserver.emit('bot.stop');
                 const { ticksService } = $scope;
                 // Unsubscribe previous ticks_history subscription
@@ -249,6 +272,7 @@ const Interpreter = () => {
         if ($scope.stopped || !interpreter || typeof interpreter.run !== 'function') return false;
         interpreter.paused_ = false;
         globalObserver.emit('bot.resumed');
+        flushPausedAsyncCallbacks();
         loop();
         return true;
     }
@@ -293,6 +317,7 @@ const Interpreter = () => {
 
             interpreter = new JSInterpreter(code, initFunc);
             interpreter.paused_ = false;
+            pausedAsyncCallbacks = [];
             onFinish = resolve;
 
             loop();
