@@ -30,6 +30,7 @@ interface IQuickStrategyStore {
     setSelectedStrategy: (strategy: string) => void;
     setValue: (name: string, value: string) => void;
     onSubmit: (data: TFormData) => void;
+    loadFreeBotXml: (xml: string, botName?: string) => Promise<void>;
     toggleStopBotDialog: () => void;
     setCurrentDurationMinMax: (min: number, max: number) => void;
     setOptionsLoading: (is_loading: boolean) => void;
@@ -77,6 +78,7 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             setValue: action,
             toggleStopBotDialog: action,
             setOptionsLoading: action,
+            loadFreeBotXml: action,
         });
         this.root_store = root_store;
         const savedStrategy = getSetting('selected_strategy_for_notofy');
@@ -93,6 +95,28 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
     setSelectedStrategy = (strategy: string) => { this.selected_strategy = strategy; };
     setValue = (name: string, value: string | number | boolean) => { this.form_data[name as keyof TFormData] = value; };
     setCurrentDurationMinMax = (min = 0, max = 10) => { this.current_duration_min_max = { min, max }; };
+
+    /**
+     * Entry point for XML bots coming from the homepage Free Bots tab.
+     * It deliberately reuses Quick Strategy's existing workspace import
+     * primitives so Free Bots never creates a second Blockly/trading engine.
+     */
+    loadFreeBotXml = async (xml: string, botName = 'Free Bot') => {
+        if (!xml?.trim()) return;
+        const workspace = window.Blockly?.derivWorkspace;
+        if (!workspace) return;
+
+        const strategy_dom = window.Blockly.utils.xml.textToDom(xml);
+        const blockly_xml = strategy_dom.querySelectorAll('block');
+        const blockTypes = Array.from(blockly_xml)
+            .map(block => block.getAttribute('type'))
+            .filter(Boolean);
+
+        removeLimitedBlocks(workspace, blockTypes);
+        loadBlocks(strategy_dom, null, `free-bot-load-${Date.now()}`, workspace);
+        this.setAdditionalData({ free_bot_name: botName });
+        this.setFormVisibility(false);
+    };
 
     onSubmit = async (data: TFormData) => {
         const runImport = async () => {
@@ -147,16 +171,10 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             const workspace = window.Blockly?.derivWorkspace;
             if (!workspace) return;
 
-            // Quick Strategy must NOT clear/recreate the live Blockly workspace. That
-            // asyncClear/clearWorkspaceAndLoadFromXml cycle is what was causing the
-            // React interruption screen. Remove only conflicting strategy blocks and
-            // add the new strategy into the existing workspace instead.
             const blockly_xml = strategy_dom.querySelectorAll('block');
             removeLimitedBlocks(workspace, Array.from(blockly_xml).map(block => block.getAttribute('type')));
             loadBlocks(strategy_dom, null, `quick-strategy-load${Date.now()}`, workspace);
 
-            // Keep Quick Strategy open after Load. The user can tap it again later and
-            // load a different set of values. Never auto-run from Quick Strategy Load.
             if (action === 'RUN') return;
         };
 
