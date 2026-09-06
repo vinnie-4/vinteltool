@@ -62,9 +62,6 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
     loss_threshold_warning_data: TLossThresholdWarningData = { show: false };
     additional_data = {};
 
-    // Quick Strategy can be opened repeatedly. Keep workspace imports serialized so a
-    // second import can never clear/replace the workspace while the first import is
-    // still finishing its Blockly lifecycle work.
     workspace_load_queue: Promise<void> = Promise.resolve();
 
     constructor(root_store: RootStore) {
@@ -166,12 +163,11 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
                 else if (typeof value === 'string') modifyFieldDropdownValues(key, value);
             });
 
-            // Capture the workspace immediately before the destructive clear/load cycle.
-            // Never run a strategy against a missing or replaced workspace instance.
+            // Keep Quick Strategy mounted while Blockly clears and rebuilds the live workspace.
+            // Closing it before the import completes can trigger a React/Blockly lifecycle
+            // interruption even though the workspace eventually receives the correct XML.
             const workspace = window.Blockly?.derivWorkspace;
             if (!workspace) return;
-
-            this.setFormVisibility(false);
 
             await load({
                 block_string: window.Blockly.Xml.domToText(strategy_dom),
@@ -183,10 +179,10 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
                 showIncompatibleStrategyDialog: null,
             });
 
-            // load() performs asyncClear() and repopulates the workspace. Confirm the
-            // same live workspace is still installed before allowing the Run cycle to
-            // read it. This protects the import lifecycle without changing bot execution.
             if (window.Blockly?.derivWorkspace !== workspace) return;
+
+            // Only close Quick Strategy after the workspace import has completed successfully.
+            this.setFormVisibility(false);
 
             if (action === 'RUN') {
                 await new Promise(resolve => setTimeout(resolve, 0));
@@ -199,8 +195,6 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             }
         };
 
-        // Serialize only Quick Strategy workspace imports. Existing manual bot loading,
-        // editing, and the bot run cycle are untouched.
         const previous = this.workspace_load_queue;
         const current = previous.catch(() => undefined).then(runImport);
         this.workspace_load_queue = current.then(() => undefined, () => undefined);
