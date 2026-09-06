@@ -95,15 +95,24 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
         </Button>
     );
 
+    // One physical control is used for both states. Pausing never calls stopBot;
+    // it only freezes the existing interpreter. Resume releases that same
+    // interpreter so execution continues from its current state.
     const pauseResumeButton = is_stop_button_visible && is_running ? (
         <Button
             is_disabled={false}
             className='animation__pause-resume-button'
             id='db-animation__pause-resume-button'
             icon={<span className='animation__pause-resume-icon' aria-hidden='true'>{is_paused ? '⏸' : '⏯'}</span>}
-            onClick={onPauseResumeButtonClick}
+            onClick={() => {
+                if (!is_running) return;
+                onPauseResumeButtonClick();
+            }}
             has_effect
             primary
+            aria-pressed={is_paused}
+            aria-label={is_paused ? localize('Resume bot') : localize('Pause bot')}
+            title={is_paused ? localize('Resume bot') : localize('Pause bot')}
         >
             {is_paused ? <Localize i18n_default_text='Resume' /> : <Localize i18n_default_text='Pause' />}
         </Button>
