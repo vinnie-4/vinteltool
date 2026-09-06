@@ -26,6 +26,7 @@ import { useDevice } from '@deriv-com/ui';
 import RunPanel from '../../components/run-panel';
 import ChartModal from '../chart/chart-modal';
 import Dashboard from '../dashboard';
+import FreeBots from './free-bots';
 import RunStrategy from '../dashboard/run-strategy';
 import './main.scss';
 
@@ -42,7 +43,7 @@ const AppWrapper = observer(() => {
     const { is_open } = quick_strategy;
     const { cancel_button_text, ok_button_text, title, message, dismissable, is_closed_on_cancel } = dialog_options as { [key: string]: string };
     const { clear } = summary_card;
-    const { DASHBOARD, BOT_BUILDER } = DBOT_TABS;
+    const { DASHBOARD, BOT_BUILDER, FREE_BOTS } = DBOT_TABS;
     const init_render = React.useRef(true);
     const hash = ['dashboard', 'bot_builder', 'free_bots', 'analysis_tool', 'manual_trader', 'ultimate_bot_2026', 'chart', 'tutorial', 'deriv_course'];
     const { isDesktop } = useDevice();
@@ -169,6 +170,11 @@ const AppWrapper = observer(() => {
         if (el_id) setTimeout(() => document.getElementById(el_id)?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }), 10);
     }, [active_tab]);
 
+    const handleFreeBotLoad = React.useCallback(async (bot) => {
+        await quick_strategy.loadFreeBotXml(bot.xml, bot.name);
+        setActiveTab(BOT_BUILDER);
+    }, [quick_strategy, setActiveTab]);
+
     const handleLoginGeneration = async () => {
         const oauthUrl = await generateOAuthURL();
         if (oauthUrl) window.location.replace(oauthUrl);
@@ -186,7 +192,9 @@ const AppWrapper = observer(() => {
                                 <Dashboard handleTabChange={handleTabChange} />
                             </div>
                             <div label={<><LabelPairedPuzzlePieceTwoCaptionBoldIcon height='24px' width='24px' fill='var(--text-general)' /><Localize i18n_default_text='Bot Builder' /></>} id='id-bot-builder' />
-                            <div label={<>🤖 <Localize i18n_default_text='Free Bots' /></>} id='id-free-bots' />
+                            <div label={<>🤖 <Localize i18n_default_text='Free Bots' /></>} id='id-free-bots'>
+                                <FreeBots onLoadBot={handleFreeBotLoad} />
+                            </div>
                             <div label={<>📊 <Localize i18n_default_text='Analysis Tool' /></>} id='id-analysis-tool' />
                             <div label={<>⚙️ <Localize i18n_default_text='Manual Trader' /></>} id='id-manual-trader' />
                             <div label={<>🎯 <Localize i18n_default_text='Ultimate Bot 2026' /></>} id='id-ultimate-bot-2026' />
