@@ -92,8 +92,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: var(--general-main-1);
-    border: 1px solid var(--general-section-2);
+    background: #f5e6c8;
+    border: 1px solid #dfcfad;
     border-radius: 4px;
     box-sizing: border-box;
     white-space: nowrap;
@@ -111,7 +111,7 @@
     &__title {
         font-size: 1.6rem;
         font-weight: 700;
-        color: var(--text-general);
+        color: #1b1b1b;
         line-height: 1.1;
     }
 
@@ -119,7 +119,7 @@
         margin-top: 0.35rem;
         font-size: 1rem;
         font-weight: 700;
-        color: var(--text-general);
+        color: #1b1b1b;
         line-height: 1;
     }
 
@@ -132,13 +132,18 @@
         padding: 0.2rem;
         border: 0;
         border-radius: 999px;
-        background: var(--general-section-2);
-        box-shadow: inset 0 0 0 1px var(--text-general);
+        background: var(--button-primary-default);
+        box-shadow: inset 0 0 0 1px var(--button-primary-default);
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
-        transition: background 160ms ease;
+        transition: background 160ms ease, opacity 160ms ease;
 
-        &--fast { background: var(--text-profit-success); }
+        &:disabled {
+            cursor: not-allowed;
+            opacity: 0.65;
+        }
+
+        &--fast { background: var(--button-primary-default); }
     }
 
     &__switch-knob {
@@ -148,7 +153,7 @@
         width: 1.4rem;
         height: 1.4rem;
         border-radius: 50%;
-        background: var(--text-general);
+        background: #fff;
         transition: transform 160ms ease;
 
         .execution-control__switch--fast & {
