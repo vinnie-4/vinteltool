@@ -1,26 +1,17 @@
 // @ts-nocheck — vendored bot code with known upstream type gaps; see AGENTS.md
 import { action, makeObservable, observable, reaction } from 'mobx';
-import { ApiHelpers, config as qs_config, load } from '@/external/bot-skeleton';
+import { ApiHelpers, config as qs_config } from '@/external/bot-skeleton';
 import { save_types } from '@/external/bot-skeleton/constants/save-type';
 import { addDynamicBlockToDOM } from '@/utils/xml-dom-quick-strategy';
+import { loadBlocks } from '@/external/bot-skeleton/scratch/utils';
+import { removeLimitedBlocks } from '@/external/bot-skeleton/utils/workspace';
 import { STRATEGIES } from '../pages/bot-builder/quick-strategy/config';
 import { TFormData } from '../pages/bot-builder/quick-strategy/types';
 import { getSetting, storeSetting } from '../utils/settings';
 import RootStore from './root-store';
 
-export type TActiveSymbol = {
-    group: string;
-    text: string;
-    value: string;
-};
-
-export type TLossThresholdWarningData = {
-    show: boolean;
-    loss_amount?: string | number;
-    currency?: string;
-    highlight_field?: Array<string>;
-    already_shown?: boolean;
-};
+export type TActiveSymbol = { group: string; text: string; value: string };
+export type TLossThresholdWarningData = { show: boolean; loss_amount?: string | number; currency?: string; highlight_field?: Array<string>; already_shown?: boolean };
 
 interface IQuickStrategyStore {
     additional_data: Record<string, unknown>;
@@ -95,18 +86,9 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
         });
     }
 
-    setAdditionalData = (data: Record<string, unknown>) => {
-        this.additional_data = { ...this.additional_data, ...data };
-    };
-
-    setLossThresholdWarningData = (data: TLossThresholdWarningData) => {
-        this.loss_threshold_warning_data = { ...this.loss_threshold_warning_data, ...data };
-    };
-
-    initializeLossThresholdWarningData = () => {
-        this.loss_threshold_warning_data = { show: false, highlight_field: [], already_shown: false };
-    };
-
+    setAdditionalData = (data: Record<string, unknown>) => { this.additional_data = { ...this.additional_data, ...data }; };
+    setLossThresholdWarningData = (data: TLossThresholdWarningData) => { this.loss_threshold_warning_data = { ...this.loss_threshold_warning_data, ...data }; };
+    initializeLossThresholdWarningData = () => { this.loss_threshold_warning_data = { show: false, highlight_field: [], already_shown: false }; };
     setFormVisibility = (is_open: boolean) => { this.is_open = is_open; };
     setSelectedStrategy = (strategy: string) => { this.selected_strategy = strategy; };
     setValue = (name: string, value: string | number | boolean) => { this.form_data[name as keyof TFormData] = value; };
@@ -123,6 +105,7 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             if (!selected_strategy) return;
             this.selected_strategy_for_notofy = this.selected_strategy;
             storeSetting('selected_strategy_for_notofy', this.selected_strategy);
+
             const strategy_xml = await import(/* webpackChunkName: `[request]` */ `../xml/${selected_strategy.name}.xml`);
             const strategy_dom = window.Blockly.utils.xml.textToDom(strategy_xml.default);
             addDynamicBlockToDOM('PREDICTION', 'last_digit_prediction', trade_type_cat, strategy_dom);
@@ -141,9 +124,7 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             };
             const modifyFieldDropdownValues = (name: string, value: string) => {
                 const name_list = `${name.toUpperCase()}_LIST`;
-                strategy_dom?.querySelectorAll(`field[name="${name_list}"]`)?.forEach((el_block: HTMLElement) => {
-                    el_block.innerHTML = value;
-                });
+                strategy_dom?.querySelectorAll(`field[name="${name_list}"]`)?.forEach((el_block: HTMLElement) => { el_block.innerHTML = value; });
             };
             const { unit, action, type, growth_rate, ...rest_data } = data;
             const fields_to_update = {
@@ -163,36 +144,20 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
                 else if (typeof value === 'string') modifyFieldDropdownValues(key, value);
             });
 
-            // Keep Quick Strategy mounted while Blockly clears and rebuilds the live workspace.
-            // Closing it before the import completes can trigger a React/Blockly lifecycle
-            // interruption even though the workspace eventually receives the correct XML.
             const workspace = window.Blockly?.derivWorkspace;
             if (!workspace) return;
 
-            await load({
-                block_string: window.Blockly.Xml.domToText(strategy_dom),
-                file_name: selected_strategy.label,
-                workspace,
-                from: save_types.UNSAVED,
-                drop_event: null,
-                strategy_id: null,
-                showIncompatibleStrategyDialog: null,
-            });
+            // Quick Strategy must NOT clear/recreate the live Blockly workspace. That
+            // asyncClear/clearWorkspaceAndLoadFromXml cycle is what was causing the
+            // React interruption screen. Remove only conflicting strategy blocks and
+            // add the new strategy into the existing workspace instead.
+            const blockly_xml = strategy_dom.querySelectorAll('block');
+            removeLimitedBlocks(workspace, Array.from(blockly_xml).map(block => block.getAttribute('type')));
+            loadBlocks(strategy_dom, null, `quick-strategy-load${Date.now()}`, workspace);
 
-            if (window.Blockly?.derivWorkspace !== workspace) return;
-
-            // Only close Quick Strategy after the workspace import has completed successfully.
-            this.setFormVisibility(false);
-
-            if (action === 'RUN') {
-                await new Promise(resolve => setTimeout(resolve, 0));
-                if (window.Blockly?.derivWorkspace !== workspace) return;
-                try {
-                    await this.root_store.run_panel.onRunButtonClick();
-                } catch (error) {
-                    console.error('Quick Strategy auto-run failed after workspace import:', error);
-                }
-            }
+            // Keep Quick Strategy open after Load. The user can tap it again later and
+            // load a different set of values. Never auto-run from Quick Strategy Load.
+            if (action === 'RUN') return;
         };
 
         const previous = this.workspace_load_queue;
