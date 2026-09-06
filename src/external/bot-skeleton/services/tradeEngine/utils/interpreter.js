@@ -36,6 +36,10 @@ const Interpreter = () => {
     let bot = Interface($scope);
     let interpreter = {};
     let onFinish;
+    // An async bot operation (purchase, tick wait, sleep, etc.) owns the
+    // interpreter continuation until its promise settles. Resume must not
+    // start a second interpreter loop while that continuation is pending.
+    let async_operation_pending = false;
 
     $scope.observer.register('REVERT', watchName => revert(watchName === 'before' ? $scope.beforeState : $scope.duringState));
 
@@ -44,6 +48,7 @@ const Interpreter = () => {
         bot = Interface($scope);
         interpreter = {};
         onFinish = () => {};
+        async_operation_pending = false;
     }
 
     function revert(state) {
@@ -53,10 +58,8 @@ const Interpreter = () => {
     }
 
     function loop() {
-        if ($scope.stopped || interpreter.paused_ || !interpreter.run()) {
-            if (!$scope.stopped && interpreter.paused_) return;
-            onFinish(interpreter.pseudoToNative(interpreter.value));
-        }
+        if (async_operation_pending || $scope.stopped || interpreter.paused_) return;
+        if (!interpreter.run()) onFinish(interpreter.pseudoToNative(interpreter.value));
     }
 
     function createAsync(js_interpreter, func) {
@@ -66,12 +69,15 @@ const Interpreter = () => {
             const first_defined_arg_idx = reversed_args.findIndex(arg => arg !== undefined);
             const function_args = first_defined_arg_idx < 0 ? [] : reversed_args.slice(first_defined_arg_idx).reverse();
 
-            func(...function_args.map(arg => js_interpreter.pseudoToNative(arg)))
+            async_operation_pending = true;
+            Promise.resolve(func(...function_args.map(arg => js_interpreter.pseudoToNative(arg))))
                 .then(rv => {
                     callback(js_interpreter.nativeToPseudo(rv));
+                    async_operation_pending = false;
                     loop();
                 })
                 .catch(e => {
+                    async_operation_pending = false;
                     $scope.observer.emit('Error', e.error || e);
                 });
         };
@@ -141,6 +147,7 @@ const Interpreter = () => {
                 $scope.stopped = true;
                 $scope.is_error_triggered = false;
                 interpreter.paused_ = false;
+                async_operation_pending = false;
                 globalObserver.emit('bot.stop');
                 const { ticksService } = $scope;
                 api_base.clearSubscriptions();
@@ -168,7 +175,9 @@ const Interpreter = () => {
         if ($scope.stopped || !interpreter || typeof interpreter.run !== 'function') return false;
         interpreter.paused_ = false;
         globalObserver.emit('bot.resumed');
-        loop();
+        // If an async operation is still pending, its completion callback owns
+        // the continuation and will call loop() exactly once.
+        if (!async_operation_pending) loop();
         return true;
     }
 
@@ -197,6 +206,7 @@ const Interpreter = () => {
             $scope.observer.register('Error', onError);
             interpreter = new JSInterpreter(code, initFunc);
             interpreter.paused_ = false;
+            async_operation_pending = false;
             onFinish = resolve;
             loop();
         });
