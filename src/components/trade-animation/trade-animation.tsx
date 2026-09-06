@@ -168,9 +168,18 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
                     icon={button_props.icon}
                     onClick={() => {
                         setShouldDisable(true);
-                        // Stop is a user lifecycle action. Protect the React click boundary so
-                        // an unexpected bot-engine cleanup error cannot turn into the refresh UI.
                         if (is_stop_button_visible) {
+                            // Mark the lifecycle transition before invoking bot cleanup.
+                            // This lets the global error boundary distinguish an expected
+                            // stop-time exception from a genuine application crash.
+                            try {
+                                window.__vinteltool_stopping = true;
+                                window.setTimeout(() => {
+                                    window.__vinteltool_stopping = false;
+                                }, 10000);
+                            } catch (error) {
+                                console.warn('[TradeAnimation] Could not set stop guard.', error);
+                            }
                             try {
                                 onStopBotClick();
                             } catch (error) {
