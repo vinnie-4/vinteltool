@@ -39,9 +39,6 @@ const Interpreter = () => {
     let bot = Interface($scope);
     let interpreter = {};
     let onFinish;
-    // Async interpreter operations can finish after Pause is tapped. Keep their
-    // continuations queued so no paused operation can advance the bot until Resume.
-    let pausedAsyncCallbacks = [];
 
     $scope.observer.register('REVERT', watchName =>
         revert(watchName === 'before' ? $scope.beforeState : $scope.duringState)
@@ -52,18 +49,16 @@ const Interpreter = () => {
         bot = Interface($scope);
         interpreter = {};
         onFinish = () => {};
-        pausedAsyncCallbacks = [];
     }
 
     function revert(state) {
         interpreter.restoreStateSnapshot(state);
         interpreter.paused_ = false;
-        pausedAsyncCallbacks = [];
         loop();
     }
 
     function loop() {
-        // Pause deliberately leaves the interpreter/session alive. This guard
+        // Pause deliberately leaves the interpreter/session alive. This guard only
         // prevents the next interpreter step from executing while paused.
         if ($scope.stopped || interpreter.paused_ || !interpreter.run()) {
             if (!$scope.stopped && interpreter.paused_) return;
@@ -85,22 +80,13 @@ const Interpreter = () => {
 
             func(...function_args.map(arg => js_interpreter.pseudoToNative(arg)))
                 .then(rv => {
-                    const pseudoValue = js_interpreter.nativeToPseudo(rv);
-                    if ($scope.stopped) return;
-                    if (interpreter.paused_) {
-                        pausedAsyncCallbacks.push(() => callback(pseudoValue));
-                        return;
-                    }
-                    callback(pseudoValue);
+                    callback(js_interpreter.nativeToPseudo(rv));
+                    // Async operations may complete while paused. loop() will remain
+                    // blocked until resume() is explicitly called.
                     loop();
                 })
                 .catch(e => {
                     // e.error for errors get from API, e for code errors
-                    if ($scope.stopped) return;
-                    if (interpreter.paused_) {
-                        pausedAsyncCallbacks.push(() => $scope.observer.emit('Error', e.error || e));
-                        return;
-                    }
                     $scope.observer.emit('Error', e.error || e);
                 });
         };
@@ -111,16 +97,6 @@ const Interpreter = () => {
         const MAX_ACCEPTABLE_FUNC_ARGS = 100;
         Object.defineProperty(asyncFunc, 'length', { value: MAX_ACCEPTABLE_FUNC_ARGS + 1 });
         return js_interpreter.createAsyncFunction(asyncFunc);
-    }
-
-    // TODO: This is a workaround, create issue on original repo, once fixed
-    // remove this. We don't know how many args are going to be passed, so we
-    // assume a max of 100.
-    function flushPausedAsyncCallbacks() {
-        if ($scope.stopped || !pausedAsyncCallbacks.length) return;
-        const callbacks = pausedAsyncCallbacks;
-        pausedAsyncCallbacks = [];
-        callbacks.forEach(callback => callback());
     }
 
     function initFunc(js_interpreter, scope) {
@@ -234,7 +210,6 @@ const Interpreter = () => {
                 $scope.stopped = true;
                 $scope.is_error_triggered = false;
                 interpreter.paused_ = false;
-                pausedAsyncCallbacks = [];
                 globalObserver.emit('bot.stop');
                 const { ticksService } = $scope;
                 // Unsubscribe previous ticks_history subscription
@@ -274,7 +249,6 @@ const Interpreter = () => {
         if ($scope.stopped || !interpreter || typeof interpreter.run !== 'function') return false;
         interpreter.paused_ = false;
         globalObserver.emit('bot.resumed');
-        flushPausedAsyncCallbacks();
         loop();
         return true;
     }
@@ -318,7 +292,6 @@ const Interpreter = () => {
             $scope.observer.register('Error', onError);
 
             interpreter = new JSInterpreter(code, initFunc);
-            pausedAsyncCallbacks = [];
             interpreter.paused_ = false;
             onFinish = resolve;
 
