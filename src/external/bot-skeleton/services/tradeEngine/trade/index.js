@@ -18,10 +18,11 @@ import Sell from './Sell';
 import Ticks from './Ticks';
 import Total from './Total';
 
-const watchBefore = (store, scope) =>
+const watchBefore = (store, scope, symbol) =>
     watchScope({
         store,
         scope,
+        symbol,
         stopScope: constants.DURING_PURCHASE,
         passScope: constants.BEFORE_PURCHASE,
         passFlag: 'proposalsReady',
@@ -41,7 +42,7 @@ const watchDuring = store =>
  * which leads to the same problem we try to solve. So prevTick is isolated
  */
 let prevTick;
-const watchScope = ({ store, scope, stopScope, passScope, passFlag, fast }) => {
+const watchScope = ({ store, scope, symbol, stopScope, passScope, passFlag, fast }) => {
     // in case watch is called after stop is fired
     if (store.getState().scope === stopScope) {
         return Promise.resolve(false);
@@ -50,6 +51,7 @@ const watchScope = ({ store, scope, stopScope, passScope, passFlag, fast }) => {
     return new Promise(resolve => {
         let settled = false;
         const timers = [];
+        let unsubscribe;
 
         const cleanup = () => {
             timers.forEach(timer => clearTimeout(timer));
@@ -63,7 +65,7 @@ const watchScope = ({ store, scope, stopScope, passScope, passFlag, fast }) => {
             resolve(value);
         };
 
-        const unsubscribe = store.subscribe(() => {
+        unsubscribe = store.subscribe(() => {
             const newState = store.getState();
 
             if (newState.newTick !== prevTick) {
@@ -80,14 +82,13 @@ const watchScope = ({ store, scope, stopScope, passScope, passFlag, fast }) => {
             }
         });
 
-        if (!fast || !scope?.ticksService) return;
+        if (!fast || !scope?.ticksService || !symbol) return;
 
-        // FAST never changes strategy, stake, contract parameters, martingale,
-        // recovery, or proposal logic. It only reduces websocket/event latency
-        // by checking the current market tick at the requested execution windows.
-        const symbol = scope?.symbol;
-        if (!symbol) return;
-
+        // FAST is an execution-timing layer only. It does not change strategy,
+        // stake, martingale/recovery, contract parameters, proposal selection,
+        // or purchase rules. At each fast window we ask for the latest tick so
+        // the existing strategy can continue immediately when that tick is
+        // already available, instead of waiting for the monitor callback.
         getFastExecutionWindows().forEach(delay => {
             const timer = setTimeout(async () => {
                 if (settled || store.getState().scope === stopScope) return;
@@ -101,8 +102,7 @@ const watchScope = ({ store, scope, stopScope, passScope, passFlag, fast }) => {
                         store.dispatch({ type: constants.NEW_TICK, payload: epoch });
                     }
                 } catch (error) {
-                    // The normal tick monitor remains the source of truth if a
-                    // FAST probe cannot be completed.
+                    // The normal websocket tick monitor remains the fallback.
                     globalObserver.emit('execution.fast.probe_error', error);
                 }
             }, delay);
@@ -196,7 +196,7 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
 
     watch(watchName) {
         if (watchName === 'before') {
-            return watchBefore(this.store, this.$scope);
+            return watchBefore(this.store, this.$scope, this.options?.symbol);
         }
         return watchDuring(this.store);
     }
