@@ -58,8 +58,10 @@ const FormWrapper = observer(({ children, current_step, setCurrentStep, onClickC
         await setFieldValue('action', 'EDIT');
         const errors = await validateForm();
         if (Object.keys(errors).length) return;
+        const form_data = { ...values, action: 'EDIT' } as TFormData;
         await submitForm();
-        await onSubmit({ ...values, action: 'EDIT' } as TFormData);
+        await onSubmit(form_data);
+        onClickClose();
     };
 
     const onBack = () => { setCurrentStep(QsSteps.StrategySelect); };
