@@ -58,7 +58,10 @@ const Interpreter = () => {
     }
 
     function loop() {
-        if ($scope.stopped || !interpreter.run()) {
+        // Pause deliberately leaves the interpreter/session alive. This guard only
+        // prevents the next interpreter step from executing while paused.
+        if ($scope.stopped || interpreter.paused_ || !interpreter.run()) {
+            if (!$scope.stopped && interpreter.paused_) return;
             onFinish(interpreter.pseudoToNative(interpreter.value));
         }
     }
@@ -78,6 +81,8 @@ const Interpreter = () => {
             func(...function_args.map(arg => js_interpreter.pseudoToNative(arg)))
                 .then(rv => {
                     callback(js_interpreter.nativeToPseudo(rv));
+                    // Async operations may complete while paused. loop() will remain
+                    // blocked until resume() is explicitly called.
                     loop();
                 })
                 .catch(e => {
@@ -118,10 +123,10 @@ const Interpreter = () => {
             pseudo_bot_interface,
             'start',
             js_interpreter.nativeToPseudo((...args) => {
-                const { start } = bot_interface;
                 if (shouldRestartOnError(bot)) {
                     $scope.startState = js_interpreter.takeStateSnapshot();
                 }
+                const { start } = bot_interface;
                 start(...args);
             })
         );
@@ -204,6 +209,7 @@ const Interpreter = () => {
             try {
                 $scope.stopped = true;
                 $scope.is_error_triggered = false;
+                interpreter.paused_ = false;
                 globalObserver.emit('bot.stop');
                 const { ticksService } = $scope;
                 // Unsubscribe previous ticks_history subscription
@@ -230,6 +236,21 @@ const Interpreter = () => {
                 reject(e);
             }
         });
+    }
+
+    function pause() {
+        if ($scope.stopped || !interpreter || typeof interpreter.run !== 'function') return false;
+        interpreter.paused_ = true;
+        globalObserver.emit('bot.paused');
+        return true;
+    }
+
+    function resume() {
+        if ($scope.stopped || !interpreter || typeof interpreter.run !== 'function') return false;
+        interpreter.paused_ = false;
+        globalObserver.emit('bot.resumed');
+        loop();
+        return true;
     }
 
     function run(code) {
@@ -271,13 +292,25 @@ const Interpreter = () => {
             $scope.observer.register('Error', onError);
 
             interpreter = new JSInterpreter(code, initFunc);
+            interpreter.paused_ = false;
             onFinish = resolve;
 
             loop();
         });
     }
 
-    return { stop, run, terminateSession, bot, unsubscribeFromTicksService };
+    return {
+        stop,
+        run,
+        pause,
+        resume,
+        terminateSession,
+        bot,
+        unsubscribeFromTicksService,
+        get isPaused() {
+            return Boolean(interpreter?.paused_);
+        },
+    };
 };
 export default Interpreter;
 
