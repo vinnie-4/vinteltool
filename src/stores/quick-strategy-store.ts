@@ -25,12 +25,14 @@ interface IQuickStrategyStore {
     is_contract_dialog_open: boolean;
     is_stop_bot_dialog_open: boolean;
     is_options_loading: boolean;
+    pending_free_bot: { xml: string; name: string } | null;
     setLossThresholdWarningData: (data: TLossThresholdWarningData) => void;
     setFormVisibility: (is_open: boolean) => void;
     setSelectedStrategy: (strategy: string) => void;
     setValue: (name: string, value: string) => void;
     onSubmit: (data: TFormData) => void;
     loadFreeBotXml: (xml: string, botName?: string) => Promise<void>;
+    consumePendingFreeBot: () => Promise<void>;
     toggleStopBotDialog: () => void;
     setCurrentDurationMinMax: (min: number, max: number) => void;
     setOptionsLoading: (is_loading: boolean) => void;
@@ -53,6 +55,7 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
     current_duration_min_max = { min: 0, max: 10 };
     loss_threshold_warning_data: TLossThresholdWarningData = { show: false };
     additional_data = {};
+    pending_free_bot: { xml: string; name: string } | null = null;
 
     workspace_load_queue: Promise<void> = Promise.resolve();
 
@@ -65,6 +68,7 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             is_open: observable,
             is_stop_bot_dialog_open: observable,
             is_options_loading: observable,
+            pending_free_bot: observable,
             initializeLossThresholdWarningData: action,
             selected_strategy: observable,
             selected_strategy_for_notofy: observable,
@@ -79,6 +83,7 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             toggleStopBotDialog: action,
             setOptionsLoading: action,
             loadFreeBotXml: action,
+            consumePendingFreeBot: action,
         });
         this.root_store = root_store;
         const savedStrategy = getSetting('selected_strategy_for_notofy');
@@ -98,13 +103,16 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
 
     /**
      * Entry point for XML bots coming from the homepage Free Bots tab.
-     * It deliberately reuses Quick Strategy's existing workspace import
+     * It deliberately reuses Quick Strategy's existing Blockly import
      * primitives so Free Bots never creates a second Blockly/trading engine.
      */
     loadFreeBotXml = async (xml: string, botName = 'Free Bot') => {
         if (!xml?.trim()) return;
         const workspace = window.Blockly?.derivWorkspace;
-        if (!workspace) return;
+        if (!workspace) {
+            this.pending_free_bot = { xml, name: botName };
+            return;
+        }
 
         const strategy_dom = window.Blockly.utils.xml.textToDom(xml);
         const blockly_xml = strategy_dom.querySelectorAll('block');
@@ -114,8 +122,15 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
 
         removeLimitedBlocks(workspace, blockTypes);
         loadBlocks(strategy_dom, null, `free-bot-load-${Date.now()}`, workspace);
+        this.pending_free_bot = null;
         this.setAdditionalData({ free_bot_name: botName });
         this.setFormVisibility(false);
+    };
+
+    consumePendingFreeBot = async () => {
+        if (!this.pending_free_bot || !window.Blockly?.derivWorkspace) return;
+        const pending = this.pending_free_bot;
+        await this.loadFreeBotXml(pending.xml, pending.name);
     };
 
     onSubmit = async (data: TFormData) => {
