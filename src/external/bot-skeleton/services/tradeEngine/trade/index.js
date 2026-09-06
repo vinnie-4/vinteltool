@@ -6,6 +6,7 @@ import { observer as globalObserver } from '../../../utils/observer';
 import { api_base } from '../../api/api-base';
 import { checkBlocksForProposalRequest, doUntilDone } from '../utils/helpers';
 import { expectInitArg } from '../utils/sanitize';
+import { getFastExecutionWindows, isFastExecution } from '../execution/execution-mode';
 import { proposalsReady, start } from './state/actions';
 import * as constants from './state/constants';
 import rootReducer from './state/reducers';
@@ -17,12 +18,14 @@ import Sell from './Sell';
 import Ticks from './Ticks';
 import Total from './Total';
 
-const watchBefore = store =>
+const watchBefore = (store, scope) =>
     watchScope({
         store,
+        scope,
         stopScope: constants.DURING_PURCHASE,
         passScope: constants.BEFORE_PURCHASE,
         passFlag: 'proposalsReady',
+        fast: isFastExecution(),
     });
 
 const watchDuring = store =>
@@ -31,33 +34,80 @@ const watchDuring = store =>
         stopScope: constants.STOP,
         passScope: constants.DURING_PURCHASE,
         passFlag: 'openContract',
+        fast: false,
     });
 
 /* The watchScope function is called randomly and resets the prevTick
  * which leads to the same problem we try to solve. So prevTick is isolated
  */
 let prevTick;
-const watchScope = ({ store, stopScope, passScope, passFlag }) => {
+const watchScope = ({ store, scope, stopScope, passScope, passFlag, fast }) => {
     // in case watch is called after stop is fired
     if (store.getState().scope === stopScope) {
         return Promise.resolve(false);
     }
+
     return new Promise(resolve => {
+        let settled = false;
+        const timers = [];
+
+        const cleanup = () => {
+            timers.forEach(timer => clearTimeout(timer));
+            unsubscribe?.();
+        };
+
+        const finish = value => {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            resolve(value);
+        };
+
         const unsubscribe = store.subscribe(() => {
             const newState = store.getState();
 
-            if (newState.newTick === prevTick) return;
-            prevTick = newState.newTick;
+            if (newState.newTick !== prevTick) {
+                prevTick = newState.newTick;
 
-            if (newState.scope === passScope && newState[passFlag]) {
-                unsubscribe();
-                resolve(true);
+                if (newState.scope === passScope && newState[passFlag]) {
+                    finish(true);
+                    return;
+                }
             }
 
             if (newState.scope === stopScope) {
-                unsubscribe();
-                resolve(false);
+                finish(false);
             }
+        });
+
+        if (!fast || !scope?.ticksService) return;
+
+        // FAST never changes strategy, stake, contract parameters, martingale,
+        // recovery, or proposal logic. It only reduces websocket/event latency
+        // by checking the current market tick at the requested execution windows.
+        const symbol = scope?.symbol;
+        if (!symbol) return;
+
+        getFastExecutionWindows().forEach(delay => {
+            const timer = setTimeout(async () => {
+                if (settled || store.getState().scope === stopScope) return;
+
+                try {
+                    const ticks = await scope.ticksService.request({ symbol });
+                    const lastTick = ticks?.[ticks.length - 1];
+                    const epoch = lastTick?.epoch;
+
+                    if (typeof epoch === 'number' && epoch !== prevTick) {
+                        store.dispatch({ type: constants.NEW_TICK, payload: epoch });
+                    }
+                } catch (error) {
+                    // The normal tick monitor remains the source of truth if a
+                    // FAST probe cannot be completed.
+                    globalObserver.emit('execution.fast.probe_error', error);
+                }
+            }, delay);
+
+            timers.push(timer);
         });
     });
 };
@@ -146,7 +196,7 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
 
     watch(watchName) {
         if (watchName === 'before') {
-            return watchBefore(this.store);
+            return watchBefore(this.store, this.$scope);
         }
         return watchDuring(this.store);
     }
