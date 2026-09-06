@@ -10,11 +10,13 @@ const ExecutionControl = observer(() => {
     const is_running = run_panel.is_stop_button_visible;
 
     const toggleMode = () => {
-        // NORMAL deliberately uses the existing bot execution path.
-        // Never allow the execution mode to change during an active run.
         if (is_running) return;
         setMode(current => (current === 'normal' ? 'fast' : 'normal'));
     };
+
+    // Execution selection is only needed while the bot is stopped.
+    // The running state is represented by the existing bot-status area.
+    if (is_running) return null;
 
     return (
         <div className='execution-control' aria-label='Execution mode'>
@@ -27,7 +29,6 @@ const ExecutionControl = observer(() => {
                 className={`execution-control__switch execution-control__switch--${mode}`}
                 aria-label={`Switch execution mode. Current mode: ${mode}`}
                 aria-pressed={mode === 'fast'}
-                disabled={is_running}
                 onClick={toggleMode}
             >
                 <span className='execution-control__switch-knob' />
