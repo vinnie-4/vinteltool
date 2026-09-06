@@ -28,7 +28,7 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
     const { has_active_bot, has_saved_bots } = blockly_store;
     const { isMobile } = useDevice();
     const { is_contract_completed, profit } = summary_card;
-    const { contract_stage, is_stop_button_visible, is_stop_button_disabled, onRunButtonClick, stopBot } = run_panel;
+    const { contract_stage, is_stop_button_visible, is_stop_button_disabled, is_running, is_paused, onRunButtonClick, onPauseResumeButtonClick, stopBot } = run_panel;
     const [shouldDisable, setShouldDisable] = React.useState(false);
     const is_unavailable_for_payment_agent = false;
     const { load_modal } = useStore();
@@ -95,12 +95,26 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
         </Button>
     );
 
+    const pauseResumeButton = is_stop_button_visible && is_running ? (
+        <Button
+            is_disabled={false}
+            className='animation__pause-resume-button'
+            id='db-animation__pause-resume-button'
+            icon={<span className='animation__pause-resume-icon' aria-hidden='true'>{is_paused ? '⏸' : '⏯'}</span>}
+            onClick={onPauseResumeButtonClick}
+            has_effect
+            primary
+        >
+            {is_paused ? <Localize i18n_default_text='Resume' /> : <Localize i18n_default_text='Pause' />}
+        </Button>
+    ) : null;
+
     const stopButton = is_stop_button_visible ? (
         <Button
             is_disabled={is_stop_button_disabled}
             className='animation__stop-button'
             id='db-animation__stop-button'
-            icon={<LabelPairedSquareLgFillIcon fill='#e02020' />}
+            icon={<LabelPairedSquareLgFillIcon fill='#0066ff' />}
             onClick={() => {
                 setShouldDisable(true);
                 try {
@@ -153,6 +167,7 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
                             {status_classes.map((status_class, i) => <CircularWrapper key={`status_class-${status_class}-${i}`} className={status_class} />)}
                         </div>
                     </div>
+                    {pauseResumeButton}
                     {stopButton}
                 </>
             )}
