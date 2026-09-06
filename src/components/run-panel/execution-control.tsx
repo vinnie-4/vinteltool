@@ -1,17 +1,21 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { useStore } from '@/hooks/useStore';
+import { getExecutionMode, setExecutionMode } from '@/external/bot-skeleton/services/tradeEngine/execution/execution-mode';
 
 type ExecutionMode = 'normal' | 'fast';
 
 const ExecutionControl = observer(() => {
     const { run_panel } = useStore();
-    const [mode, setMode] = React.useState<ExecutionMode>('normal');
+    const [mode, setMode] = React.useState<ExecutionMode>(() => getExecutionMode());
     const is_running = run_panel.is_stop_button_visible;
 
     const toggleMode = () => {
         if (is_running) return;
-        setMode(current => (current === 'normal' ? 'fast' : 'normal'));
+
+        const next_mode: ExecutionMode = mode === 'normal' ? 'fast' : 'normal';
+        setExecutionMode(next_mode);
+        setMode(next_mode);
     };
 
     // Execution selection is only needed while the bot is stopped.
