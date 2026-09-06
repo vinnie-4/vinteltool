@@ -75,52 +75,25 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
     const has_no_bots = !has_active_bot && !has_saved_bots;
     const is_bot_builder_tab = active_tab === DBOT_TABS.BOT_BUILDER;
     const should_disable_run = has_no_bots && !is_bot_builder_tab;
-    const is_run_disabled = is_stop_button_visible || shouldDisable || should_disable_run || contract_stage === 3;
+    const is_disabled = is_stop_button_visible ? false : shouldDisable || should_disable_run;
     const should_show_tooltip = !is_stop_button_visible && !is_bot_builder_tab && has_no_bots;
 
-    const runButton = (
-        <Button
-            is_disabled={is_run_disabled && !is_unavailable_for_payment_agent}
-            className='animation__run-button'
-            id='db-animation__run-button'
-            icon={<LabelPairedPlayLgFillIcon fill='#fff' />}
-            onClick={() => {
-                setShouldDisable(true);
-                onRunButtonClick();
-            }}
-            has_effect
-            {...(!is_unavailable_for_payment_agent ? { primary: true } : { green: true })}
-        >
-            <Localize i18n_default_text='Run' />
-        </Button>
-    );
-
-    const stopButton = is_stop_button_visible ? (
-        <Button
-            is_disabled={is_stop_button_disabled}
-            className='animation__stop-button'
-            id='db-animation__stop-button'
-            icon={<LabelPairedSquareLgFillIcon fill='#fff' />}
-            onClick={() => {
-                setShouldDisable(true);
-                try {
-                    window.__vinteltool_stopping = true;
-                    window.setTimeout(() => { window.__vinteltool_stopping = false; }, 10000);
-                } catch (error) {
-                    console.warn('[TradeAnimation] Could not set stop guard.', error);
-                }
-                try {
-                    stopBot();
-                } catch (error) {
-                    console.warn('[TradeAnimation] Stop action failed; keeping app alive.', error);
-                }
-            }}
-            has_effect
-            primary
-        >
-            <Localize i18n_default_text='Stop' />
-        </Button>
-    ) : null;
+    const button_props = React.useMemo(() => {
+        if (is_stop_button_visible && !is_stop_button_disabled) {
+            return {
+                id: 'db-animation__stop-button',
+                class: 'animation__stop-button',
+                text: <Localize i18n_default_text='Stop' />,
+                icon: <LabelPairedSquareLgFillIcon fill='#e02020' />,
+            };
+        }
+        return {
+            id: 'db-animation__run-button',
+            class: 'animation__run-button',
+            text: <Localize i18n_default_text='Run' />,
+            icon: <LabelPairedPlayLgFillIcon fill='#fff' />,
+        };
+    }, [is_stop_button_visible, is_stop_button_disabled]);
 
     const show_overlay = should_show_overlay && is_contract_completed;
 
@@ -144,20 +117,42 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
                 <div className='run__button_wrapper'>
                     <Tooltip alignment={determineTooltipAlignment()} message={localize('The Run button is disabled because no Bot has been created yet.')} icon='info' className='qs__tooltip' />
                     <div style={{ opacity: 0.5, marginLeft: '8px' }}>
-                        {runButton}
+                        <Button is_disabled={true} className={button_props.class} id={button_props.id} icon={button_props.icon} onClick={() => {}} has_effect {...(is_stop_button_visible || !is_unavailable_for_payment_agent ? { primary: true } : { green: true })}>
+                            {button_props.text}
+                        </Button>
                     </div>
                 </div>
             ) : (
-                <>
-                    {runButton}
-                    {stopButton}
-                </>
+                <Button
+                    is_disabled={(is_disabled && !is_unavailable_for_payment_agent) || contract_stage === 3}
+                    className={button_props.class}
+                    id={button_props.id}
+                    icon={button_props.icon}
+                    onClick={() => {
+                        setShouldDisable(true);
+                        if (is_stop_button_visible) {
+                            try {
+                                window.__vinteltool_stopping = true;
+                                window.setTimeout(() => { window.__vinteltool_stopping = false; }, 10000);
+                            } catch (error) {
+                                console.warn('[TradeAnimation] Could not set stop guard.', error);
+                            }
+                            try { stopBot(); } catch (error) { console.warn('[TradeAnimation] Stop action failed; keeping app alive.', error); }
+                            return;
+                        }
+                        onRunButtonClick();
+                    }}
+                    has_effect
+                    {...(is_stop_button_visible || !is_unavailable_for_payment_agent ? { primary: true } : { green: true })}
+                >
+                    {button_props.text}
+                </Button>
             )}
 
             <div className={classNames('animation__container', className, {
                 'animation--running': contract_stage > 0,
                 'animation--completed': show_overlay,
-                'animation--disabled': is_run_disabled,
+                'animation--disabled': is_disabled,
             })}>
                 <ExecutionControl />
                 {show_overlay && <ContractResultOverlay profit={profit} />}
