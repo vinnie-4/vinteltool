@@ -47,14 +47,14 @@ export default function ChunkLoader({ message: _message }: { message: string }) 
             }}
         >
             <div className='vinteltool-loader-floaters' aria-hidden='true'>
-                <span>VT</span>
-                <span>01</span>
-                <span>FX</span>
+                <span>vinteltool.site</span>
+                <span>↗ vinteltool.site</span>
+                <span>vinteltool.site</span>
                 <span>↗</span>
-                <span>VT</span>
-                <span>∞</span>
-                <span>01</span>
-                <span>FX</span>
+                <span>vinteltool.site</span>
+                <span>↘ vinteltool.site</span>
+                <span>vinteltool.site</span>
+                <span>↗ vinteltool.site</span>
             </div>
 
             <div style={{ width: 'min(420px, 100%)', textAlign: 'center', position: 'relative', zIndex: 2 }}>
@@ -66,20 +66,13 @@ export default function ChunkLoader({ message: _message }: { message: string }) 
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        border: '2px solid rgba(255,255,255,0.72)',
-                        background: 'rgba(255,255,255,0.035)',
-                        boxShadow: '0 0 30px rgba(255,255,255,0.12)',
-                        animation: 'vinteltool-box-fade 2.2s ease-in-out infinite',
+                        border: '3px solid #1687ff',
+                        background: 'transparent',
+                        boxShadow: '0 0 30px rgba(22,135,255,0.35)',
+                        animation: 'vinteltool-box-fade 2.2s ease-in-out infinite, vinteltool-box-rotate 4s linear infinite',
                     }}
                 >
-                    <span
-                        style={{
-                            fontSize: 30,
-                            fontWeight: 700,
-                            letterSpacing: '-1px',
-                            animation: 'vinteltool-box-rotate 4s linear infinite',
-                        }}
-                    >
+                    <span style={{ fontSize: 30, fontWeight: 700, letterSpacing: '-1px' }}>
                         <span style={{ color: '#fff' }}>V</span><span style={{ color: '#e53935' }}>T</span>
                     </span>
                 </div>
@@ -114,7 +107,7 @@ export default function ChunkLoader({ message: _message }: { message: string }) 
                             style={{
                                 width: `${progress}%`,
                                 height: '100%',
-                                background: '#fff',
+                                background: '#1687ff',
                                 transition: 'width 90ms linear',
                             }}
                         />
@@ -140,32 +133,33 @@ export default function ChunkLoader({ message: _message }: { message: string }) 
 
                 .vinteltool-loader-floaters span {
                     position: absolute;
-                    font-size: 18px;
+                    font-size: 14px;
                     font-weight: 700;
                     color: #fff;
+                    white-space: nowrap;
                     animation: vinteltool-float 9s linear infinite;
                 }
 
-                .vinteltool-loader-floaters span:nth-child(1) { left: 8%; top: 72%; animation-delay: -2s; }
-                .vinteltool-loader-floaters span:nth-child(2) { left: 18%; top: 20%; animation-delay: -6s; }
-                .vinteltool-loader-floaters span:nth-child(3) { left: 76%; top: 25%; animation-delay: -4s; }
-                .vinteltool-loader-floaters span:nth-child(4) { left: 87%; top: 70%; animation-delay: -8s; }
-                .vinteltool-loader-floaters span:nth-child(5) { left: 68%; top: 82%; animation-delay: -1s; }
-                .vinteltool-loader-floaters span:nth-child(6) { left: 30%; top: 84%; animation-delay: -5s; }
-                .vinteltool-loader-floaters span:nth-child(7) { left: 91%; top: 42%; animation-delay: -7s; }
-                .vinteltool-loader-floaters span:nth-child(8) { left: 5%; top: 38%; animation-delay: -3s; }
+                .vinteltool-loader-floaters span:nth-child(1) { left: 6%; top: 72%; animation-delay: -2s; }
+                .vinteltool-loader-floaters span:nth-child(2) { left: 15%; top: 20%; animation-delay: -6s; }
+                .vinteltool-loader-floaters span:nth-child(3) { left: 73%; top: 25%; animation-delay: -4s; }
+                .vinteltool-loader-floaters span:nth-child(4) { left: 88%; top: 70%; animation-delay: -8s; }
+                .vinteltool-loader-floaters span:nth-child(5) { left: 64%; top: 82%; animation-delay: -1s; }
+                .vinteltool-loader-floaters span:nth-child(6) { left: 27%; top: 84%; animation-delay: -5s; }
+                .vinteltool-loader-floaters span:nth-child(7) { left: 86%; top: 42%; animation-delay: -7s; }
+                .vinteltool-loader-floaters span:nth-child(8) { left: 3%; top: 38%; animation-delay: -3s; }
 
                 @keyframes vinteltool-float {
-                    0% { transform: translate3d(0, 35px, 0) rotate(0deg); opacity: 0; }
+                    0% { transform: translate3d(0, 35px, 0); opacity: 0; }
                     15% { opacity: 0.8; }
-                    50% { transform: translate3d(22px, -35px, 0) rotate(8deg); opacity: 0.55; }
+                    50% { transform: translate3d(22px, -35px, 0); opacity: 0.55; }
                     85% { opacity: 0.8; }
-                    100% { transform: translate3d(-18px, -110px, 0) rotate(-8deg); opacity: 0; }
+                    100% { transform: translate3d(-18px, -110px, 0); opacity: 0; }
                 }
 
                 @keyframes vinteltool-box-fade {
-                    0%, 100% { opacity: 0.45; box-shadow: 0 0 16px rgba(255,255,255,0.06); }
-                    50% { opacity: 1; box-shadow: 0 0 34px rgba(255,255,255,0.18); }
+                    0%, 100% { opacity: 0.45; box-shadow: 0 0 16px rgba(22,135,255,0.18); }
+                    50% { opacity: 1; box-shadow: 0 0 34px rgba(22,135,255,0.5); }
                 }
 
                 @keyframes vinteltool-box-rotate {
@@ -175,10 +169,7 @@ export default function ChunkLoader({ message: _message }: { message: string }) 
 
                 @media (prefers-reduced-motion: reduce) {
                     .vinteltool-loader-floaters span,
-                    .vinteltool-loader-floaters,
-                    .vinteltool-loader-floaters span,
-                    .vinteltool-loader > div > div:first-child,
-                    .vinteltool-loader > div > div:first-child span {
+                    .vinteltool-loader > div > div:first-child {
                         animation: none !important;
                     }
                 }
