@@ -2,84 +2,19 @@
 
 .run-panel {
     height: 0;
-
-    &__container {
-        height: var(--bot-content-height) !important;
-        top: 10.4rem !important;
-        width: 36.6rem !important;
-        right: 0;
-
-        &--mobile {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            z-index: var(--zindex-drawer);
-            height: calc(100% - env(safe-area-inset-bottom, 0));
-            padding-bottom: env(safe-area-inset-bottom, 0);
-
-            &-closed { position: unset; }
-        }
-    }
-
-    &__tile {
-        @include flex-center;
-        flex-direction: column;
-        height: 100%;
-        &-title { min-height: 1.8rem; margin-bottom: 4px; @include typeface(--small-center-bold-black, none); }
-        &-content { height: 18px; margin-bottom: 4px; @include typeface(--small-center-normal-black, none); }
-    }
-
-    &__stat {
-        @include flex-center(flex-start, flex-end);
-        flex-direction: column;
-        width: 35rem;
-        background-color: var(--general-section-2);
-        @include mobile-or-tablet-screen {
-            margin: 0;
-            position: fixed;
-            @supports (-webkit-touch-callout: none) { padding-bottom: env(safe-area-inset-bottom, 0); }
-        }
-        &--info { @include flex-center(center, flex-start); width: 33%; padding: 16px 0 2px; cursor: pointer; color: var(--text-general); -webkit-tap-highlight-color: transparent; &-item { display: inline-block; border-bottom: 1px dotted var(--text-general); } }
-        &--tiles { width: 100%; display: grid; grid-template: 64px 64px / 1fr 1fr 1fr; }
-        &-amount { @include typeface(--small-center-normal-black, none); &--positive { font-weight: bold; color: var(--text-profit-success); } &--negative { font-weight: bold; color: var(--text-loss-danger); } }
-        &--mobile { width: 100%; bottom: 0; }
-    }
-
+    &__container { height: var(--bot-content-height) !important; top: 10.4rem !important; width: 36.6rem !important; right: 0; &--mobile { position: absolute; top: 0; left: 0; width: 100vw; z-index: var(--zindex-drawer); height: calc(100% - env(safe-area-inset-bottom, 0)); padding-bottom: env(safe-area-inset-bottom, 0); &-closed { position: unset; } } }
+    &__tile { @include flex-center; flex-direction: column; height: 100%; &-title { min-height: 1.8rem; margin-bottom: 4px; @include typeface(--small-center-bold-black, none); } &-content { height: 18px; margin-bottom: 4px; @include typeface(--small-center-normal-black, none); } }
+    &__stat { @include flex-center(flex-start, flex-end); flex-direction: column; width: 35rem; background-color: var(--general-section-2); @include mobile-or-tablet-screen { margin: 0; position: fixed; @supports (-webkit-touch-callout: none) { padding-bottom: env(safe-area-inset-bottom, 0); } } &--info { @include flex-center(center, flex-start); width: 33%; padding: 16px 0 2px; cursor: pointer; color: var(--text-general); -webkit-tap-highlight-color: transparent; &-item { display: inline-block; border-bottom: 1px dotted var(--text-general); } } &--tiles { width: 100%; display: grid; grid-template: 64px 64px / 1fr 1fr 1fr; } &-amount { @include typeface(--small-center-normal-black, none); &--positive { font-weight: bold; color: var(--text-profit-success); } &--negative { font-weight: bold; color: var(--text-loss-danger); } } &--mobile { width: 100%; bottom: 0; } }
     &__footer { text-align: center; @include flex-center(space-between); flex-direction: column; &-button { width: 318px; height: 32px !important; margin: 12px 24px; } }
     &__content { display: flex; justify-content: space-between; flex-direction: column; overflow: hidden !important; .dc-tabs__item { overflow: hidden; text-overflow: ellipsis; padding: 0 0.8rem; } }
     &__buttons { display: inline-flex !important; justify-content: space-between; width: 67%; margin-top: 1rem; align-items: center; }
-    &-tab__content {
-        height: calc(100vh - 42rem);
-        overflow: hidden;
-        &--no-stat { height: var(--drawer-content-height-no-stat); }
-        &--mobile { display: flex; height: var(--drawer-content-height-mobile); position: fixed; bottom: 15.7rem; width: 100vw; padding: 0.4rem 0; @supports (-webkit-touch-callout: none) { bottom: calc(15.7rem + env(safe-area-inset-bottom, 0)); } }
-        &--summary-tab { padding: 0.8rem 1.6rem; }
-    }
+    &-tab__content { height: calc(100vh - 42rem); overflow: hidden; &--no-stat { height: var(--drawer-content-height-no-stat); } &--mobile { display: flex; height: var(--drawer-content-height-mobile); position: fixed; bottom: 15.7rem; width: 100vw; padding: 0.4rem 0; @supports (-webkit-touch-callout: none) { bottom: calc(15.7rem + env(safe-area-inset-bottom, 0)); } } &--summary-tab { padding: 0.8rem 1.6rem; } }
     &__clear-button { @include mobile-or-tablet-screen { position: absolute !important; top: 0.5rem; right: 1.6rem; height: 2.6rem !important; min-width: 8rem; } }
 }
 
 .controls {
-    &__section {
-        @include flex-center(space-between);
-        flex-direction: column;
-        position: fixed;
-        bottom: 0;
-        width: 100%;
-        background-color: var(--general-main-1);
-        border-top: solid 2px var(--general-section-1);
-        z-index: 8;
-        @supports (-webkit-touch-callout: none) { bottom: env(safe-area-inset-bottom, 0); padding-bottom: env(safe-area-inset-bottom, 0); }
-        &.ios-device { bottom: env(safe-area-inset-bottom, 0); padding-bottom: env(safe-area-inset-bottom, 0); }
-    }
-    &__buttons {
-        padding: 0.8rem 2.4rem;
-        min-height: 6rem;
-        display: flex;
-        width: inherit;
-        @include tablet-screen { max-width: 60rem; padding: 0.8rem 0; }
-        @supports (-webkit-touch-callout: none) { height: auto; min-height: 6rem; }
-    }
+    &__section { @include flex-center(space-between); flex-direction: column; position: fixed; bottom: 0; width: 100%; background-color: var(--general-main-1); border-top: solid 2px var(--general-section-1); z-index: 8; @supports (-webkit-touch-callout: none) { bottom: env(safe-area-inset-bottom, 0); padding-bottom: env(safe-area-inset-bottom, 0); } &.ios-device { bottom: env(safe-area-inset-bottom, 0); padding-bottom: env(safe-area-inset-bottom, 0); } }
+    &__buttons { padding: 0.8rem 2.4rem; min-height: 6rem; display: flex; width: inherit; @include tablet-screen { max-width: 60rem; padding: 0.8rem 0; } @supports (-webkit-touch-callout: none) { height: auto; min-height: 6rem; } }
     &__stop-button, &__run-button { width: 40%; border-radius: 4px 0 0 4px !important; }
     &__animation { width: 100%; height: 4rem; border-radius: 4px; }
 }
@@ -87,84 +22,31 @@
 .execution-control {
     height: 4rem;
     width: 100%;
-    margin: 0 0 0 0.8rem;
+    margin: 0;
     padding: 0 0.8rem 0 1rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #f5e6c8;
-    border: 1px solid #dfcfad;
+    background: #fff1b8;
+    border: 1px solid #e6d58a;
     border-radius: 4px;
     box-sizing: border-box;
     white-space: nowrap;
     min-width: 0;
+    position: absolute;
+    inset: 0;
+    z-index: 2;
 
-    &__labels {
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        justify-content: center;
-        line-height: 1;
-    }
-
-    &__title {
-        font-size: 1.6rem;
-        font-weight: 700;
-        color: #1b1b1b;
-        line-height: 1.1;
-    }
-
-    &__mode {
-        margin-top: 0.35rem;
-        font-size: 1rem;
-        font-weight: 700;
-        color: #1b1b1b;
-        line-height: 1;
-    }
-
-    &__switch {
-        position: relative;
-        flex: 0 0 auto;
-        width: 3.8rem;
-        height: 2rem;
-        margin-left: 0.6rem;
-        padding: 0.2rem;
-        border: 0;
-        border-radius: 999px;
-        background: var(--button-primary-default);
-        box-shadow: inset 0 0 0 1px var(--button-primary-default);
-        cursor: pointer;
-        -webkit-tap-highlight-color: transparent;
-        transition: background 160ms ease, opacity 160ms ease;
-
-        &:disabled {
-            cursor: not-allowed;
-            opacity: 0.65;
-        }
-
-        &--fast { background: var(--button-primary-default); }
-    }
-
-    &__switch-knob {
-        position: absolute;
-        top: 0.3rem;
-        left: 0.3rem;
-        width: 1.4rem;
-        height: 1.4rem;
-        border-radius: 50%;
-        background: #fff;
-        transition: transform 160ms ease;
-
-        .execution-control__switch--fast & {
-            transform: translateX(1.8rem);
-        }
-    }
+    &__labels { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; line-height: 1; }
+    &__title { font-size: 1.6rem; font-weight: 700; color: #1b1b1b; line-height: 1.1; }
+    &__mode { margin-top: 0.35rem; font-size: 1rem; font-weight: 700; color: #1b1b1b; line-height: 1; }
+    &__switch { position: relative; flex: 0 0 auto; width: 3.8rem; height: 2rem; margin-left: 0.6rem; padding: 0.2rem; border: 1px solid #d7d7d7; border-radius: 999px; background: #fff; box-shadow: none; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: border-color 160ms ease; &--fast { background: #fff; } &:hover { border-color: var(--button-primary-default); } }
+    &__switch-knob { position: absolute; top: 0.3rem; left: 0.3rem; width: 1.4rem; height: 1.4rem; border-radius: 50%; background: var(--button-primary-default); transition: transform 160ms ease; .execution-control__switch--fast & { transform: translateX(1.8rem); } }
 }
 
 @media (max-width: 420px) {
     .controls__buttons { padding-left: 0.8rem; padding-right: 0.8rem; }
-    .execution-control { margin-left: 0.5rem; padding-left: 0.8rem; padding-right: 0.6rem; &__title { font-size: 1.6rem; } &__mode { font-size: 0.95rem; } &__switch { width: 3.6rem; height: 1.9rem; } &__switch-knob { width: 1.3rem; height: 1.3rem; top: 0.3rem; left: 0.3rem; .execution-control__switch--fast & { transform: translateX(1.7rem); } } }
+    .execution-control { &__title { font-size: 1.6rem; } &__mode { font-size: 0.95rem; } &__switch { width: 3.6rem; height: 1.9rem; } &__switch-knob { width: 1.3rem; height: 1.3rem; top: 0.3rem; left: 0.3rem; .execution-control__switch--fast & { transform: translateX(1.7rem); } } }
 }
 
 .list__animation-enter { height: 0; transform: translateX(200%); }
