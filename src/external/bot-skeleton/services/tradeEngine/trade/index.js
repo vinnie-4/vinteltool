@@ -6,7 +6,11 @@ import { observer as globalObserver } from '../../../utils/observer';
 import { api_base } from '../../api/api-base';
 import { checkBlocksForProposalRequest, doUntilDone } from '../utils/helpers';
 import { expectInitArg } from '../utils/sanitize';
-import { getFastExecutionWindows, isFastExecution } from '../execution/execution-mode';
+import {
+    getFastExecutionConfig,
+    isFastExecution,
+    shouldFastPoll,
+} from '../execution/execution-mode';
 import { proposalsReady, start } from './state/actions';
 import * as constants from './state/constants';
 import rootReducer from './state/reducers';
@@ -38,15 +42,9 @@ const watchDuring = store =>
         fast: false,
     });
 
-/* The watchScope function is called randomly and resets the prevTick
- * which leads to the same problem we try to solve. So prevTick is isolated
- */
 let prevTick;
 const watchScope = ({ store, scope, symbol, stopScope, passScope, passFlag, fast }) => {
-    // in case watch is called after stop is fired
-    if (store.getState().scope === stopScope) {
-        return Promise.resolve(false);
-    }
+    if (store.getState().scope === stopScope) return Promise.resolve(false);
 
     return new Promise(resolve => {
         let settled = false;
@@ -70,45 +68,58 @@ const watchScope = ({ store, scope, symbol, stopScope, passScope, passFlag, fast
 
             if (newState.newTick !== prevTick) {
                 prevTick = newState.newTick;
-
                 if (newState.scope === passScope && newState[passFlag]) {
                     finish(true);
                     return;
                 }
             }
 
-            if (newState.scope === stopScope) {
-                finish(false);
-            }
+            if (newState.scope === stopScope) finish(false);
         });
 
         if (!fast || !scope?.ticksService || !symbol) return;
 
-        // FAST is an execution-timing layer only. It does not change strategy,
-        // stake, martingale/recovery, contract parameters, proposal selection,
-        // or purchase rules. At each fast window we ask for the latest tick so
-        // the existing strategy can continue immediately when that tick is
-        // already available, instead of waiting for the monitor callback.
-        getFastExecutionWindows().forEach(delay => {
-            const timer = setTimeout(async () => {
-                if (settled || store.getState().scope === stopScope) return;
+        // Non-1s volatility indices already stream ticks as quickly as the
+        // market produces them. Do not add polling latency or duplicate work.
+        // FAST therefore naturally executes on every distinct incoming tick.
+        if (!shouldFastPoll(symbol)) return;
 
-                try {
-                    const ticks = await scope.ticksService.request({ symbol });
-                    const lastTick = ticks?.[ticks.length - 1];
-                    const epoch = lastTick?.epoch;
+        // 1s indices cannot produce more than one market tick per second.
+        // Instead of pretending there are extra ticks, aggressively check the
+        // live tick service for a short period. The first genuinely new tick
+        // immediately advances the existing strategy/purchase pipeline.
+        const { pollIntervalMs, windowDurationMs } = getFastExecutionConfig();
+        const startedAt = Date.now();
+        let probing = false;
 
-                    if (typeof epoch === 'number' && epoch !== prevTick) {
-                        store.dispatch({ type: constants.NEW_TICK, payload: epoch });
-                    }
-                } catch (error) {
-                    // The normal websocket tick monitor remains the fallback.
-                    globalObserver.emit('execution.fast.probe_error', error);
+        const probe = async () => {
+            if (settled || store.getState().scope === stopScope) return;
+            if (Date.now() - startedAt >= windowDurationMs) return;
+            if (probing) return;
+
+            probing = true;
+            try {
+                const ticks = await scope.ticksService.request({ symbol });
+                const lastTick = ticks?.[ticks.length - 1];
+                const epoch = lastTick?.epoch;
+
+                if (typeof epoch === 'number' && epoch !== prevTick) {
+                    store.dispatch({ type: constants.NEW_TICK, payload: epoch });
                 }
-            }, delay);
+            } catch (error) {
+                globalObserver.emit('execution.fast.probe_error', error);
+            } finally {
+                probing = false;
+                if (!settled && Date.now() - startedAt < windowDurationMs) {
+                    timers.push(setTimeout(probe, pollIntervalMs));
+                }
+            }
+        };
 
-            timers.push(timer);
-        });
+        // Start immediately, then retry every 25ms. This is intentionally
+        // bounded so FAST remains responsive without creating an uncontrolled
+        // request loop.
+        probe();
     });
 };
 
@@ -118,10 +129,7 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
         this.observer = $scope.observer;
         this.$scope = $scope;
         this.observe();
-        this.data = {
-            contract: {},
-            proposals: [],
-        };
+        this.data = { contract: {}, proposals: [] };
         this.subscription_id_for_accumulators = null;
         this.is_proposal_requested_for_accumulators = false;
         this.store = createStore(rootReducer, applyMiddleware(thunk));
@@ -130,11 +138,9 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
     init(...args) {
         const [token, options] = expectInitArg(args);
         const { symbol } = options;
-
         this.initArgs = args;
         this.options = options;
         this.startPromise = this.loginAndGetBalance(token);
-
         if (!this.checkTicksPromiseExists()) this.watchTicks(symbol);
     }
 
@@ -142,33 +148,19 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
         if (!this.options) {
             throw createError('NotInitialized', getLocalizedErrorMessage('NotInitialized'));
         }
-
         globalObserver.emit('bot.running');
-
         const validated_trade_options = this.validateTradeOptions(tradeOptions);
-
         this.tradeOptions = { ...validated_trade_options, symbol: this.options.symbol };
         this.store.dispatch(start());
         this.checkLimits(validated_trade_options);
-
         this.makeDirectPurchaseDecision();
     }
 
     loginAndGetBalance(token) {
-        if (this.token === token) {
-            return Promise.resolve();
-        }
-        // for strategies using total runs, GetTotalRuns function is trying to get loginid and it gets called before Proposals calls.
-        // the below required loginid to be set in Proposal calls where loginAndGetBalance gets resolved.
-        // Earlier this used to happen as soon as we get ticks_history response and by the time GetTotalRuns gets called we have required info.
+        if (this.token === token) return Promise.resolve();
         this.accountInfo = api_base.account_info;
         this.token = api_base.token;
         return new Promise(resolve => {
-            // Try to recover from a situation where API doesn't give us a correct response on
-            // "proposal_open_contract" which would make the bot run forever. When there's a "sell"
-            // event, wait a couple seconds for the API to give us the correct "proposal_open_contract"
-            // response, if there's none after x seconds. Send an explicit request, which _should_
-            // solve the issue. This is a backup!
             const subscription = api_base.api.onMessage().subscribe(({ data }) => {
                 if (data.msg_type === 'transaction' && data.transaction.action === 'sell') {
                     this.transaction_recovery_timeout = setTimeout(() => {
@@ -195,16 +187,13 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
     }
 
     watch(watchName) {
-        if (watchName === 'before') {
-            return watchBefore(this.store, this.$scope, this.options?.symbol);
-        }
+        if (watchName === 'before') return watchBefore(this.store, this.$scope, this.options?.symbol);
         return watchDuring(this.store);
     }
 
     makeDirectPurchaseDecision() {
         const { has_payout_block, is_basis_payout } = checkBlocksForProposalRequest();
         this.is_proposal_subscription_required = has_payout_block || is_basis_payout;
-
         if (this.is_proposal_subscription_required) {
             this.makeProposals({ ...this.options, ...this.tradeOptions });
             this.checkProposalReady();
