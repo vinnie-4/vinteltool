@@ -6,21 +6,23 @@ import { localize } from '@deriv-com/translations';
 import { TFormData, TFormValues } from '../types';
 import { QsSteps } from './trade-constants';
 
- type TMobileQSFooter = {
+type TMobileQSFooter = {
     current_step: QsSteps;
     setCurrentStep: (current_step: QsSteps) => void;
 };
 
 export const MobileQSFooter = observer(({ current_step, setCurrentStep }: TMobileQSFooter) => {
     const { quick_strategy } = useStore();
-    const { isValid, submitForm, setFieldValue, validateForm } = useFormikContext<TFormValues>();
+    const { isValid, submitForm, setFieldValue, validateForm, values } = useFormikContext<TFormValues>();
     const is_verified_or_completed_step = current_step === QsSteps.StrategyVerified || current_step === QsSteps.StrategyCompleted;
     const is_selected_strategy_step = current_step === QsSteps.StrategySelect;
 
     const onLoad = async () => {
         await setFieldValue('action', 'EDIT');
-        validateForm();
-        submitForm();
+        const errors = await validateForm();
+        if (Object.keys(errors).length) return;
+        await submitForm();
+        await quick_strategy.onSubmit({ ...values, action: 'EDIT' } as TFormData);
     };
 
     const onBack = () => {
@@ -37,7 +39,7 @@ export const MobileQSFooter = observer(({ current_step, setCurrentStep }: TMobil
                     <Button
                         primary
                         data-testid='qs-load-button'
-                        type='submit'
+                        type='button'
                         onClick={e => {
                             e.preventDefault();
                             onLoad();
