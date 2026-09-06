@@ -161,16 +161,13 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
         });
 
         const { derivWorkspace: workspace } = Blockly;
-        if (action === 'RUN') {
-            workspace?.waitForBlockEvent({
-                block_type: 'trade_definition',
-                event_type: window.Blockly.Events.BLOCK_CREATE,
-                timeout: 5000,
-            }).then(() => {
-                this.root_store.run_panel.onRunButtonClick();
-            });
-        }
         this.setFormVisibility(false);
+
+        // Finish the complete Blockly import first. The previous implementation started
+        // a waitForBlockEvent callback before load() completed, which could make the Run
+        // panel execute against a workspace that was still being cleared/populated. That
+        // race caused the first import to hit the application's error screen, while a
+        // refresh appeared to fix it because the strategy had already been persisted.
         await load({
             block_string: window.Blockly.Xml.domToText(strategy_dom),
             file_name: selected_strategy.label,
@@ -180,6 +177,17 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             strategy_id: null,
             showIncompatibleStrategyDialog: null,
         });
+
+        if (action === 'RUN') {
+            // Give React/MobX one browser turn to observe the completed workspace load
+            // before the Run panel reads the workspace and starts execution.
+            await new Promise(resolve => setTimeout(resolve, 0));
+            try {
+                await this.root_store.run_panel.onRunButtonClick();
+            } catch (error) {
+                console.error('Quick Strategy auto-run failed after workspace import:', error);
+            }
+        }
     };
 
     toggleStopBotDialog = (): void => {
