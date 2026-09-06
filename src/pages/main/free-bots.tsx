@@ -42,7 +42,6 @@ const VINTEL_EVEN_BOT_XML = `<xml xmlns="https://developers.google.com/blockly/x
   </block>
 </xml>`;
 
-/** BinaryTool-style Free Bots catalogue. Each card carries its own XML and uses the existing Quick Strategy import path. */
 export const FREE_BOTS: TFreeBot[] = [
     {
         id: 'vintel-even-bot',
@@ -54,22 +53,47 @@ export const FREE_BOTS: TFreeBot[] = [
 ];
 
 const FreeBots = ({ bots = FREE_BOTS, onLoadBot }: TFreeBotsProps) => {
+    const [loading_bot_id, setLoadingBotId] = React.useState<string | null>(null);
+
     if (!bots.length) return null;
+
+    const handleLoad = async (bot: TFreeBot) => {
+        if (loading_bot_id) return;
+        setLoadingBotId(bot.id);
+        try {
+            await onLoadBot(bot);
+        } catch (error) {
+            console.error('Failed to load free bot:', error);
+        } finally {
+            setLoadingBotId(null);
+        }
+    };
 
     return (
         <section className='free-bots' id='free-bots-panel' aria-label='Free Bots'>
             <div className='free-bots__grid'>
-                {bots.map(bot => (
-                    <article className='free-bots__card' key={bot.id}>
-                        <div className='free-bots__icon' aria-hidden='true'>🤖</div>
-                        <div className='free-bots__body'>
-                            <h3 className='free-bots__name'>{bot.name}</h3>
-                            {bot.description && <p className='free-bots__description'>{bot.description}</p>}
-                            {!!bot.tags?.length && <div className='free-bots__tags'>{bot.tags.map(tag => <span key={tag}>{tag}</span>)}</div>}
-                        </div>
-                        <button type='button' className='free-bots__load' onClick={() => onLoadBot(bot)}>Load to Bot Builder</button>
-                    </article>
-                ))}
+                {bots.map(bot => {
+                    const is_loading = loading_bot_id === bot.id;
+                    return (
+                        <article className='free-bots__card' key={bot.id}>
+                            <div className='free-bots__icon' aria-hidden='true'>🤖</div>
+                            <div className='free-bots__body'>
+                                <h3 className='free-bots__name'>{bot.name}</h3>
+                                {bot.description && <p className='free-bots__description'>{bot.description}</p>}
+                                {!!bot.tags?.length && <div className='free-bots__tags'>{bot.tags.map(tag => <span key={tag}>{tag}</span>)}</div>}
+                            </div>
+                            <button
+                                type='button'
+                                className='free-bots__load'
+                                onClick={() => void handleLoad(bot)}
+                                disabled={!!loading_bot_id}
+                                aria-busy={is_loading}
+                            >
+                                {is_loading ? 'Loading…' : 'Load'}
+                            </button>
+                        </article>
+                    );
+                })}
             </div>
         </section>
     );

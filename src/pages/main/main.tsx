@@ -171,8 +171,10 @@ const AppWrapper = observer(() => {
     }, [active_tab]);
 
     const handleFreeBotLoad = React.useCallback(async (bot) => {
-        await quick_strategy.loadFreeBotXml(bot.xml, bot.name);
+        // Activate Bot Builder first. Quick Strategy's pending XML queue handles the mount delay.
         setActiveTab(BOT_BUILDER);
+        await new Promise<void>(resolve => setTimeout(resolve, 50));
+        await quick_strategy.loadFreeBotXml(bot.xml, bot.name);
     }, [quick_strategy, setActiveTab]);
 
     const handleLoginGeneration = async () => {
@@ -202,7 +204,7 @@ const AppWrapper = observer(() => {
                                 <Suspense fallback={<ChunkLoader message={localize('Please wait, loading chart...')} />}><ChartWrapper show_digits_stats={false} /></Suspense>
                             </div>
                             <div label={<><LegacyGuide1pxIcon height='16px' width='16px' fill='var(--text-general)' className='icon-general-fill-g-path' /><Localize i18n_default_text='Tutorials' /></>} id='id-tutorials'>
-                                <div className='tutorials-wrapper'><Suspense fallback={<ChunkLoader message={localize('Please wait, loading tutorials...')} />}><Tutorial handleTabChange={handleTabChange} /></Suspense></div>
+                                <div className='tutorials-wrapper'><Suspense fallback={<ChunkLoader message={localize('Please wait, loading tutorials...')} />}><Tutorial handleTabChange={handleTabChange} /></div>
                             </div>
                             <div label={<>🎓 <Localize i18n_default_text='Deriv Course' /></>} id='id-deriv-course' />
                         </Tabs>
