@@ -25,97 +25,57 @@ const shouldRestartOnError = (bot, errorName = '') =>
 
 const shouldStopOnError = (bot, errorName = '') => {
     const stopErrors = ['SellNotAvailableCustom', 'ContractCreationFailure', 'InvalidtoBuy'];
-    if (stopErrors.includes(errorName) && botInitialized(bot)) {
-        return true;
-    }
+    if (stopErrors.includes(errorName) && botInitialized(bot)) return true;
     return false;
 };
 
 const timeMachineEnabled = bot => botInitialized(bot) && bot.tradeEngine.options.timeMachineEnabled;
 
-// TODO chek beforState & duringState & startState
 const Interpreter = () => {
     let $scope = createScope();
     let bot = Interface($scope);
     let interpreter = {};
     let onFinish;
-    let pausedAsyncCallbacks = [];
 
-    $scope.observer.register('REVERT', watchName =>
-        revert(watchName === 'before' ? $scope.beforeState : $scope.duringState)
-    );
+    $scope.observer.register('REVERT', watchName => revert(watchName === 'before' ? $scope.beforeState : $scope.duringState));
 
     function init() {
         $scope = createScope();
         bot = Interface($scope);
         interpreter = {};
         onFinish = () => {};
-        pausedAsyncCallbacks = [];
     }
 
     function revert(state) {
         interpreter.restoreStateSnapshot(state);
         interpreter.paused_ = false;
-        pausedAsyncCallbacks = [];
         loop();
     }
 
     function loop() {
-        // A paused bot keeps its interpreter and subscriptions alive, but no new
-        // interpreter step is allowed to execute until resume() is called.
         if ($scope.stopped || interpreter.paused_ || !interpreter.run()) {
             if (!$scope.stopped && interpreter.paused_) return;
             onFinish(interpreter.pseudoToNative(interpreter.value));
         }
     }
 
-    function flushPausedAsyncCallbacks() {
-        if (interpreter.paused_ || $scope.stopped) return;
-
-        // Resolve the async continuation only after Resume. This is important for
-        // trade blocks: a completed tick/proposal/purchase promise cannot advance
-        // the bot into another trade while the user has paused it.
-        const callbacks = pausedAsyncCallbacks;
-        pausedAsyncCallbacks = [];
-        callbacks.forEach(callback => callback());
-    }
-
     function createAsync(js_interpreter, func) {
         const asyncFunc = (...args) => {
             const callback = args.pop();
-
-            // Workaround for unknown number of args
             const reversed_args = args.slice().reverse();
             const first_defined_arg_idx = reversed_args.findIndex(arg => arg !== undefined);
-
-            // Remove extra undefined args from end of the args
             const function_args = first_defined_arg_idx < 0 ? [] : reversed_args.slice(first_defined_arg_idx).reverse();
-            // End of workaround
 
             func(...function_args.map(arg => js_interpreter.pseudoToNative(arg)))
                 .then(rv => {
-                    const continueInterpreter = () => {
-                        if ($scope.stopped) return;
-                        callback(js_interpreter.nativeToPseudo(rv));
-                        loop();
-                    };
-
-                    if (interpreter.paused_) {
-                        pausedAsyncCallbacks.push(continueInterpreter);
-                        return;
-                    }
-
-                    continueInterpreter();
+                    callback(js_interpreter.nativeToPseudo(rv));
+                    loop();
                 })
                 .catch(e => {
-                    // e.error for errors get from API, e for code errors
                     $scope.observer.emit('Error', e.error || e);
                 });
         };
 
-        // TODO: This is a workaround, create issue on original repo, once fixed
-        // remove this. We don't know how many args are going to be passed, so we
-        // assume a max of 100.
         const MAX_ACCEPTABLE_FUNC_ARGS = 100;
         Object.defineProperty(asyncFunc, 'length', { value: MAX_ACCEPTABLE_FUNC_ARGS + 1 });
         return js_interpreter.createAsyncFunction(asyncFunc);
@@ -129,60 +89,28 @@ const Interpreter = () => {
         js_interpreter.setProperty(scope, 'console', js_interpreter.nativeToPseudo(custom_console));
         js_interpreter.setProperty(scope, 'alert', js_interpreter.nativeToPseudo(alert));
         js_interpreter.setProperty(scope, 'prompt', js_interpreter.nativeToPseudo(prompt));
-        js_interpreter.setProperty(
-            scope,
-            'getPurchaseReference',
-            js_interpreter.nativeToPseudo(bot_interface.getPurchaseReference)
-        );
+        js_interpreter.setProperty(scope, 'getPurchaseReference', js_interpreter.nativeToPseudo(bot_interface.getPurchaseReference));
 
         const pseudo_bot_interface = js_interpreter.nativeToPseudo(bot_interface);
+        Object.entries(ticks_interface).forEach(([name, f]) => js_interpreter.setProperty(pseudo_bot_interface, name, createAsync(js_interpreter, f)));
 
-        Object.entries(ticks_interface).forEach(([name, f]) =>
-            js_interpreter.setProperty(pseudo_bot_interface, name, createAsync(js_interpreter, f))
-        );
-
-        js_interpreter.setProperty(
-            pseudo_bot_interface,
-            'start',
-            js_interpreter.nativeToPseudo((...args) => {
-                if (shouldRestartOnError(bot)) {
-                    $scope.startState = js_interpreter.takeStateSnapshot();
-                }
-                const { start } = bot_interface;
-                start(...args);
-            })
-        );
-
-        js_interpreter.setProperty(
-            pseudo_bot_interface,
-            'purchase',
-            createAsync(js_interpreter, bot_interface.purchase)
-        );
-        js_interpreter.setProperty(
-            pseudo_bot_interface,
-            'sellAtMarket',
-            createAsync(js_interpreter, bot_interface.sellAtMarket)
-        );
+        js_interpreter.setProperty(pseudo_bot_interface, 'start', js_interpreter.nativeToPseudo((...args) => {
+            if (shouldRestartOnError(bot)) $scope.startState = js_interpreter.takeStateSnapshot();
+            const { start } = bot_interface;
+            start(...args);
+        }));
+        js_interpreter.setProperty(pseudo_bot_interface, 'purchase', createAsync(js_interpreter, bot_interface.purchase));
+        js_interpreter.setProperty(pseudo_bot_interface, 'sellAtMarket', createAsync(js_interpreter, bot_interface.sellAtMarket));
         js_interpreter.setProperty(scope, 'Bot', pseudo_bot_interface);
-        js_interpreter.setProperty(
-            scope,
-            'watch',
-            createAsync(js_interpreter, watchName => {
-                const { watch } = bot.getInterface();
-
-                if (timeMachineEnabled(bot)) {
-                    const snapshot = interpreter.takeStateSnapshot();
-                    if (watchName === 'before') {
-                        $scope.beforeState = snapshot;
-                    } else {
-                        $scope.duringState = snapshot;
-                    }
-                }
-
-                return watch(watchName);
-            })
-        );
-
+        js_interpreter.setProperty(scope, 'watch', createAsync(js_interpreter, watchName => {
+            const { watch } = bot.getInterface();
+            if (timeMachineEnabled(bot)) {
+                const snapshot = interpreter.takeStateSnapshot();
+                if (watchName === 'before') $scope.beforeState = snapshot;
+                else $scope.duringState = snapshot;
+            }
+            return watch(watchName);
+        }));
         js_interpreter.setProperty(scope, 'sleep', createAsync(js_interpreter, sleep));
     }
 
@@ -190,39 +118,20 @@ const Interpreter = () => {
         return new Promise((resolve, reject) => {
             try {
                 const global_timeouts = globalObserver.getState('global_timeouts') ?? [];
-                const is_timeouts_cancellable = Object.keys(global_timeouts).every(
-                    timeout => global_timeouts[timeout].is_cancellable
-                );
-
+                const is_timeouts_cancellable = Object.keys(global_timeouts).every(timeout => global_timeouts[timeout].is_cancellable);
                 if (!bot.tradeEngine.contractId && is_timeouts_cancellable) {
                     api_base.is_stopping = true;
-                    // When user is rate limited, allow them to stop the bot immediately
-                    // granted there is no active contract.
                     global_timeouts.forEach(timeout => clearTimeout(global_timeouts[timeout]));
-                    terminateSession().then(() => {
-                        api_base.is_stopping = false;
-                        resolve();
-                    });
-                } else if (
-                    bot.tradeEngine.isSold === false &&
-                    !$scope.is_error_triggered &&
-                    isMultiplierContract(bot?.tradeEngine?.data?.contract?.contract_type ?? '')
-                ) {
+                    terminateSession().then(() => { api_base.is_stopping = false; resolve(); });
+                } else if (bot.tradeEngine.isSold === false && !$scope.is_error_triggered && isMultiplierContract(bot?.tradeEngine?.data?.contract?.contract_type ?? '')) {
                     globalObserver.register('contract.status', async contractStatus => {
-                        if (contractStatus.id === 'contract.sold') {
-                            terminateSession().then(() => resolve());
-                        }
+                        if (contractStatus.id === 'contract.sold') terminateSession().then(() => resolve());
                     });
                 } else {
                     api_base.is_stopping = true;
-                    terminateSession().then(() => {
-                        api_base.is_stopping = false;
-                        resolve();
-                    });
+                    terminateSession().then(() => { api_base.is_stopping = false; resolve(); });
                 }
-            } catch (e) {
-                reject(e);
-            }
+            } catch (e) { reject(e); }
         });
     }
 
@@ -232,32 +141,19 @@ const Interpreter = () => {
                 $scope.stopped = true;
                 $scope.is_error_triggered = false;
                 interpreter.paused_ = false;
-                pausedAsyncCallbacks = [];
                 globalObserver.emit('bot.stop');
                 const { ticksService } = $scope;
-                // Unsubscribe previous ticks_history subscription
-                // Unsubscribe the subscriptions from Proposal, Balance and OpenContract
                 api_base.clearSubscriptions();
-
-                ticksService.unsubscribeFromTicksService().then(() => {
-                    resolve();
-                });
-            } catch (error) {
-                reject(error);
-            }
+                ticksService.unsubscribeFromTicksService().then(() => resolve());
+            } catch (error) { reject(error); }
         });
     }
 
     async function unsubscribeFromTicksService() {
         const { ticksService } = $scope;
         return new Promise((resolve, reject) => {
-            try {
-                ticksService.unsubscribeFromTicksService().then(() => {
-                    resolve();
-                });
-            } catch (e) {
-                reject(e);
-            }
+            try { ticksService.unsubscribeFromTicksService().then(() => resolve()); }
+            catch (e) { reject(e); }
         });
     }
 
@@ -272,7 +168,6 @@ const Interpreter = () => {
         if ($scope.stopped || !interpreter || typeof interpreter.run !== 'function') return false;
         interpreter.paused_ = false;
         globalObserver.emit('bot.resumed');
-        flushPausedAsyncCallbacks();
         loop();
         return true;
     }
@@ -280,26 +175,15 @@ const Interpreter = () => {
     function run(code) {
         return new Promise((resolve, reject) => {
             const onError = e => {
-                if ($scope.stopped) {
-                    return;
-                }
-                // DBot handles 'InvalidToken' internally
-                if (e.code === 'InvalidToken') {
-                    globalObserver.emit('client.invalid_token');
-                    return;
-                }
+                if ($scope.stopped) return;
+                if (e.code === 'InvalidToken') { globalObserver.emit('client.invalid_token'); return; }
                 if (shouldStopOnError(bot, e?.code)) {
                     globalObserver.emit('ui.log.error', e.message);
                     globalObserver.emit('bot.click_stop');
                     return;
                 }
-
                 $scope.is_error_triggered = true;
-                if (!shouldRestartOnError(bot, e.code) || !botStarted(bot)) {
-                    reject(e);
-                    return;
-                }
-
+                if (!shouldRestartOnError(bot, e.code) || !botStarted(bot)) { reject(e); return; }
                 globalObserver.emit('Error', e);
                 const { initArgs, tradeOptions } = bot.tradeEngine;
                 terminateSession();
@@ -308,35 +192,17 @@ const Interpreter = () => {
                 bot.tradeEngine.init(...initArgs);
                 bot.tradeEngine.start(tradeOptions);
                 const canRestoreState = $scope.startState && interpreter?.restoreStateSnapshot instanceof Function;
-                if (canRestoreState) {
-                    revert($scope.startState);
-                }
+                if (canRestoreState) revert($scope.startState);
             };
-
             $scope.observer.register('Error', onError);
-
             interpreter = new JSInterpreter(code, initFunc);
             interpreter.paused_ = false;
-            pausedAsyncCallbacks = [];
             onFinish = resolve;
-
             loop();
         });
     }
 
-    return {
-        stop,
-        run,
-        pause,
-        resume,
-        terminateSession,
-        bot,
-        unsubscribeFromTicksService,
-        get isPaused() {
-            return Boolean(interpreter?.paused_);
-        },
-    };
+    return { stop, run, pause, resume, terminateSession, bot, unsubscribeFromTicksService, get isPaused() { return Boolean(interpreter?.paused_); } };
 };
 export default Interpreter;
-
 export const createInterpreter = () => new Interpreter();
