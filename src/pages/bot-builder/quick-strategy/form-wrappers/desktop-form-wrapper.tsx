@@ -13,7 +13,6 @@ import QSStepper from './qs-stepper';
 import StrategyTabContent from './strategy-tab-content';
 import StrategyTemplatePicker from './strategy-template-picker';
 import { QsSteps } from './trade-constants';
-import useQsSubmitHandler from './useQsSubmitHandler';
 
 type TDesktopFormWrapper = {
     children: React.ReactNode;
@@ -42,10 +41,9 @@ const QuickSelectionPanel = ({ selected_trade_type, selected_startegy_label, chi
 
 const FormWrapper = observer(({ children, current_step, setCurrentStep, onClickClose, selected_trade_type, setSelectedTradeType }: TDesktopFormWrapper) => {
     const scroll_ref = React.useRef<HTMLDivElement & SVGSVGElement>(null);
-    const { submitForm, isValid, setFieldValue, validateForm } = useFormikContext<TFormValues>();
+    const { submitForm, isValid, setFieldValue, validateForm, values } = useFormikContext<TFormValues>();
     const { quick_strategy } = useStore();
     const { selected_strategy, onSubmit, is_stop_bot_dialog_open } = quick_strategy;
-    const { handleSubmit } = useQsSubmitHandler();
     const selected_startegy_label = STRATEGIES()[selected_strategy as keyof typeof STRATEGIES].label;
     const is_selected_strategy_step = current_step === QsSteps.StrategySelect;
 
@@ -58,13 +56,12 @@ const FormWrapper = observer(({ children, current_step, setCurrentStep, onClickC
 
     const onLoad = async () => {
         await setFieldValue('action', 'EDIT');
-        validateForm();
-        submitForm();
-        // onSubmit() performs the Quick Strategy XML import into the active Blockly workspace.
-        // EDIT deliberately prevents the auto-run path; the loaded strategy remains in Bot Builder.
+        const errors = await validateForm();
+        if (Object.keys(errors).length) return;
+        await submitForm();
+        await onSubmit({ ...values, action: 'EDIT' } as TFormData);
     };
 
-    const onRun = () => { handleSubmit(); };
     const onBack = () => { setCurrentStep(QsSteps.StrategySelect); };
 
     const renderContent = React.useCallback(() => {
