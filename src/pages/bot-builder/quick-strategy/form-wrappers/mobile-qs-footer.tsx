@@ -21,8 +21,10 @@ export const MobileQSFooter = observer(({ current_step, setCurrentStep }: TMobil
         await setFieldValue('action', 'EDIT');
         const errors = await validateForm();
         if (Object.keys(errors).length) return;
+        const form_data = { ...values, action: 'EDIT' } as TFormData;
         await submitForm();
-        await quick_strategy.onSubmit({ ...values, action: 'EDIT' } as TFormData);
+        await quick_strategy.onSubmit(form_data);
+        quick_strategy.setFormVisibility(false);
     };
 
     const onBack = () => {
