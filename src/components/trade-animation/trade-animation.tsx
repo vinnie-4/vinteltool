@@ -2,6 +2,7 @@ import React from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
 import ContractResultOverlay from '@/components/contract-result-overlay';
+import ExecutionControl from '@/components/run-panel/execution-control';
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { contract_stages } from '@/constants/contract-stage';
 import { useStore } from '@/hooks/useStore';
@@ -168,9 +169,6 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
                     onClick={() => {
                         setShouldDisable(true);
                         if (is_stop_button_visible) {
-                            // The visible Run-panel Stop button performs one operation only:
-                            // stop the bot. It must not clear the summary, transactions,
-                            // journal, or any other Run-panel data.
                             try {
                                 window.__vinteltool_stopping = true;
                                 window.setTimeout(() => {
@@ -196,6 +194,9 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
                     {button_props.text}
                 </Button>
             )}
+
+            <ExecutionControl />
+
             <div
                 className={classNames('animation__container', className, {
                     'animation--running': contract_stage > 0,
