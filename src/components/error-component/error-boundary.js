@@ -12,11 +12,13 @@ class ErrorBoundary extends React.Component {
         if (window.TrackJS) window.TrackJS.console.log(this.props.root_store);
         console.error('[ErrorBoundary] Caught render error:', error, info);
 
-        // Do not turn an expected bot-stop exception into the global
-        // "Sorry for the interruption. Refresh" screen. The stop action is
-        // already guarded by the run-panel store; this is the final UI guard.
+        // Stop/cleanup can surface errors asynchronously, after the button
+        // handler has already returned. The stop lifecycle guard is set by
+        // TradeAnimation before bot cleanup begins, so suppress the global
+        // refresh screen for the entire expected cleanup window.
         const message = String(error?.message || error || '').toLowerCase();
         const stopRelated =
+            Boolean(window.__vinteltool_stopping) ||
             message.includes('stopbot') ||
             message.includes('terminatebot') ||
             message.includes('bot stop') ||
