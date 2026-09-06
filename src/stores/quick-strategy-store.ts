@@ -24,18 +24,13 @@ export type TLossThresholdWarningData = {
 
 interface IQuickStrategyStore {
     additional_data: Record<string, unknown>;
-    current_duration_min_max: {
-        min: number;
-        max: number;
-    };
+    current_duration_min_max: { min: number; max: number };
     root_store: RootStore;
     is_open: boolean;
     selected_strategy: string;
     selected_strategy_for_notofy: string;
     form_data: TFormData;
-    loss_threshold_warning_data: {
-        show: boolean;
-    };
+    loss_threshold_warning_data: { show: boolean };
     is_contract_dialog_open: boolean;
     is_stop_bot_dialog_open: boolean;
     is_options_loading: boolean;
@@ -63,13 +58,8 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
     is_contract_dialog_open = false;
     is_stop_bot_dialog_open = false;
     is_options_loading = false;
-    current_duration_min_max = {
-        min: 0,
-        max: 10,
-    };
-    loss_threshold_warning_data: TLossThresholdWarningData = {
-        show: false,
-    };
+    current_duration_min_max = { min: 0, max: 10 };
+    loss_threshold_warning_data: TLossThresholdWarningData = { show: false };
     additional_data = {};
 
     constructor(root_store: RootStore) {
@@ -98,39 +88,22 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
         this.root_store = root_store;
 
         const savedStrategy = getSetting('selected_strategy_for_notofy');
-        if (savedStrategy) {
-            this.selected_strategy_for_notofy = savedStrategy;
-        }
-        reaction(
-            () => this.is_open,
-            () => {
-                if (!this.is_open) {
-                    this.selected_strategy = 'MARTINGALE';
-                }
-            }
-        );
+        if (savedStrategy) this.selected_strategy_for_notofy = savedStrategy;
+        reaction(() => this.is_open, () => {
+            if (!this.is_open) this.selected_strategy = 'MARTINGALE';
+        });
     }
 
     setAdditionalData = (data: Record<string, unknown>) => {
-        this.additional_data = {
-            ...this.additional_data,
-            ...data,
-        };
+        this.additional_data = { ...this.additional_data, ...data };
     };
 
     setLossThresholdWarningData = (data: TLossThresholdWarningData) => {
-        this.loss_threshold_warning_data = {
-            ...this.loss_threshold_warning_data,
-            ...data,
-        };
+        this.loss_threshold_warning_data = { ...this.loss_threshold_warning_data, ...data };
     };
 
     initializeLossThresholdWarningData = () => {
-        this.loss_threshold_warning_data = {
-            show: false,
-            highlight_field: [],
-            already_shown: false,
-        };
+        this.loss_threshold_warning_data = { show: false, highlight_field: [], already_shown: false };
     };
 
     setFormVisibility = (is_open: boolean) => {
@@ -146,10 +119,7 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
     };
 
     setCurrentDurationMinMax = (min = 0, max = 10) => {
-        this.current_duration_min_max = {
-            min,
-            max,
-        };
+        this.current_duration_min_max = { min, max };
     };
 
     onSubmit = async (data: TFormData) => {
@@ -166,19 +136,20 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
         storeSetting('selected_strategy_for_notofy', this.selected_strategy);
 
         const strategy_xml = await import(/* webpackChunkName: `[request]` */ `../xml/${selected_strategy.name}.xml`);
+        if (!window.Blockly?.utils?.xml || !window.Blockly?.Xml) return;
         const strategy_dom = window.Blockly.utils.xml.textToDom(strategy_xml.default);
         addDynamicBlockToDOM('PREDICTION', 'last_digit_prediction', trade_type_cat, strategy_dom);
 
         const modifyValueInputs = (key: string, value: number) => {
             const el_value_inputs = strategy_dom?.querySelectorAll(`value[strategy_value="${key}"]`);
             el_value_inputs?.forEach((el_value_input: HTMLElement) => {
-                if (key.includes('boolean'))
-                    if (value)
-                        el_value_input.innerHTML = `<block type="logic_boolean"><field name="BOOL">TRUE</field></block>`;
-                    else
-                        el_value_input.innerHTML = `<block type="logic_boolean"><field name="BOOL">FALSE</field></block>`;
-                else
+                if (key.includes('boolean')) {
+                    el_value_input.innerHTML = value
+                        ? `<block type="logic_boolean"><field name="BOOL">TRUE</field></block>`
+                        : `<block type="logic_boolean"><field name="BOOL">FALSE</field></block>`;
+                } else {
                     el_value_input.innerHTML = `<shadow type="math_number"><field name="NUM">${value}</field></shadow>`;
+                }
             });
         };
 
@@ -205,17 +176,10 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
 
         Object.keys(fields_to_update).forEach(key => {
             const value = fields_to_update[key as keyof typeof fields_to_update];
-
-            if (!isNaN(value as number) && key !== 'growthrate') {
-                modifyValueInputs(key, value as number);
-            } else if (typeof value === 'string') {
-                modifyFieldDropdownValues(key, value);
-            }
+            if (!isNaN(value as number) && key !== 'growthrate') modifyValueInputs(key, value as number);
+            else if (typeof value === 'string') modifyFieldDropdownValues(key, value);
         });
 
-        // Blockly is mounted separately from the Quick Strategy modal. On fast loads,
-        // the modal can submit before derivWorkspace exists. Wait for the actual shared
-        // workspace instead of silently passing undefined to load().
         const waitForWorkspace = async (timeout = 10000) => {
             const started_at = Date.now();
             while (!window.Blockly?.derivWorkspace && Date.now() - started_at < timeout) {
@@ -227,22 +191,48 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
         const workspace = await waitForWorkspace();
         if (!workspace) return;
 
+        // Register the block-create waiter before loading the XML. Blockly creates the
+        // blocks during load; waiting for that event prevents Run from racing Blockly's
+        // change listeners and generator initialization.
+        let block_create_promise: Promise<unknown> | null = null;
+        if (action === 'RUN' && typeof workspace.waitForBlockEvent === 'function') {
+            block_create_promise = workspace.waitForBlockEvent({
+                block_type: 'trade_definition',
+                event_type: window.Blockly.Events.BLOCK_CREATE,
+                timeout: 5000,
+            });
+        }
+
         this.setFormVisibility(false);
 
-        await load({
-            block_string: window.Blockly.Xml.domToText(strategy_dom),
-            file_name: selected_strategy.label,
-            workspace,
-            from: save_types.UNSAVED,
-            drop_event: null,
-            strategy_id: null,
-            showIncompatibleStrategyDialog: null,
-        });
+        try {
+            await load({
+                block_string: window.Blockly.Xml.domToText(strategy_dom),
+                file_name: selected_strategy.label,
+                workspace,
+                from: save_types.UNSAVED,
+                drop_event: null,
+                strategy_id: null,
+                showIncompatibleStrategyDialog: null,
+            });
 
-        // Run only after the strategy has actually finished loading into the workspace.
-        // This removes the race between waitForBlockEvent and loadWorkspace().
-        if (action === 'RUN') {
-            this.root_store.run_panel.onRunButtonClick();
+            if (block_create_promise) {
+                try {
+                    await block_create_promise;
+                } catch (error) {
+                    console.warn('[QuickStrategy] trade_definition creation wait failed; strategy is still loaded.', error);
+                }
+            }
+
+            // Give Blockly's synchronous load/change handlers one browser turn to finish
+            // before generating code or starting the interpreter.
+            if (action === 'RUN') {
+                await new Promise(resolve => setTimeout(resolve, 0));
+                await this.root_store.run_panel.onRunButtonClick();
+            }
+        } catch (error) {
+            console.error('[QuickStrategy] Failed to import/run strategy:', error);
+            this.setFormVisibility(true);
         }
     };
 
