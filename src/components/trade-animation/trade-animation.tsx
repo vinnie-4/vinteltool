@@ -28,7 +28,7 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
     const { has_active_bot, has_saved_bots } = blockly_store;
     const { isMobile } = useDevice();
     const { is_contract_completed, profit } = summary_card;
-    const { contract_stage, is_stop_button_visible, is_stop_button_disabled, is_running, is_paused, onRunButtonClick, stopBot } = run_panel;
+    const { contract_stage, is_stop_button_visible, is_stop_button_disabled, is_running, is_paused, onRunButtonClick, onPauseResumeButtonClick, stopBot } = run_panel;
     const [shouldDisable, setShouldDisable] = React.useState(false);
     const is_unavailable_for_payment_agent = false;
     const { load_modal } = useStore();
@@ -78,8 +78,6 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
     const is_disabled = is_stop_button_visible ? false : shouldDisable || should_disable_run;
     const should_show_tooltip = !is_stop_button_visible && !is_bot_builder_tab && has_no_bots;
 
-    // Pause/Resume remain visually attached to the Run button, but have no
-    // execution wiring. The original Run action is only called while idle.
     const runButton = (
         <Button
             is_disabled={is_stop_button_visible ? false : ((is_disabled && !is_unavailable_for_payment_agent) || contract_stage === 3)}
@@ -93,7 +91,10 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
                 )
             }
             onClick={() => {
-                if (is_stop_button_visible && is_running) return;
+                if (is_stop_button_visible && is_running) {
+                    onPauseResumeButtonClick();
+                    return;
+                }
                 setShouldDisable(true);
                 onRunButtonClick();
             }}
