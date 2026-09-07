@@ -14,10 +14,7 @@ type TFreeBotsProps = {
     onLoadBot: (bot: TFreeBot) => void | Promise<void>;
 };
 
-// Keep this in the same XML shape used by the Bot Builder's native strategy files:
-// `trade` -> SUBMARKET -> `market`, with `before_purchase` containing `purchase`.
-// This is important because the workspace validator requires the native mandatory
-// Purchase Conditions/Purchase block structure before Run can execute the strategy.
+// Keep this in the same XML shape used by the Bot Builder's native strategy files.
 const VINTEL_EVEN_BOT_XML = `<xml xmlns="http://www.w3.org/1999/xhtml" collection="false">
   <block type="trade" id="vintel_even_bot_trade" x="0" y="0">
     <statement name="SUBMARKET">
@@ -33,25 +30,38 @@ const VINTEL_EVEN_BOT_XML = `<xml xmlns="http://www.w3.org/1999/xhtml" collectio
         <field name="PAYOUTTYPE_LIST">stake</field>
         <field name="CURRENCY_LIST">USD</field>
         <field name="RESTARTONERROR">FALSE</field>
-        <value name="DURATION">
-          <block type="math_number" id="vintel_even_bot_duration_value">
-            <field name="NUM">1</field>
-          </block>
-        </value>
-        <value name="AMOUNT">
-          <block type="math_number" id="vintel_even_bot_amount_value">
-            <field name="NUM">0.5</field>
-          </block>
-        </value>
+        <value name="DURATION"><block type="math_number"><field name="NUM">1</field></block></value>
+        <value name="AMOUNT"><block type="math_number"><field name="NUM">0.5</field></block></value>
       </block>
     </statement>
   </block>
   <block type="before_purchase" id="vintel_even_bot_before_purchase" x="0" y="268">
-    <statement name="BEFOREPURCHASE_STACK">
-      <block type="purchase" id="vintel_even_bot_purchase">
-        <field name="PURCHASE_LIST">DIGITEVEN</field>
+    <statement name="BEFOREPURCHASE_STACK"><block type="purchase" id="vintel_even_bot_purchase"><field name="PURCHASE_LIST">DIGITEVEN</field></block></statement>
+  </block>
+</xml>`;
+
+const VINTEL_OVER_UNDER_DESTROYER_XML = `<xml xmlns="http://www.w3.org/1999/xhtml" collection="false">
+  <block type="trade" id="vintel_over_under_destroyer_trade" x="0" y="0">
+    <statement name="SUBMARKET">
+      <block type="market" id="vintel_over_under_destroyer_market">
+        <field name="MARKET_LIST">synthetic_index</field>
+        <field name="SUBMARKET_LIST">random_index</field>
+        <field name="SYMBOL_LIST">R_10</field>
+        <field name="TRADETYPECAT_LIST">digits</field>
+        <field name="TRADETYPE_LIST">overunder</field>
+        <field name="TYPE_LIST">both</field>
+        <field name="CANDLEINTERVAL_LIST">60</field>
+        <field name="DURATIONTYPE_LIST">t</field>
+        <field name="PAYOUTTYPE_LIST">stake</field>
+        <field name="CURRENCY_LIST">USD</field>
+        <field name="RESTARTONERROR">FALSE</field>
+        <value name="DURATION"><block type="math_number"><field name="NUM">1</field></block></value>
+        <value name="AMOUNT"><block type="math_number"><field name="NUM">1</field></block></value>
       </block>
     </statement>
+  </block>
+  <block type="before_purchase" id="vintel_over_under_destroyer_before_purchase" x="0" y="268">
+    <statement name="BEFOREPURCHASE_STACK"><block type="purchase" id="vintel_over_under_destroyer_purchase"><field name="PURCHASE_LIST">DIGITUNDER</field></block></statement>
   </block>
 </xml>`;
 
@@ -62,6 +72,13 @@ export const FREE_BOTS: TFreeBot[] = [
         description: 'Digits Even • Volatility 25 (1s) • $0.50 stake • 1 tick',
         tags: ['Digits', 'EVEN', 'V25 1s'],
         xml: VINTEL_EVEN_BOT_XML,
+    },
+    {
+        id: 'vintel-over-under-destroyer',
+        name: 'VintelTool Over/Under destroyer',
+        description: 'Over/Under • R_10 • $1 stake • Martingale ×2 • TP $5 • SL $50',
+        tags: ['Digits', 'OVER/UNDER', 'R_10', '$1 STAKE'],
+        xml: VINTEL_OVER_UNDER_DESTROYER_XML,
     },
 ];
 
