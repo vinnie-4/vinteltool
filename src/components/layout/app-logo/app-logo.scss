@@ -15,10 +15,15 @@
         min-width: 0;
     }
 
+    // Keep the existing 32px logo height, but render the logo itself as a
+    // circular icon without changing its rendered height.
     &__logo-img {
-        width: auto;
-        max-width: 160px;
-        object-fit: contain;
+        width: 32px;
+        height: 32px !important;
+        max-width: 32px;
+        object-fit: cover;
+        border-radius: 50%;
+        display: block;
     }
 
     // Letter-badge fallback shown when no logo file/data URL is available.
@@ -27,7 +32,7 @@
         align-items: center;
         justify-content: center;
         flex: none;
-        border-radius: 0.8rem;
+        border-radius: 50%;
         background: color-mix(in srgb, var(--brand-primary, var(--text-general)) 10%, transparent);
         color: var(--brand-primary, var(--text-general));
         font-weight: 700;
