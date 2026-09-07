@@ -2,6 +2,7 @@ import { LogTypes } from '../../../constants/messages';
 import { api_base } from '../../api/api-base';
 import { contractStatus, info, log } from '../utils/broadcast';
 import { doUntilDone, getUUID, recoverFromError, tradeOptionToBuy } from '../utils/helpers';
+import { waitForExecutionResume } from '../execution/pause-controller';
 import { purchaseSuccessful } from './state/actions';
 import { BEFORE_PURCHASE } from './state/constants';
 
@@ -10,8 +11,18 @@ let purchase_reference;
 
 export default Engine =>
     class Purchase extends Engine {
-        purchase(contract_type) {
+        async purchase(contract_type) {
             // Prevent calling purchase twice
+            if (this.store.getState().scope !== BEFORE_PURCHASE) {
+                return Promise.resolve();
+            }
+
+            // Pause gates only the next purchase. It does not restart the engine,
+            // alter Run/Stop wiring, disconnect the socket, or reset strategy state.
+            await waitForExecutionResume();
+
+            // Re-check the purchase scope after a pause so Resume cannot submit a
+            // duplicate purchase if another execution path already advanced state.
             if (this.store.getState().scope !== BEFORE_PURCHASE) {
                 return Promise.resolve();
             }
