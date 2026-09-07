@@ -3,6 +3,7 @@ import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
 import ContractResultOverlay from '@/components/contract-result-overlay';
 import ExecutionControl from '@/components/run-panel/execution-control';
+import { pauseExecution, resumeExecution } from '@/external/bot-skeleton/services/tradeEngine/execution/pause-controller';
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { contract_stages } from '@/constants/contract-stage';
 import { useStore } from '@/hooks/useStore';
@@ -30,7 +31,6 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
     const { is_contract_completed, profit } = summary_card;
     const { contract_stage, is_stop_button_visible, is_stop_button_disabled, is_running, onRunButtonClick, stopBot } = run_panel;
     const [shouldDisable, setShouldDisable] = React.useState(false);
-    // Visual-only Pause/Resume state. It intentionally has no connection to the trading engine.
     const [is_pause_resume_visual, setIsPauseResumeVisual] = React.useState(false);
     const is_unavailable_for_payment_agent = false;
     const { load_modal } = useStore();
@@ -44,7 +44,11 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
     }, [dashboard_strategies, is_delete_modal_open, is_stop_button_visible]);
 
     React.useEffect(() => {
-        if (!is_stop_button_visible) setIsPauseResumeVisual(false);
+        if (!is_stop_button_visible) {
+            setIsPauseResumeVisual(false);
+            // A stopped bot must never leave the next Run paused.
+            resumeExecution();
+        }
     }, [is_stop_button_visible]);
 
     React.useEffect(() => {
@@ -98,9 +102,13 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
             }
             onClick={() => {
                 if (is_stop_button_visible && is_running) {
-                    // Pause/Resume is intentionally visual-only for now.
-                    // Do NOT call the trading engine until this feature is wired later.
-                    setIsPauseResumeVisual(current => !current);
+                    if (is_pause_resume_visual) {
+                        resumeExecution();
+                        setIsPauseResumeVisual(false);
+                    } else {
+                        pauseExecution();
+                        setIsPauseResumeVisual(true);
+                    }
                     return;
                 }
                 setShouldDisable(true);
