@@ -10,7 +10,7 @@ import './app-logo.scss';
 export const AppLogo = () => {
     return (
         <a href='/' className='app-header__logo' aria-label={localize('Home')}>
-            <LogoMark height={32} />
+            <LogoMark height={34} />
         </a>
     );
 };
