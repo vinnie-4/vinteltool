@@ -14,31 +14,44 @@ type TFreeBotsProps = {
     onLoadBot: (bot: TFreeBot) => void | Promise<void>;
 };
 
-const VINTEL_EVEN_BOT_XML = `<xml xmlns="https://developers.google.com/blockly/xml">
-  <block type="trade_definition" id="vintel_even_bot_trade" x="20" y="20">
-    <statement name="TRADE_OPTIONS">
-      <block type="trade_definition_market" id="vintel_even_bot_market">
-        <field name="MARKET_LIST">synthetic_index</field>
+// Keep this in the same XML shape used by the Bot Builder's native strategy files:
+// `trade` -> SUBMARKET -> `market`, with `before_purchase` containing `purchase`.
+// This is important because the workspace validator requires the native mandatory
+// Purchase Conditions/Purchase block structure before Run can execute the strategy.
+const VINTEL_EVEN_BOT_XML = `<xml xmlns="http://www.w3.org/1999/xhtml" collection="false">
+  <block type="trade" id="vintel_even_bot_trade" x="0" y="0">
+    <statement name="SUBMARKET">
+      <block type="market" id="vintel_even_bot_market">
+        <field name="MARKET_LIST">volidx</field>
         <field name="SUBMARKET_LIST">random_index</field>
         <field name="SYMBOL_LIST">R_25_1S</field>
-        <next><block type="trade_definition_tradetype" id="vintel_even_bot_type">
-          <field name="TRADETYPECAT_LIST">digits</field><field name="TRADETYPE_LIST">evenodd</field>
-          <next><block type="trade_definition_contracttype" id="vintel_even_bot_contract">
-            <field name="TYPE_LIST">EVEN</field>
-            <next><block type="trade_definition_duration" id="vintel_even_bot_duration">
-              <field name="DURATIONTYPE_LIST">t</field>
-              <value name="DURATION"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
-              <next><block type="trade_definition_amount" id="vintel_even_bot_amount">
-                <value name="AMOUNT"><shadow type="math_number"><field name="NUM">0.5</field></shadow></value>
-              </block></next>
-            </block></next>
-          </block></next>
-        </block></next>
+        <field name="TRADETYPECAT_LIST">digits</field>
+        <field name="TRADETYPE_LIST">evenodd</field>
+        <field name="TYPE_LIST">both</field>
+        <field name="CANDLEINTERVAL_LIST">60</field>
+        <field name="DURATIONTYPE_LIST">t</field>
+        <field name="PAYOUTTYPE_LIST">stake</field>
+        <field name="CURRENCY_LIST">USD</field>
+        <field name="RESTARTONERROR">FALSE</field>
+        <value name="DURATION">
+          <block type="math_number" id="vintel_even_bot_duration_value">
+            <field name="NUM">1</field>
+          </block>
+        </value>
+        <value name="AMOUNT">
+          <block type="math_number" id="vintel_even_bot_amount_value">
+            <field name="NUM">0.5</field>
+          </block>
+        </value>
       </block>
     </statement>
   </block>
-  <block type="before_purchase" id="vintel_even_bot_before_purchase" x="20" y="420">
-    <statement name="BEFOREPURCHASE"><block type="purchase" id="vintel_even_bot_purchase"><field name="PURCHASE_LIST">EVEN</field></block></statement>
+  <block type="before_purchase" id="vintel_even_bot_before_purchase" x="0" y="268">
+    <statement name="BEFOREPURCHASE_STACK">
+      <block type="purchase" id="vintel_even_bot_purchase">
+        <field name="PURCHASE_LIST">DIGITEVEN</field>
+      </block>
+    </statement>
   </block>
 </xml>`;
 
