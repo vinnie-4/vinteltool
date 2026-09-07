@@ -144,14 +144,11 @@ const AppHeader = observer(() => {
                         </div>
                     );
                 } else if (position === 'right') {
-                    // For right section - transfer button (and account switcher on desktop)
+                    // Keep the existing controls/handlers intact; visually interchange
+                    // the account and transfer controls so Transfer occupies the account
+                    // control's former position and the account control follows it.
                     return (
                         <div className='auth-actions'>
-                            {isDesktop && (
-                                <div className='account-info'>
-                                    <AccountSwitcher activeAccount={activeAccount} />
-                                </div>
-                            )}
                             <Button
                                 primary
                                 disabled={client?.is_logging_out || !authData?.currency}
@@ -159,6 +156,11 @@ const AppHeader = observer(() => {
                             >
                                 <Localize i18n_default_text='Transfer' />
                             </Button>
+                            {isDesktop && (
+                                <div className='account-info'>
+                                    <AccountSwitcher activeAccount={activeAccount} />
+                                </div>
+                            )}
                         </div>
                     );
                 }
