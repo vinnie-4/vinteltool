@@ -3,8 +3,8 @@
   <variables>
     <variable type="" id="vintel_stake">Stake</variable>
     <variable type="" id="vintel_martingale">Martingale</variable>
+    <variable type="" id="vintel_direction">Direction</variable>
     <variable type="" id="vintel_prediction">Prediction</variable>
-    <variable type="" id="vintel_next_trade">NextTrade</variable>
   </variables>
   <block type="trade_definition" id="vintel_over_under_destroyer_trade" x="0" y="0">
     <statement name="TRADE_OPTIONS">
@@ -17,8 +17,8 @@
             <field name="TRADETYPECAT_LIST">digits</field>
             <field name="TRADETYPE_LIST">overunder</field>
             <next>
-              <block type="trade_definition_contracttype" id="vintel_over_under_contract" deletable="false" movable="false">
-                <field name="TYPE_LIST">both</field>
+              <block type="trade_definition_contracttype" id="vintel_over_contract_under" deletable="false" movable="false">
+                <field name="TYPE_LIST">DIGITUNDER</field>
                 <next>
                   <block type="trade_definition_candleinterval" id="vintel_over_under_candle" deletable="false" movable="false">
                     <field name="CANDLEINTERVAL_LIST">60</field>
@@ -49,13 +49,13 @@
             <field name="VAR" id="vintel_martingale" variabletype="">Martingale</field>
             <value name="VALUE"><block type="math_number"><field name="NUM">2</field></block></value>
             <next>
-              <block type="variables_set" id="vintel_set_prediction">
-                <field name="VAR" id="vintel_prediction" variabletype="">Prediction</field>
-                <value name="VALUE"><block type="math_number"><field name="NUM">4</field></block></value>
+              <block type="variables_set" id="vintel_set_direction">
+                <field name="VAR" id="vintel_direction" variabletype="">Direction</field>
+                <value name="VALUE"><block type="math_number"><field name="NUM">0</field></block></value>
                 <next>
-                  <block type="variables_set" id="vintel_set_next_trade">
-                    <field name="VAR" id="vintel_next_trade" variabletype="">NextTrade</field>
-                    <value name="VALUE"><block type="text"><field name="TEXT">UNDER</field></block></value>
+                  <block type="variables_set" id="vintel_set_prediction">
+                    <field name="VAR" id="vintel_prediction" variabletype="">Prediction</field>
+                    <value name="VALUE"><block type="math_number"><field name="NUM">4</field></block></value>
                   </block>
                 </next>
               </block>
@@ -76,48 +76,14 @@
   </block>
   <block type="before_purchase" id="vintel_over_under_before_purchase" x="0" y="620">
     <statement name="BEFOREPURCHASE_STACK">
-      <block type="controls_if" id="vintel_over_under_alternator">
+      <block type="controls_if" id="vintel_purchase_selector">
         <mutation else="1"></mutation>
-        <value name="IF0">
-          <block type="logic_compare">
-            <field name="OP">EQ</field>
-            <value name="A"><block type="variables_get"><field name="VAR" id="vintel_next_trade" variabletype="">NextTrade</field></block></value>
-            <value name="B"><block type="text"><field name="TEXT">UNDER</field></block></value>
-          </block>
-        </value>
+        <value name="IF0"><block type="logic_compare"><field name="OP">EQ</field><value name="A"><block type="variables_get"><field name="VAR" id="vintel_direction" variabletype="">Direction</field></block></value><value name="B"><block type="math_number"><field name="NUM">0</field></block></value></block></value>
         <statement name="DO0">
-          <block type="variables_set" id="vintel_set_under_prediction">
-            <field name="VAR" id="vintel_prediction" variabletype="">Prediction</field>
-            <value name="VALUE"><block type="math_number"><field name="NUM">4</field></block></value>
-            <next>
-              <block type="purchase" id="vintel_over_under_purchase_under">
-                <field name="PURCHASE_LIST">DIGITUNDER</field>
-                <next>
-                  <block type="variables_set" id="vintel_next_over">
-                    <field name="VAR" id="vintel_next_trade" variabletype="">NextTrade</field>
-                    <value name="VALUE"><block type="text"><field name="TEXT">OVER</field></block></value>
-                  </block>
-                </next>
-              </block>
-            </next>
-          </block>
+          <block type="variables_set" id="vintel_prepare_under_prediction"><field name="VAR" id="vintel_prediction" variabletype="">Prediction</field><value name="VALUE"><block type="math_number"><field name="NUM">4</field></block></value><next><block type="purchase" id="vintel_purchase_under"><field name="PURCHASE_LIST">DIGITUNDER</field></block></next></block>
         </statement>
         <statement name="ELSE">
-          <block type="variables_set" id="vintel_set_over_prediction">
-            <field name="VAR" id="vintel_prediction" variabletype="">Prediction</field>
-            <value name="VALUE"><block type="math_number"><field name="NUM">5</field></block></value>
-            <next>
-              <block type="purchase" id="vintel_over_under_purchase_over">
-                <field name="PURCHASE_LIST">DIGITOVER</field>
-                <next>
-                  <block type="variables_set" id="vintel_next_under">
-                    <field name="VAR" id="vintel_next_trade" variabletype="">NextTrade</field>
-                    <value name="VALUE"><block type="text"><field name="TEXT">UNDER</field></block></value>
-                  </block>
-                </next>
-              </block>
-            </next>
-          </block>
+          <block type="variables_set" id="vintel_prepare_over_prediction"><field name="VAR" id="vintel_prediction" variabletype="">Prediction</field><value name="VALUE"><block type="math_number"><field name="NUM">5</field></block></value><next><block type="purchase" id="vintel_purchase_over"><field name="PURCHASE_LIST">DIGITOVER</field></block></next></block>
         </statement>
       </block>
     </statement>
@@ -128,10 +94,12 @@
         <mutation else="1"></mutation>
         <value name="IF0"><block type="contract_check_result"><field name="CHECK_RESULT">win</field></block></value>
         <statement name="DO0">
-          <block type="variables_set"><field name="VAR" id="vintel_stake" variabletype="">Stake</field><value name="VALUE"><block type="math_number"><field name="NUM">1</field></block></value><next><block type="trade_again"/></next></block>
+          <block type="variables_set" id="vintel_reset_stake_win"><field name="VAR" id="vintel_stake" variabletype="">Stake</field><value name="VALUE"><block type="math_number"><field name="NUM">1</field></block></value>
+          <next><block type="controls_if" id="vintel_toggle_win"><value name="IF0"><block type="logic_compare"><field name="OP">EQ</field><value name="A"><block type="variables_get"><field name="VAR" id="vintel_direction" variabletype="">Direction</field></block></value><value name="B"><block type="math_number"><field name="NUM">0</field></block></value></block></value><statement name="DO0"><block type="variables_set"><field name="VAR" id="vintel_direction" variabletype="">Direction</field><value name="VALUE"><block type="math_number"><field name="NUM">1</field></block></value></block></statement><next><block type="variables_set"><field name="VAR" id="vintel_prediction" variabletype="">Prediction</field><value name="VALUE"><block type="math_number"><field name="NUM">5</field></block></value><next><block type="trade_again"/></next></block></next></block>
         </statement>
         <statement name="ELSE">
-          <block type="variables_set"><field name="VAR" id="vintel_stake" variabletype="">Stake</field><value name="VALUE"><block type="math_arithmetic"><field name="OP">MULTIPLY</field><value name="A"><block type="variables_get"><field name="VAR" id="vintel_stake" variabletype="">Stake</field></block></value><value name="B"><block type="variables_get"><field name="VAR" id="vintel_martingale" variabletype="">Martingale</field></block></value></block></value><next><block type="trade_again"/></next></block>
+          <block type="variables_set" id="vintel_martingale_stake_loss"><field name="VAR" id="vintel_stake" variabletype="">Stake</field><value name="VALUE"><block type="math_arithmetic"><field name="OP">MULTIPLY</field><value name="A"><block type="variables_get"><field name="VAR" id="vintel_stake" variabletype="">Stake</field></block></value><value name="B"><block type="variables_get"><field name="VAR" id="vintel_martingale" variabletype="">Martingale</field></block></value></block></value>
+          <next><block type="controls_if" id="vintel_toggle_loss"><value name="IF0"><block type="logic_compare"><field name="OP">EQ</field><value name="A"><block type="variables_get"><field name="VAR" id="vintel_direction" variabletype="">Direction</field></block></value><value name="B"><block type="math_number"><field name="NUM">0</field></block></value></block></value><statement name="DO0"><block type="variables_set"><field name="VAR" id="vintel_direction" variabletype="">Direction</field><value name="VALUE"><block type="math_number"><field name="NUM">1</field></block></value></block></statement><next><block type="variables_set"><field name="VAR" id="vintel_prediction" variabletype="">Prediction</field><value name="VALUE"><block type="math_number"><field name="NUM">5</field></block></value><next><block type="trade_again"/></next></block></next></block>
         </statement>
       </block>
     </statement>
