@@ -2,7 +2,7 @@ import { LogTypes } from '../../../constants/messages';
 import { api_base } from '../../api/api-base';
 import { contractStatus, info, log } from '../utils/broadcast';
 import { doUntilDone, getUUID, recoverFromError, tradeOptionToBuy } from '../utils/helpers';
-import { waitForExecutionResume } from '../execution/pause-controller';
+import { isExecutionPaused, waitForExecutionResume } from '../execution/pause-controller';
 import { purchaseSuccessful } from './state/actions';
 import { BEFORE_PURCHASE } from './state/constants';
 
@@ -17,9 +17,18 @@ export default Engine =>
                 return Promise.resolve();
             }
 
-            // Pause gates only the next purchase. It does not restart the engine,
-            // alter Run/Stop wiring, disconnect the socket, or reset strategy state.
-            await waitForExecutionResume();
+            // If execution is paused, only the first pending purchase may wait for
+            // Resume. Additional callers must not continue, preventing Resume from
+            // releasing multiple queued purchase attempts at once.
+            if (isExecutionPaused()) {
+                if (this.__vinteltool_pause_purchase_waiting) return Promise.resolve();
+                this.__vinteltool_pause_purchase_waiting = true;
+                try {
+                    await waitForExecutionResume();
+                } finally {
+                    this.__vinteltool_pause_purchase_waiting = false;
+                }
+            }
 
             // Re-check the purchase scope after a pause so Resume cannot submit a
             // duplicate purchase if another execution path already advanced state.
