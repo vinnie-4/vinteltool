@@ -1,33 +1,19 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './styles.scss';
 
 const DIGITS = Array.from({ length: 10 }, (_, i) => i);
 const VOLATILITY_INDICES = [
-    'Volatility 10', 'Volatility 10 (1s)', 'Volatility 15 (1s)', 'Volatility 25', 'Volatility 25 (1s)',
-    'Volatility 30 (1s)', 'Volatility 50', 'Volatility 50 (1s)', 'Volatility 75', 'Volatility 75 (1s)',
-    'Volatility 90 (1s)', 'Volatility 100', 'Volatility 100 (1s)',
-];
+    ['Volatility 10', 'R_10'], ['Volatility 10 (1s)', '1HZ10V'], ['Volatility 15 (1s)', '1HZ15V'],
+    ['Volatility 25', 'R_25'], ['Volatility 25 (1s)', '1HZ25V'], ['Volatility 30 (1s)', '1HZ30V'],
+    ['Volatility 50', 'R_50'], ['Volatility 50 (1s)', '1HZ50V'], ['Volatility 75', 'R_75'],
+    ['Volatility 75 (1s)', '1HZ75V'], ['Volatility 90 (1s)', '1HZ90V'], ['Volatility 100', 'R_100'],
+    ['Volatility 100 (1s)', '1HZ100V'],
+] as const;
 
-const SYMBOLS: Record<string, string> = {
-    'Volatility 10': 'R_10',
-    'Volatility 10 (1s)': '1HZ10V',
-    'Volatility 15 (1s)': '1HZ15V',
-    'Volatility 25': 'R_25',
-    'Volatility 25 (1s)': '1HZ25V',
-    'Volatility 30 (1s)': '1HZ30V',
-    'Volatility 50': 'R_50',
-    'Volatility 50 (1s)': '1HZ50V',
-    'Volatility 75': 'R_75',
-    'Volatility 75 (1s)': '1HZ75V',
-    'Volatility 90 (1s)': '1HZ90V',
-    'Volatility 100': 'R_100',
-    'Volatility 100 (1s)': '1HZ100V',
-};
+const ANALYSIS_WINDOWS = [500, 300, 100, 50, 10];
+const WS_URL = 'wss://ws.derivws.com/websockets/v3';
 
-const WINDOW_SIZE = 500;
-const DEFAULT_APP_ID = '1089';
-
-const getLastDigit = (quote: number | string) => {
+const getLastDigit = (quote: number) => {
     const text = String(quote);
     const decimal = text.split('.')[1];
     return Number((decimal || text).slice(-1));
@@ -35,101 +21,72 @@ const getLastDigit = (quote: number | string) => {
 
 const AnalysisTool = () => {
     const [expanded, setExpanded] = useState<string | null>(null);
-    const [selectedIndex, setSelectedIndex] = useState(VOLATILITY_INDICES[0]);
-    const [digits, setDigits] = useState<number[]>([]);
+    const [selectedIndex, setSelectedIndex] = useState(VOLATILITY_INDICES[0][0]);
+    const [windowSize, setWindowSize] = useState(500);
+    const [ticks, setTicks] = useState<number[]>([]);
     const [latestDigit, setLatestDigit] = useState<number | null>(null);
-    const [connection, setConnection] = useState<'connecting' | 'live' | 'offline'>('connecting');
-    const socketRef = useRef<WebSocket | null>(null);
-    const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const sequenceRef = useRef<number[]>([]);
-    const requestIdRef = useRef(1);
+    const [connected, setConnected] = useState(false);
+    const wsRef = useRef<WebSocket | null>(null);
+    const reconnectRef = useRef<number | null>(null);
+    const selectedSymbol = VOLATILITY_INDICES.find(([name]) => name === selectedIndex)?.[1] || 'R_10';
 
-    const appId = (typeof window !== 'undefined' && (window as any).__DERIV_APP_ID__) ||
-        (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_DERIV_APP_ID) || DEFAULT_APP_ID;
+    const connect = useCallback(() => {
+        if (reconnectRef.current) window.clearTimeout(reconnectRef.current);
+        wsRef.current?.close();
+
+        const ws = new WebSocket(WS_URL);
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+            setConnected(true);
+            ws.send(JSON.stringify({ ticks_history: selectedSymbol, count: 500, end: 'latest', style: 'ticks', subscribe: 1 }));
+        };
+
+        ws.onmessage = event => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.error) return;
+                if (Array.isArray(data.history?.prices)) {
+                    const history = data.history.prices.map(Number).filter(Number.isFinite);
+                    setTicks(history.slice(-500));
+                    if (history.length) setLatestDigit(getLastDigit(history[history.length - 1]));
+                }
+                if (data.tick?.quote !== undefined) {
+                    const quote = Number(data.tick.quote);
+                    if (!Number.isFinite(quote)) return;
+                    const digit = getLastDigit(quote);
+                    setLatestDigit(digit);
+                    setTicks(previous => [...previous, quote].slice(-500));
+                }
+            } catch {
+                // Ignore malformed/non-data WebSocket messages.
+            }
+        };
+
+        ws.onclose = () => {
+            setConnected(false);
+            reconnectRef.current = window.setTimeout(connect, 2500);
+        };
+        ws.onerror = () => setConnected(false);
+    }, [selectedSymbol]);
 
     useEffect(() => {
-        let disposed = false;
-
-        const connect = () => {
-            if (disposed) return;
-            setConnection('connecting');
-            const socket = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${encodeURIComponent(appId)}`);
-            socketRef.current = socket;
-
-            socket.onopen = () => {
-                if (disposed) return;
-                setConnection('live');
-                const symbol = SYMBOLS[selectedIndex];
-                const historyId = requestIdRef.current++;
-                socket.send(JSON.stringify({
-                    ticks_history: symbol,
-                    adjust_start_time: 1,
-                    count: WINDOW_SIZE,
-                    end: 'latest',
-                    start: 1,
-                    style: 'ticks',
-                    req_id: historyId,
-                }));
-                socket.send(JSON.stringify({ ticks: symbol, subscribe: 1, req_id: requestIdRef.current++ }));
-            };
-
-            socket.onmessage = event => {
-                try {
-                    const data = JSON.parse(event.data);
-                    if (data.error) return;
-
-                    if (data.history?.prices) {
-                        const historyDigits = data.history.prices.map((quote: number | string) => getLastDigit(quote));
-                        sequenceRef.current = historyDigits.slice(-WINDOW_SIZE);
-                        setDigits(sequenceRef.current);
-                        const last = sequenceRef.current[sequenceRef.current.length - 1];
-                        if (last !== undefined) setLatestDigit(last);
-                    }
-
-                    if (data.tick?.quote !== undefined) {
-                        const digit = getLastDigit(data.tick.quote);
-                        sequenceRef.current = [...sequenceRef.current, digit].slice(-WINDOW_SIZE);
-                        setDigits(sequenceRef.current);
-                        setLatestDigit(digit);
-                    }
-                } catch {
-                    // Ignore malformed socket frames without affecting the rest of the app.
-                }
-            };
-
-            socket.onerror = () => {
-                if (!disposed) setConnection('offline');
-            };
-
-            socket.onclose = () => {
-                if (socketRef.current === socket) socketRef.current = null;
-                if (!disposed) {
-                    setConnection('offline');
-                    reconnectRef.current = setTimeout(connect, 2500);
-                }
-            };
-        };
-
-        sequenceRef.current = [];
-        setDigits([]);
+        setTicks([]);
         setLatestDigit(null);
         connect();
-
         return () => {
-            disposed = true;
-            if (reconnectRef.current) clearTimeout(reconnectRef.current);
-            reconnectRef.current = null;
-            const socket = socketRef.current;
-            socketRef.current = null;
-            if (socket && socket.readyState === WebSocket.OPEN) socket.close();
+            if (reconnectRef.current) window.clearTimeout(reconnectRef.current);
+            wsRef.current?.close();
+            wsRef.current = null;
         };
-    }, [selectedIndex, appId]);
+    }, [connect]);
 
+    const analysisTicks = useMemo(() => ticks.slice(-windowSize), [ticks, windowSize]);
     const stats = useMemo(() => {
-        const counts = DIGITS.map(digit => ({ digit, count: digits.filter(value => value === digit).length }));
+        const counts = DIGITS.map(digit => ({ digit, count: analysisTicks.filter(quote => getLastDigit(quote) === digit).length }));
         const total = counts.reduce((sum, item) => sum + item.count, 0);
-        const max = Math.max(...counts.map(item => item.count), 0);
-        const min = Math.min(...counts.map(item => item.count), 0);
+        const max = Math.max(0, ...counts.map(item => item.count));
+        const min = total ? Math.min(...counts.map(item => item.count)) : 0;
         return counts.map(item => ({
             ...item,
             percentage: total ? (item.count / total) * 100 : 0,
@@ -137,32 +94,32 @@ const AnalysisTool = () => {
             isMost: total > 0 && item.count === max,
             isLeast: total > 0 && item.count === min,
         }));
-    }, [digits]);
+    }, [analysisTicks]);
 
     return (
         <section className='lda'>
             <header className='lda__header'>
                 <div>
                     <h2>🎯 Last Digit Analysis (LDA)</h2>
-                    <p>Live analysis of the last digit appearing on each Deriv tick.</p>
+                    <p>Live analysis of the last digit appearing on each tick.</p>
                 </div>
                 <div>
                     <select value={selectedIndex} onChange={event => setSelectedIndex(event.target.value)}>
-                        {VOLATILITY_INDICES.map(index => <option key={index}>{index}</option>)}
+                        {VOLATILITY_INDICES.map(([name]) => <option key={name}>{name}</option>)}
                     </select>
-                    <small style={{ display: 'block', marginTop: 6 }}>
-                        {connection === 'live' ? '🟢 Live' : connection === 'connecting' ? '🟡 Connecting…' : '🔴 Offline — reconnecting…'}
-                    </small>
+                    <select value={windowSize} onChange={event => setWindowSize(Number(event.target.value))} aria-label='Analysis tick window'>
+                        {ANALYSIS_WINDOWS.map(size => <option key={size} value={size}>Last {size} ticks</option>)}
+                    </select>
                 </div>
             </header>
 
             <div className='lda__latest'>
                 <span>Latest last digit</span>
-                <strong>{latestDigit ?? '—'}{latestDigit !== null && <i className='lda__pointer' aria-hidden='true'>➤</i>}</strong>
-                <small>{digits.length ? `${digits.length} live observations in the analysis window.` : 'Waiting for live ticks…'}</small>
+                <strong>{latestDigit ?? '—'}</strong>
+                <small>{connected ? '● Live' : '○ Reconnecting…'} · Analysing {analysisTicks.length} / {windowSize} ticks</small>
             </div>
 
-            <div className='lda__circles' aria-label={`${selectedIndex} live last digit analysis`}>
+            <div className='lda__circles' aria-label={`${selectedIndex} last digit analysis`}>
                 {stats.map(item => (
                     <div className={`lda__digit ${item.isMost ? 'lda__digit--most' : ''} ${item.isLeast ? 'lda__digit--least' : ''}`} key={item.digit}>
                         <div className='lda__circle'>
@@ -179,15 +136,15 @@ const AnalysisTool = () => {
             <div className='lda__legend'>
                 <span>🟢 Green = most appearing digit</span>
                 <span>🔴 Red = least appearing digit</span>
-                <span>➤ = latest live digit</span>
+                <span>➤ = latest digit</span>
             </div>
 
             <div className='lda__sections'>
                 {[
-                    ['frequency', '📊 Digit frequency', 'Live tick observations are counted for digits 0–9. The analysis window keeps the latest 500 observations.'],
-                    ['distribution', '⚖️ Percentage distribution', 'Each percentage is calculated from the observed live ticks in the current window.'],
-                    ['sequence', '🔢 Recent sequence', `The selected ${selectedIndex} stream updates automatically as new ticks arrive.`],
-                    ['note', '⚠️ Important note', 'Frequency describes observed data only. A frequent or rare digit does not guarantee what the next tick will be.'],
+                    ['frequency', '📊 Digit frequency', `Frequency calculated from the selected last ${windowSize} ticks.`],
+                    ['distribution', '⚖️ Percentage distribution', `Each digit's percentage is calculated from the ${analysisTicks.length} ticks currently collected for this window.`],
+                    ['sequence', '🔢 Recent sequence', 'The analyzer follows live digits in order and continuously keeps the latest 500 ticks available for analysis.'],
+                    ['note', '⚠️ Important note', 'A frequent or rare digit does not guarantee what the next tick will be. This tool describes observed market data only.'],
                 ].map(([key, title, description]) => (
                     <button type='button' className='lda__section' key={key} onClick={() => setExpanded(expanded === key ? null : key)}>
                         <span>{title}</span><em>{expanded === key ? '−' : '+'}</em>
