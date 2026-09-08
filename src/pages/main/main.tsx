@@ -29,6 +29,7 @@ import Dashboard from '../dashboard';
 import FreeBots from './free-bots';
 import RunStrategy from '../dashboard/run-strategy';
 import DerivCourse from '../deriv-course';
+import AnalysisTool from '../analysis-tool';
 import './main.scss';
 
 const ChartWrapper = lazy(() => import('../chart/chart-wrapper'));
@@ -172,7 +173,6 @@ const AppWrapper = observer(() => {
     }, [active_tab]);
 
     const handleFreeBotLoad = React.useCallback(async (bot) => {
-        // Activate Bot Builder first. Quick Strategy's pending XML queue handles the mount delay.
         setActiveTab(BOT_BUILDER);
         await new Promise<void>(resolve => setTimeout(resolve, 50));
         await quick_strategy.loadFreeBotXml(bot.xml, bot.name);
@@ -198,7 +198,9 @@ const AppWrapper = observer(() => {
                             <div label={<>🤖 <Localize i18n_default_text='Free Bots' /></>} id='id-free-bots'>
                                 <FreeBots onLoadBot={handleFreeBotLoad} />
                             </div>
-                            <div label={<>📊 <Localize i18n_default_text='Analysis Tool' /></>} id='id-analysis-tool' />
+                            <div label={<>📊 <Localize i18n_default_text='Analysis Tool' /></>} id='id-analysis-tool'>
+                                <AnalysisTool />
+                            </div>
                             <div label={<>⚙️ <Localize i18n_default_text='Manual Trader' /></>} id='id-manual-trader' />
                             <div label={<>🎯 <Localize i18n_default_text='Ultimate Bot 2026' /></>} id='id-ultimate-bot-2026' />
                             <div label={<>📉 <Localize i18n_default_text='Charts' /></>} id='id-charts'>
