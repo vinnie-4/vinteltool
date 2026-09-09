@@ -1,25 +1,77 @@
 import React from 'react';
 import './free-bots.scss';
+// @ts-ignore — raw-loader exposes XML assets as strings at build time.
+import VINTEL_OVER_UNDER_DESTROYER_XML from '@/xml/VintelTool Over Under destroyer.xml';
+import { ULTIMATE_EVEN_ODD_SWITCHER_XML } from '@/xml/ultimate-even-odd-switcher';
 
 export type TFreeBot = { id: string; name: string; xml: string; description?: string; tags?: string[] };
 type TFreeBotsProps = { bots?: TFreeBot[]; onLoadBot: (bot: TFreeBot) => void | Promise<void> };
 
-// Under 4, Under 4, Under 4, then Over 5, then Under 4, Over 5, Under 4, Over 5... continuously until TP $5 or SL -$50.
-const VINTEL_OVER_UNDER_DESTROYER_XML = `<?xml version="1.0" encoding="UTF-8"?><xml xmlns="http://www.w3.org/1999/xhtml" is_dbot="true" collection="false"><variables><variable type="" id="vintel_stake">Stake</variable><variable type="" id="vintel_martingale">Martingale</variable><variable type="" id="vintel_trade">Next Trade</variable><variable type="" id="vintel_prediction">Prediction</variable><variable type="" id="vintel_count">Consecutive Count</variable><variable type="" id="vintel_batch">Batch Size</variable></variables><block type="trade_definition" id="vintel_trade_definition" x="0" y="0"><statement name="TRADE_OPTIONS"><block type="trade_definition_market" id="vintel_market" deletable="false" movable="false"><field name="MARKET_LIST">synthetic_index</field><field name="SUBMARKET_LIST">random_index</field><field name="SYMBOL_LIST">R_10</field><next><block type="trade_definition_tradetype" id="vintel_tradetype" deletable="false" movable="false"><field name="TRADETYPECAT_LIST">digits</field><field name="TRADETYPE_LIST">overunder</field><next><block type="trade_definition_contracttype" id="vintel_contract" deletable="false" movable="false"><field name="TYPE_LIST">both</field><next><block type="trade_definition_candleinterval" id="vintel_candle" deletable="false" movable="false"><field name="CANDLEINTERVAL_LIST">60</field><next><block type="trade_definition_restartbuysell" id="vintel_restart" deletable="false" movable="false"><field name="TIME_MACHINE_ENABLED">FALSE</field><next><block type="trade_definition_restartonerror" id="vintel_error" deletable="false" movable="false"><field name="RESTARTONERROR">FALSE</field></block></next></block></next></block></next></block></next></block></statement><statement name="INITIALIZATION"><block type="variables_set"><field name="VAR" id="vintel_stake">Stake</field><value name="VALUE"><block type="math_number"><field name="NUM">1</field></block></value><next><block type="variables_set"><field name="VAR" id="vintel_martingale">Martingale</field><value name="VALUE"><block type="math_number"><field name="NUM">2</field></block></value><next><block type="variables_set"><field name="VAR" id="vintel_trade">Next Trade</field><value name="VALUE"><block type="text"><field name="TEXT">Under</field></block></value><next><block type="variables_set"><field name="VAR" id="vintel_prediction">Prediction</field><value name="VALUE"><block type="math_number"><field name="NUM">4</field></block></value><next><block type="variables_set"><field name="VAR" id="vintel_count">Consecutive Count</field><value name="VALUE"><block type="math_number"><field name="NUM">0</field></block></value><next><block type="variables_set"><field name="VAR" id="vintel_batch">Batch Size</field><value name="VALUE"><block type="math_number"><field name="NUM">3</field></block></value></next></block></next></block></next></block></next></block></next></block></statement><statement name="SUBMARKET"><block type="trade_definition_tradeoptions" id="vintel_options"><mutation has_first_barrier="false" has_second_barrier="false" has_prediction="true"></mutation><field name="DURATIONTYPE_LIST">t</field><value name="DURATION"><shadow type="math_number"><field name="NUM">1</field></shadow></value><value name="AMOUNT"><shadow type="math_number"><field name="NUM">1</field></shadow><block type="variables_get"><field name="VAR" id="vintel_stake">Stake</field></block></value><value name="PREDICTION"><shadow type="math_number_positive"><field name="NUM">5</field></shadow><block type="variables_get"><field name="VAR" id="vintel_prediction">Prediction</field></block></value></block></statement></block><block type="before_purchase" id="vintel_before_purchase" x="0" y="620"><statement name="BEFOREPURCHASE_STACK"><block type="controls_if" id="vintel_purchase_conditions"><mutation else="1"></mutation><value name="IF0"><block type="logic_compare"><field name="OP">EQ</field><value name="A"><block type="variables_get"><field name="VAR" id="vintel_trade">Next Trade</field></block></value><value name="B"><block type="text"><field name="TEXT">Under</field></block></value></block></value><statement name="DO0"><block type="variables_set"><field name="VAR" id="vintel_prediction">Prediction</field><value name="VALUE"><block type="math_number"><field name="NUM">4</field></block></value><next><block type="purchase"><field name="PURCHASE_LIST">DIGITUNDER</field></block></next></block></statement><statement name="ELSE"><block type="variables_set"><field name="VAR" id="vintel_prediction">Prediction</field><value name="VALUE"><block type="math_number"><field name="NUM">5</field></block></value><next><block type="purchase"><field name="PURCHASE_LIST">DIGITOVER</field></block></next></block></statement></block></statement></block><block type="after_purchase" id="vintel_after_purchase" x="520" y="620"><statement name="AFTERPURCHASE_STACK"><block type="controls_if"><mutation elseif="1" else="1"></mutation><value name="IF0"><block type="logic_compare"><field name="OP">GTE</field><value name="A"><block type="total_profit"/></value><value name="B"><block type="math_number"><field name="NUM">5</field></block></value></block></value><statement name="DO0"><block type="text_print"><value name="TEXT"><shadow type="text"><field name="TEXT">CONGRATULATIONS 🎉 VintelTool strategy worked. Take profit hit🤗!</field></shadow></value></block></statement><value name="IF1"><block type="logic_compare"><field name="OP">LTE</field><value name="A"><block type="total_profit"/></value><value name="B"><block type="math_number"><field name="NUM">-50</field></block></value></block></value><statement name="DO1"><block type="text_print"><value name="TEXT"><shadow type="text"><field name="TEXT">STOP LOSS $50 REACHED - BOT STOPPED</field></shadow></value></block></statement><statement name="ELSE"><block type="controls_if"><mutation else="1"></mutation><value name="IF0"><block type="contract_check_result"><field name="CHECK_RESULT">win</field></block></value><statement name="DO0"><block type="variables_set"><field name="VAR" id="vintel_stake">Stake</field><value name="VALUE"><block type="math_number"><field name="NUM">1</field></block></value></block></statement><statement name="ELSE"><block type="variables_set"><field name="VAR" id="vintel_stake">Stake</field><value name="VALUE"><block type="math_arithmetic"><field name="OP">MULTIPLY</field><value name="A"><block type="variables_get"><field name="VAR" id="vintel_stake">Stake</field></block></value><value name="B"><block type="variables_get"><field name="VAR" id="vintel_martingale">Martingale</field></block></value></block></value></block></statement><next><block type="variables_set"><field name="VAR" id="vintel_count">Consecutive Count</field><value name="VALUE"><block type="math_arithmetic"><field name="OP">ADD</field><value name="A"><block type="variables_get"><field name="VAR" id="vintel_count">Consecutive Count</field></block></value><value name="B"><block type="math_number"><field name="NUM">1</field></block></value></block></value><next><block type="controls_if"><value name="IF0"><block type="logic_compare"><field name="OP">GTE</field><value name="A"><block type="variables_get"><field name="VAR" id="vintel_count">Consecutive Count</field></block></value><value name="B"><block type="variables_get"><field name="VAR" id="vintel_batch">Batch Size</field></block></value></block></value><statement name="DO0"><block type="controls_if"><mutation else="1"></mutation><value name="IF0"><block type="logic_compare"><field name="OP">EQ</field><value name="A"><block type="variables_get"><field name="VAR" id="vintel_trade">Next Trade</field></block></value><value name="B"><block type="text"><field name="TEXT">Under</field></block></value></block></value><statement name="DO0"><block type="variables_set"><field name="VAR" id="vintel_trade">Next Trade</field><value name="VALUE"><block type="text"><field name="TEXT">Over</field></block></value></block></statement><statement name="ELSE"><block type="variables_set"><field name="VAR" id="vintel_trade">Next Trade</field><value name="VALUE"><block type="text"><field name="TEXT">Under</field></block></value></block></statement><next><block type="variables_set"><field name="VAR" id="vintel_count">Consecutive Count</field><value name="VALUE"><block type="math_number"><field name="NUM">0</field></block></value><next><block type="variables_set"><field name="VAR" id="vintel_batch">Batch Size</field><value name="VALUE"><block type="math_number"><field name="NUM">1</field></block></value></next></block></next></block></statement><next><block type="controls_if"><value name="IF0"><block type="logic_compare"><field name="OP">EQ</field><value name="A"><block type="variables_get"><field name="VAR" id="vintel_trade">Next Trade</field></block></value><value name="B"><block type="text"><field name="TEXT">Over</field></block></value></block></value><statement name="DO0"><block type="variables_set"><field name="VAR" id="vintel_prediction">Prediction</field><value name="VALUE"><block type="math_number"><field name="NUM">5</field></block></value></block></statement><statement name="ELSE"><block type="variables_set"><field name="VAR" id="vintel_prediction">Prediction</field><value name="VALUE"><block type="math_number"><field name="NUM">4</field></block></value></block></statement><next><block type="trade_again"/></next></block></next></next></block></statement></block></statement></block></statement></block></statement></block></statement></block></statement></block></xml>`;
-
 export const FREE_BOTS: TFreeBot[] = [
-    { id: 'vintel-over-under-destroyer', name: 'VintelTool Over/Under destroyer', description: 'Over/Under • R_10 • $1 stake • Martingale ×2 • TP $5 • SL $50', tags: ['Digits', 'OVER/UNDER', 'R_10', '$1 STAKE'], xml: VINTEL_OVER_UNDER_DESTROYER_XML },
+    {
+        id: 'vintel-over-under-destroyer',
+        name: 'VintelTool Over/Under destroyer',
+        description: 'Over/Under • R_10 • $1 stake • Martingale ×2 • TP $5 • SL $50',
+        tags: ['Digits', 'OVER/UNDER', 'R_10', '$1 STAKE'],
+        xml: VINTEL_OVER_UNDER_DESTROYER_XML,
+    },
+    {
+        id: 'ultimate-even-odd-switcher-ai',
+        name: 'Ultimate Even ODD Switcher Ai DBot',
+        description: 'Even/Odd percentage strategy • R_100 • 1 tick • base stake $0.50 • Martingale ×2.1 • TP $10 • SL $20',
+        tags: ['Digits', 'EVEN/ODD', 'R_100', '1 TICK', 'AI SWITCHER'],
+        xml: ULTIMATE_EVEN_ODD_SWITCHER_XML,
+    },
 ];
 
 const FreeBots = ({ bots = FREE_BOTS, onLoadBot }: TFreeBotsProps) => {
     const [loading_bot_id, setLoadingBotId] = React.useState<string | null>(null);
+
     if (!bots.length) return null;
+
     const handleLoad = async (bot: TFreeBot) => {
         if (loading_bot_id) return;
         setLoadingBotId(bot.id);
-        try { await onLoadBot(bot); } catch (error) { console.error('Failed to load free bot:', error); } finally { setLoadingBotId(null); }
+        try {
+            await onLoadBot(bot);
+        } catch (error) {
+            console.error('Failed to load free bot:', error);
+        } finally {
+            setLoadingBotId(null);
+        }
     };
-    return <section className='free-bots' id='free-bots-panel' aria-label='Free Bots'><div className='free-bots__grid'>{bots.map(bot => { const is_loading = loading_bot_id === bot.id; return <article className='free-bots__card' key={bot.id}><div className='free-bots__body'><h3 className='free-bots__name'>{bot.name}</h3>{bot.description && <p className='free-bots__description'>{bot.description}</p>}{!!bot.tags?.length && <div className='free-bots__tags'>{bot.tags.map(tag => <span key={tag}>{tag}</span>)}</div>}</div><button type='button' className='free-bots__load' onClick={() => void handleLoad(bot)} disabled={!!loading_bot_id} aria-busy={is_loading}>{is_loading ? 'Loading…' : 'Load'}</button></article>; })}</div></section>;
+
+    return (
+        <section className='free-bots' id='free-bots-panel' aria-label='Free Bots'>
+            <div className='free-bots__grid'>
+                {bots.map(bot => {
+                    const is_loading = loading_bot_id === bot.id;
+                    return (
+                        <article className='free-bots__card' key={bot.id}>
+                            <div className='free-bots__body'>
+                                <h3 className='free-bots__name'>{bot.name}</h3>
+                                {bot.description && <p className='free-bots__description'>{bot.description}</p>}
+                                {!!bot.tags?.length && (
+                                    <div className='free-bots__tags'>
+                                        {bot.tags.map(tag => <span key={tag}>{tag}</span>)}
+                                    </div>
+                                )}
+                            </div>
+                            <button
+                                type='button'
+                                className='free-bots__load'
+                                onClick={() => void handleLoad(bot)}
+                                disabled={!!loading_bot_id}
+                                aria-busy={is_loading}
+                            >
+                                {is_loading ? 'Loading…' : 'Load'}
+                            </button>
+                        </article>
+                    );
+                })}
+            </div>
+        </section>
+    );
 };
 
 export default FreeBots;
