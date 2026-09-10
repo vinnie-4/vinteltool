@@ -16,7 +16,6 @@ const VOLATILITY_INDICES = [
 
 const TICK_WINDOWS = [1000, 500, 300, 100, 50];
 const MAX_TICKS = 1000;
-// Current Deriv public market-data WebSocket. No authentication or OTP is required.
 const WS_URL = 'wss://api.derivws.com/trading/v1/options/ws/public';
 
 const getLastDigit = (quote: number, pipSize = 2) => {
@@ -39,25 +38,38 @@ const AnalysisTool = () => {
     const [connectionError, setConnectionError] = useState('');
     const wsRef = useRef<WebSocket | null>(null);
     const reconnectRef = useRef<number | null>(null);
+    const connectionIdRef = useRef(0);
     const stoppedRef = useRef(false);
     const pipSizeRef = useRef(2);
     const selectedSymbol = VOLATILITY_INDICES.find(([name]) => name === selectedIndex)?.[1] || 'R_100';
 
     const connect = useCallback(() => {
         stoppedRef.current = false;
+        const connectionId = ++connectionIdRef.current;
+        setConnected(false);
         setConnectionError('');
-        if (reconnectRef.current) window.clearTimeout(reconnectRef.current);
-        wsRef.current?.close();
+        if (reconnectRef.current) {
+            window.clearTimeout(reconnectRef.current);
+            reconnectRef.current = null;
+        }
+
+        const previous = wsRef.current;
+        wsRef.current = null;
+        if (previous) {
+            previous.onopen = null;
+            previous.onmessage = null;
+            previous.onerror = null;
+            previous.onclose = null;
+            previous.close();
+        }
 
         const ws = new WebSocket(WS_URL);
         wsRef.current = ws;
 
         ws.onopen = () => {
-            if (stoppedRef.current) return;
+            if (stoppedRef.current || connectionId !== connectionIdRef.current || wsRef.current !== ws) return;
             setConnected(true);
             setConnectionError('');
-            // Current Deriv public endpoint: subscribe directly to the selected live tick stream.
-            // It is read-only market data and does not require login, OAuth, PAT or OTP.
             ws.send(JSON.stringify({
                 ticks: selectedSymbol,
                 subscribe: 1,
@@ -66,26 +78,24 @@ const AnalysisTool = () => {
         };
 
         ws.onmessage = event => {
+            if (connectionId !== connectionIdRef.current || wsRef.current !== ws) return;
             try {
                 const data = JSON.parse(event.data);
-                if (data.error || Array.isArray(data.errors)) {
-                    const message = data.error?.message || data.errors?.[0]?.message || 'Deriv public WebSocket rejected the request';
+                if (data.error) {
                     setConnected(false);
-                    setConnectionError(message);
+                    setConnectionError(data.error.message || 'Deriv tick stream error');
                     return;
                 }
 
-                const receivedPipSize = Number(data.pip_size ?? data.tick?.pip_size ?? data.quote?.pip_size);
+                const receivedPipSize = Number(data.pip_size ?? data.tick?.pip_size);
                 if (Number.isFinite(receivedPipSize) && receivedPipSize >= 0) {
                     pipSizeRef.current = receivedPipSize;
                     setPipSize(receivedPipSize);
                 }
                 const decimals = Number.isFinite(receivedPipSize) && receivedPipSize >= 0 ? receivedPipSize : pipSizeRef.current;
 
-                const tick = data.tick;
-                const quoteValue = tick?.quote ?? data.quote;
-                if (quoteValue !== undefined) {
-                    const quote = Number(quoteValue);
+                if (data.msg_type === 'tick' && data.tick?.quote !== undefined) {
+                    const quote = Number(data.tick.quote);
                     if (!Number.isFinite(quote)) return;
                     const digit = getLastDigit(quote, decimals);
                     setLatestPrice(quote);
@@ -96,21 +106,26 @@ const AnalysisTool = () => {
                 }
             } catch {
                 setConnected(false);
-                setConnectionError('Invalid response received from Deriv public WebSocket');
+                setConnectionError('Invalid response received from Deriv');
             }
         };
 
         ws.onclose = event => {
+            if (connectionId !== connectionIdRef.current || wsRef.current !== ws) return;
+            wsRef.current = null;
             setConnected(false);
             if (!stoppedRef.current) {
-                const detail = event.reason || `Deriv WebSocket closed (${event.code})`;
+                const detail = event.reason || `WebSocket closed (${event.code})`;
                 setConnectionError(detail);
-                reconnectRef.current = window.setTimeout(connect, 2500);
+                reconnectRef.current = window.setTimeout(() => {
+                    if (!stoppedRef.current && connectionId === connectionIdRef.current) connect();
+                }, 2500);
             }
         };
         ws.onerror = () => {
+            if (connectionId !== connectionIdRef.current || wsRef.current !== ws) return;
             setConnected(false);
-            setConnectionError('Unable to open Deriv current public WebSocket');
+            setConnectionError('Unable to open Deriv public WebSocket');
         };
     }, [selectedSymbol]);
 
@@ -119,8 +134,17 @@ const AnalysisTool = () => {
         connect();
         return () => {
             stoppedRef.current = true;
+            ++connectionIdRef.current;
             if (reconnectRef.current) window.clearTimeout(reconnectRef.current);
-            wsRef.current?.close(); wsRef.current = null;
+            const ws = wsRef.current;
+            wsRef.current = null;
+            if (ws) {
+                ws.onopen = null;
+                ws.onmessage = null;
+                ws.onerror = null;
+                ws.onclose = null;
+                ws.close();
+            }
         };
     }, [connect]);
 
