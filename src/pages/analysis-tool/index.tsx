@@ -16,7 +16,8 @@ const VOLATILITY_INDICES = [
 
 const TICK_WINDOWS = [1000, 500, 300, 100, 50];
 const MAX_TICKS = 1000;
-const WS_URL = 'wss://ws.binaryws.com/websockets/v3';
+// Deriv's documented public WebSocket endpoint. App 1089 is the public market-data app.
+const WS_URL = 'wss://ws.derivws.com/websockets/v3?app_id=1089';
 
 const getLastDigit = (quote: number, pipSize = 2) => {
     const decimals = Math.max(0, Math.min(8, Number(pipSize) || 2));
@@ -67,8 +68,7 @@ const AnalysisTool = () => {
                 }
 
                 if (data.msg_type === 'active_symbols') {
-                    const available = Array.isArray(data.active_symbols)
-                        && data.active_symbols.some((item: { symbol?: string }) => item.symbol === selectedSymbol);
+                    const available = Array.isArray(data.active_symbols) && data.active_symbols.some((item: { symbol?: string }) => item.symbol === selectedSymbol);
                     if (!available) {
                         setConnected(false);
                         setConnectionError(`${selectedSymbol} is not available from Deriv`);
