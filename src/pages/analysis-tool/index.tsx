@@ -23,13 +23,13 @@ const getLastDigit = (quote: number) => {
 };
 
 const formatPrice = (quote: number | null) => quote === null ? '—' : quote.toFixed(2);
-
 const digitClass = (digit: number) => `dcircles__digit dcircles__digit--${digit}`;
 
 const AnalysisTool = () => {
     const [activeTab, setActiveTab] = useState<AnalysisTab>('dcircles');
     const [selectedIndex, setSelectedIndex] = useState(VOLATILITY_INDICES.find(([name]) => name === 'Volatility 100')?.[0] || VOLATILITY_INDICES[0][0]);
     const [windowSize, setWindowSize] = useState(1000);
+    const [prediction, setPrediction] = useState(0);
     const [ticks, setTicks] = useState<number[]>([]);
     const [latestDigit, setLatestDigit] = useState<number | null>(null);
     const [latestPrice, setLatestPrice] = useState<number | null>(null);
@@ -41,26 +41,16 @@ const AnalysisTool = () => {
     const connect = useCallback(() => {
         if (reconnectRef.current) window.clearTimeout(reconnectRef.current);
         wsRef.current?.close();
-
         const ws = new WebSocket(WS_URL);
         wsRef.current = ws;
-
         ws.onopen = () => {
             setConnected(true);
-            ws.send(JSON.stringify({
-                ticks_history: selectedSymbol,
-                count: MAX_TICKS,
-                end: 'latest',
-                style: 'ticks',
-                subscribe: 1,
-            }));
+            ws.send(JSON.stringify({ ticks_history: selectedSymbol, count: MAX_TICKS, end: 'latest', style: 'ticks', subscribe: 1 }));
         };
-
         ws.onmessage = event => {
             try {
                 const data = JSON.parse(event.data);
                 if (data.error) return;
-
                 if (Array.isArray(data.history?.prices)) {
                     const history = data.history.prices.map(Number).filter(Number.isFinite).slice(-MAX_TICKS);
                     if (history.length) {
@@ -70,7 +60,6 @@ const AnalysisTool = () => {
                         setLatestDigit(getLastDigit(price));
                     }
                 }
-
                 if (data.tick?.quote !== undefined) {
                     const quote = Number(data.tick.quote);
                     if (!Number.isFinite(quote)) return;
@@ -82,7 +71,6 @@ const AnalysisTool = () => {
                 // Ignore malformed WebSocket messages.
             }
         };
-
         ws.onclose = () => {
             setConnected(false);
             reconnectRef.current = window.setTimeout(connect, 2500);
@@ -103,23 +91,16 @@ const AnalysisTool = () => {
     }, [connect]);
 
     const analysisTicks = useMemo(() => ticks.slice(-windowSize), [ticks, windowSize]);
-
     const stats = useMemo(() => {
         const counts = DIGITS.map(digit => analysisTicks.filter(quote => getLastDigit(quote) === digit).length);
         const total = counts.reduce((sum, count) => sum + count, 0);
         const max = Math.max(0, ...counts);
-        return DIGITS.map((digit, index) => ({
-            digit,
-            count: counts[index],
-            percentage: total ? (counts[index] / total) * 100 : 0,
-            isMost: total > 0 && counts[index] === max,
-        }));
+        return DIGITS.map((digit, index) => ({ digit, count: counts[index], percentage: total ? (counts[index] / total) * 100 : 0, isMost: total > 0 && counts[index] === max }));
     }, [analysisTicks]);
 
     const distribution = useMemo(() => {
         const total = analysisTicks.length;
         const zero = stats[0]?.count || 0;
-        const prediction = latestDigit ?? 0;
         const matches = stats[prediction]?.count || 0;
         const even = stats.filter(item => item.digit % 2 === 0).reduce((sum, item) => sum + item.count, 0);
         const streakType = latestDigit === null ? '—' : latestDigit % 2 === 0 ? 'Even' : 'Odd';
@@ -130,10 +111,9 @@ const AnalysisTool = () => {
             differs: total ? ((total - matches) / total) * 100 : 0,
             even: total ? (even / total) * 100 : 0,
             odd: total ? ((total - even) / total) * 100 : 0,
-            prediction,
             streakType,
         };
-    }, [analysisTicks.length, latestDigit, stats]);
+    }, [analysisTicks.length, latestDigit, prediction, stats]);
 
     const renderDistributionCard = (label: string, value: number, tone: 'green' | 'red' | 'blue' | 'orange') => (
         <div className={`dcircles__distribution-card dcircles__distribution-card--${tone}`}>
@@ -154,7 +134,7 @@ const AnalysisTool = () => {
             {activeTab === 'ldp' ? (
                 <div className='dcircles__placeholder'>
                     <h2>Last Digit Probability Analyzer</h2>
-                    <p>Choose DCircles for the live digit distribution view. The existing live tick connection remains shared with this analysis page.</p>
+                    <p>Choose DCircles for the live digit distribution view. The live tick connection remains available to this analysis page.</p>
                     <button type='button' onClick={() => setActiveTab('dcircles')}>Open DCircles</button>
                 </div>
             ) : (
@@ -182,26 +162,17 @@ const AnalysisTool = () => {
 
                     <div className='dcircles__section'>
                         <div className='dcircles__section-heading'><span className='dcircles__section-icon'>◧</span><strong>Over/Under 0</strong><small>Current digit {latestDigit ?? '—'}</small></div>
-                        <div className='dcircles__cards'>
-                            {renderDistributionCard('Over 0', distribution.overZero, 'green')}
-                            {renderDistributionCard('Under 0', distribution.underZero, 'red')}
-                        </div>
+                        <div className='dcircles__cards'>{renderDistributionCard('Over 0', distribution.overZero, 'green')}{renderDistributionCard('Under 0', distribution.underZero, 'red')}</div>
                     </div>
 
                     <div className='dcircles__section'>
-                        <div className='dcircles__section-heading'><span className='dcircles__section-icon dcircles__section-icon--blue'>▣</span><strong>Matches/Differs Analysis</strong><label>Prediction<select value={distribution.prediction} onChange={() => undefined}><option value={distribution.prediction}>{distribution.prediction}</option></select></label><small>Current digit {latestDigit ?? '—'}</small></div>
-                        <div className='dcircles__cards'>
-                            {renderDistributionCard(`Matches ${distribution.prediction}`, distribution.matches, 'blue')}
-                            {renderDistributionCard(`Differs ${distribution.prediction}`, distribution.differs, 'orange')}
-                        </div>
+                        <div className='dcircles__section-heading'><span className='dcircles__section-icon dcircles__section-icon--blue'>▣</span><strong>Matches/Differs Analysis</strong><label>Prediction<select value={prediction} onChange={event => setPrediction(Number(event.target.value))}>{DIGITS.map(digit => <option key={digit} value={digit}>{digit}</option>)}</select></label><small>Current digit {latestDigit ?? '—'}</small></div>
+                        <div className='dcircles__cards'>{renderDistributionCard(`Matches ${prediction}`, distribution.matches, 'blue')}{renderDistributionCard(`Differs ${prediction}`, distribution.differs, 'orange')}</div>
                     </div>
 
                     <div className='dcircles__section'>
-                        <div className='dcircles__section-heading'><span className='dcircles__section-icon dcircles__section-icon--purple'>✣</span><strong>Even/Odd Analysis</strong><small>Current streak: {distribution.streakType}</small></div>
-                        <div className='dcircles__cards'>
-                            {renderDistributionCard('Even', distribution.even, 'blue')}
-                            {renderDistributionCard('Odd', distribution.odd, 'orange')}
-                        </div>
+                        <div className='dcircles__section-heading'><span className='dcircles__section-icon dcircles__section-icon--purple'>✣</span><strong>Even/Odd Analysis</strong><small>Current digit: {distribution.streakType}</small></div>
+                        <div className='dcircles__cards'>{renderDistributionCard('Even', distribution.even, 'blue')}{renderDistributionCard('Odd', distribution.odd, 'orange')}</div>
                     </div>
                 </>
             )}
