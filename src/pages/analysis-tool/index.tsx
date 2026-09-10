@@ -164,18 +164,21 @@ const AnalysisTool = () => {
     }, [analysisTicks]);
 
     const distribution = useMemo(() => {
-        const total = analysisTicks.length, zero = stats[0]?.count || 0, matches = stats[prediction]?.count || 0;
+        const total = analysisTicks.length;
+        const matches = stats[prediction]?.count || 0;
+        const overZero = stats.slice(1).reduce((sum, item) => sum + item.count, 0); // digits 1–9
+        const underNine = stats.slice(0, 9).reduce((sum, item) => sum + item.count, 0); // digits 0–8
         const even = stats.filter(item => item.digit % 2 === 0).reduce((sum, item) => sum + item.count, 0);
         return {
-            overZero: total ? (total - zero) / total * 100 : 0,
-            underZero: total ? zero / total * 100 : 0,
+            overZero: total ? overZero / total * 100 : 0,
+            underNine: total ? underNine / total * 100 : 0,
             matches: total ? matches / total * 100 : 0,
             differs: total ? (total - matches) / total * 100 : 0,
             even: total ? even / total * 100 : 0,
             odd: total ? (total - even) / total * 100 : 0,
             streakType: latestDigit === null ? '—' : latestDigit % 2 === 0 ? 'Even' : 'Odd',
         };
-    }, [analysisTicks.length, latestDigit, prediction, stats]);
+    }, [analysisTicks, latestDigit, prediction, stats]);
 
     const renderDistributionCard = (label: string, value: number, tone: 'green' | 'red' | 'blue' | 'orange') => (
         <div className={`dcircles__distribution-card dcircles__distribution-card--${tone}`}>
@@ -204,7 +207,7 @@ const AnalysisTool = () => {
                 </div>
                 <div className='dcircles__status'>{connected ? '● Live · Deriv' : '○ Connecting to Deriv…'} · {analysisTicks.length} / {windowSize} ticks{connectionError && <span className='dcircles__error'> · {connectionError}</span>}</div>
             </div>
-            <div className='dcircles__section'><div className='dcircles__section-heading'><span className='dcircles__section-icon'>◧</span><strong>Over/Under 0</strong><small>Current digit {latestDigit ?? '—'}</small></div><div className='dcircles__cards'>{renderDistributionCard('Over 0', distribution.overZero, 'green')}{renderDistributionCard('Under 0', distribution.underZero, 'red')}</div></div>
+            <div className='dcircles__section'><div className='dcircles__section-heading'><span className='dcircles__section-icon'>◧</span><strong>Over/Under 0/9</strong><small>Current digit {latestDigit ?? '—'}</small></div><div className='dcircles__cards'>{renderDistributionCard('Over 0', distribution.overZero, 'green')}{renderDistributionCard('Under 9', distribution.underNine, 'red')}</div></div>
             <div className='dcircles__section'><div className='dcircles__section-heading'><span className='dcircles__section-icon dcircles__section-icon--blue'>▣</span><strong>Matches/Differs Analysis</strong><label>Prediction<select value={prediction} onChange={event => setPrediction(Number(event.target.value))}>{DIGITS.map(digit => <option key={digit}>{digit}</option>)}</select></label><small>Current digit {latestDigit ?? '—'}</small></div><div className='dcircles__cards'>{renderDistributionCard(`Matches ${prediction}`, distribution.matches, 'blue')}{renderDistributionCard(`Differs ${prediction}`, distribution.differs, 'orange')}</div></div>
             <div className='dcircles__section'><div className='dcircles__section-heading'><span className='dcircles__section-icon dcircles__section-icon--purple'>✣</span><strong>Even/Odd Analysis</strong><small>Current streak: {distribution.streakType}</small></div><div className='dcircles__cards'>{renderDistributionCard('Even', distribution.even, 'blue')}{renderDistributionCard('Odd', distribution.odd, 'orange')}</div></div>
         </>}
