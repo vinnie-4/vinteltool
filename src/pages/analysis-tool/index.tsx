@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './styles.scss';
 
 type AnalysisTab = 'dcircles' | 'ldp';
-type TickRecord = { quote: number; digit: number; epoch: number };
+type TickRecord = { quote: number; digit: number };
 type RankTone = 'most' | 'second-most' | 'second-least' | 'least' | 'normal';
 
 const DIGITS = Array.from({ length: 10 }, (_, i) => i);
@@ -13,7 +13,7 @@ const VOLATILITY_INDICES = [
     ['Volatility 75 (1s)', '1HZ75V'], ['Volatility 90 (1s)', '1HZ90V'], ['Volatility 100', 'R_100'],
     ['Volatility 100 (1s)', '1HZ100V'],
 ] as const;
-const TICK_WINDOWS = [1000, 500, 300, 100, 50];
+const TICK_WINDOWS = [1000, 500, 300, 100, 60, 30];
 const MAX_TICKS = 1000;
 const WS_URL = 'wss://api.derivws.com/trading/v1/options/ws/public';
 
@@ -43,125 +43,64 @@ const AnalysisTool = () => {
     const connectionIdRef = useRef(0);
     const stoppedRef = useRef(false);
     const pipSizeRef = useRef(2);
-    const historyReadyRef = useRef(false);
-    const pendingLiveTicksRef = useRef<TickRecord[]>([]);
     const selectedSymbol = VOLATILITY_INDICES.find(([name]) => name === selectedIndex)?.[1] || 'R_100';
 
     const connect = useCallback(() => {
         stoppedRef.current = false;
         const connectionId = ++connectionIdRef.current;
-        historyReadyRef.current = false;
-        pendingLiveTicksRef.current = [];
-        setConnected(false);
-        setConnectionError('');
+        setConnected(false); setConnectionError('');
         if (reconnectRef.current) { window.clearTimeout(reconnectRef.current); reconnectRef.current = null; }
-        const previous = wsRef.current;
-        wsRef.current = null;
+        const previous = wsRef.current; wsRef.current = null;
         if (previous) { previous.onopen = null; previous.onmessage = null; previous.onerror = null; previous.onclose = null; previous.close(); }
-        const ws = new WebSocket(WS_URL);
-        wsRef.current = ws;
-
-        const acceptLiveTick = (tick: TickRecord) => {
-            if (!historyReadyRef.current) {
-                pendingLiveTicksRef.current.push(tick);
-                return;
-            }
-            setTicks(previousTicks => {
-                const duplicate = previousTicks.some(item => item.epoch === tick.epoch && item.quote === tick.quote);
-                if (duplicate) return previousTicks;
-                return [...previousTicks, tick].slice(-MAX_TICKS);
-            });
-            setLatestPrice(tick.quote);
-            setLatestDigit(tick.digit);
-        };
-
+        const ws = new WebSocket(WS_URL); wsRef.current = ws;
         ws.onopen = () => {
             if (stoppedRef.current || connectionId !== connectionIdRef.current || wsRef.current !== ws) return;
-            setConnectionError('');
-            ws.send(JSON.stringify({
-                ticks_history: selectedSymbol,
-                count: windowSize,
-                end: 'latest',
-                style: 'ticks',
-                subscribe: 0,
-                req_id: 1,
-            }));
-            ws.send(JSON.stringify({
-                ticks: selectedSymbol,
-                subscribe: 1,
-                req_id: 2,
-            }));
+            setConnected(true); setConnectionError('');
+            // Load the already-completed sample first, then subscribe to the live stream.
+            ws.send(JSON.stringify({ ticks_history: selectedSymbol, count: MAX_TICKS, end: 'latest', style: 'ticks', req_id: 1 }));
+            ws.send(JSON.stringify({ ticks: selectedSymbol, subscribe: 1, req_id: 2 }));
         };
-
         ws.onmessage = event => {
             if (connectionId !== connectionIdRef.current || wsRef.current !== ws) return;
             try {
                 const data = JSON.parse(event.data);
                 if (data.error || Array.isArray(data.errors)) {
-                    setConnected(false);
-                    setConnectionError(data.error?.message || data.errors?.[0]?.message || 'Deriv public WebSocket rejected the request');
-                    return;
+                    setConnected(false); setConnectionError(data.error?.message || data.errors?.[0]?.message || 'Deriv public WebSocket rejected the request'); return;
                 }
-
-                const receivedPipSize = Number(data.pip_size ?? data.tick?.pip_size ?? data.history?.pip_size);
-                if (Number.isFinite(receivedPipSize) && receivedPipSize >= 0) {
-                    pipSizeRef.current = receivedPipSize;
-                    setPipSize(receivedPipSize);
-                }
+                const receivedPipSize = Number(data.pip_size ?? data.tick?.pip_size);
+                if (Number.isFinite(receivedPipSize) && receivedPipSize >= 0) { pipSizeRef.current = receivedPipSize; setPipSize(receivedPipSize); }
                 const decimals = Number.isFinite(receivedPipSize) && receivedPipSize >= 0 ? receivedPipSize : pipSizeRef.current;
-
-                if (data.msg_type === 'history' && data.history?.prices && data.history?.times) {
-                    const prices = data.history.prices.map(Number);
-                    const times = data.history.times.map(Number);
-                    const historicalTicks: TickRecord[] = prices
-                        .map((quote: number, index: number) => ({ quote, epoch: times[index], digit: getLastDigit(quote, decimals) }))
-                        .filter((tick: TickRecord) => Number.isFinite(tick.quote) && Number.isFinite(tick.epoch))
-                        .slice(-windowSize);
-                    const pending = pendingLiveTicksRef.current;
-                    pendingLiveTicksRef.current = [];
-                    const combined = [...historicalTicks, ...pending].filter((tick, index, array) => array.findIndex(item => item.epoch === tick.epoch && item.quote === tick.quote) === index).slice(-windowSize);
-                    historyReadyRef.current = true;
-                    setTicks(combined);
-                    const latest = combined[combined.length - 1];
-                    if (latest) { setLatestPrice(latest.quote); setLatestDigit(latest.digit); }
-                    setConnected(true);
-                    setConnectionError('');
+                if (data.msg_type === 'history' && Array.isArray(data.history?.prices)) {
+                    const prices = data.history.prices.map(Number).filter(Number.isFinite);
+                    const historyTicks = prices.map(quote => ({ quote, digit: getLastDigit(quote, decimals) })).slice(-MAX_TICKS);
+                    setTicks(historyTicks);
+                    const last = historyTicks[historyTicks.length - 1];
+                    if (last) { setLatestPrice(last.quote); setLatestDigit(last.digit); }
+                    setConnected(true); setConnectionError('');
                     return;
                 }
-
                 if (data.msg_type === 'tick' && data.tick?.quote !== undefined) {
-                    const quote = Number(data.tick.quote);
-                    const epoch = Number(data.tick.epoch);
-                    if (!Number.isFinite(quote) || !Number.isFinite(epoch)) return;
-                    acceptLiveTick({ quote, epoch, digit: getLastDigit(quote, decimals) });
-                    setConnected(true);
-                    setConnectionError('');
+                    const quote = Number(data.tick.quote); if (!Number.isFinite(quote)) return;
+                    const digit = getLastDigit(quote, decimals);
+                    setLatestPrice(quote); setLatestDigit(digit);
+                    setTicks(previousTicks => [...previousTicks, { quote, digit }].slice(-MAX_TICKS));
+                    setConnected(true); setConnectionError('');
                 }
-            } catch {
-                setConnected(false);
-                setConnectionError('Invalid response received from Deriv');
-            }
+            } catch { setConnected(false); setConnectionError('Invalid response received from Deriv'); }
         };
         ws.onclose = event => {
             if (connectionId !== connectionIdRef.current || wsRef.current !== ws) return;
-            wsRef.current = null;
-            setConnected(false);
-            if (!stoppedRef.current) {
-                setConnectionError(event.reason || `WebSocket closed (${event.code})`);
-                reconnectRef.current = window.setTimeout(() => { if (!stoppedRef.current && connectionId === connectionIdRef.current) connect(); }, 2500);
-            }
+            wsRef.current = null; setConnected(false);
+            if (!stoppedRef.current) { setConnectionError(event.reason || `WebSocket closed (${event.code})`); reconnectRef.current = window.setTimeout(() => { if (!stoppedRef.current && connectionId === connectionIdRef.current) connect(); }, 2500); }
         };
         ws.onerror = () => { if (connectionId === connectionIdRef.current && wsRef.current === ws) { setConnected(false); setConnectionError('Unable to open Deriv public WebSocket'); } };
-    }, [selectedSymbol, windowSize]);
+    }, [selectedSymbol]);
 
     useEffect(() => {
         setTicks([]); setLatestDigit(null); setLatestPrice(null); setPipSize(2); pipSizeRef.current = 2;
         connect();
         return () => {
-            stoppedRef.current = true;
-            ++connectionIdRef.current;
-            historyReadyRef.current = false;
-            pendingLiveTicksRef.current = [];
+            stoppedRef.current = true; ++connectionIdRef.current;
             if (reconnectRef.current) window.clearTimeout(reconnectRef.current);
             const ws = wsRef.current; wsRef.current = null;
             if (ws) { ws.onopen = null; ws.onmessage = null; ws.onerror = null; ws.onclose = null; ws.close(); }
@@ -184,34 +123,19 @@ const AnalysisTool = () => {
         const even = stats.filter(item => item.digit % 2 === 0).reduce((sum, item) => sum + item.count, 0);
         const over = stats.filter(item => item.digit > overDigit).reduce((sum, item) => sum + item.count, 0);
         const under = stats.filter(item => item.digit < underDigit).reduce((sum, item) => sum + item.count, 0);
-        return {
-            over: total ? over / total * 100 : 0,
-            under: total ? under / total * 100 : 0,
-            matches: total ? matches / total * 100 : 0,
-            differs: total ? (total - matches) / total * 100 : 0,
-            even: total ? even / total * 100 : 0,
-            odd: total ? (total - even) / total * 100 : 0,
-            streakType: latestDigit === null ? '—' : latestDigit % 2 === 0 ? 'Even' : 'Odd',
-        };
+        return { over: total ? over / total * 100 : 0, under: total ? under / total * 100 : 0, matches: total ? matches / total * 100 : 0, differs: total ? (total - matches) / total * 100 : 0, even: total ? even / total * 100 : 0, odd: total ? (total - even) / total * 100 : 0, streakType: latestDigit === null ? '—' : latestDigit % 2 === 0 ? 'Even' : 'Odd' };
     }, [analysisTicks, latestDigit, overDigit, underDigit, prediction, stats]);
 
     const renderDistributionCard = (label: string, value: number, tone: 'green' | 'red' | 'blue' | 'orange') => (
-        <div className={`dcircles__distribution-card dcircles__distribution-card--${tone}`}>
-            <div className='dcircles__distribution-icon' aria-hidden='true' /><strong>{label}</strong><b>{value.toFixed(1)}%</b>
-            <div className='dcircles__distribution-bar'><span style={{ width: `${Math.min(100, Math.max(0, value))}%` }} /></div>
-        </div>
+        <div className={`dcircles__distribution-card dcircles__distribution-card--${tone}`}><div className='dcircles__distribution-icon' aria-hidden='true' /><strong>{label}</strong><b>{value.toFixed(1)}%</b><div className='dcircles__distribution-bar'><span style={{ width: `${Math.min(100, Math.max(0, value))}%` }} /></div></div>
     );
 
     return <section className='dcircles'>
         <div className='dcircles__subtabs' role='tablist'><button type='button' className={activeTab === 'dcircles' ? 'is-active' : ''} onClick={() => setActiveTab('dcircles')}>DCircles</button><button type='button' className={activeTab === 'ldp' ? 'is-active' : ''} onClick={() => setActiveTab('ldp')}>LDP Analyzer</button></div>
         {activeTab === 'ldp' ? <div className='dcircles__placeholder'><h2>Last Digit Probability Analyzer</h2><p>Choose DCircles for the live Deriv digit distribution view.</p><button type='button' onClick={() => setActiveTab('dcircles')}>Open DCircles</button></div> : <>
             <div className='dcircles__controls'><label>Market<select value={selectedIndex} onChange={event => setSelectedIndex(event.target.value)}>{VOLATILITY_INDICES.map(([name]) => <option key={name}>{name}</option>)}</select></label><label>Ticks<select value={windowSize} onChange={event => setWindowSize(Number(event.target.value))}>{TICK_WINDOWS.map(size => <option key={size} value={size}>{size}</option>)}</select></label><div className='dcircles__price'><span>Price</span><strong>{formatPrice(latestPrice, pipSize)}</strong></div></div>
-            <div className='dcircles__circle-panel'><div className='dcircles__circles'>{stats.map(item => <div className={`${digitClass(item.digit)} dcircles__digit--rank-${item.rankTone}`} key={item.digit}><div className='dcircles__circle'><span>{item.digit}</span>{item.digit === latestDigit && <i className='dcircles__pointer'>▲</i>}</div><b>{item.percentage.toFixed(2)}%</b><div className='dcircles__digit-bar'><span /></div></div>)}</div><div className='dcircles__status'>{connected ? '● Live · Deriv' : '○ Loading historical ticks…'} · {analysisTicks.length} / {windowSize} ticks{connectionError && <span className='dcircles__error'> · {connectionError}</span>}</div></div>
-            <div className='dcircles__section'>
-                <div className='dcircles__section-heading'><span className='dcircles__section-icon'>◧</span><strong>Over/Under</strong><button type='button' className='dcircles__expand-toggle' onClick={() => setOverUnderOpen(open => !open)} aria-expanded={overUnderOpen}>{overUnderOpen ? '▲' : '▼'}</button><small>Over {overDigit} · Under {underDigit}</small></div>
-                <div className='dcircles__cards'>{renderDistributionCard(`Over ${overDigit}`, distribution.over, 'green')}{renderDistributionCard(`Under ${underDigit}`, distribution.under, 'red')}</div>
-                {overUnderOpen && <div className='dcircles__over-under-picker'><div><strong>Over digit</strong><div className='dcircles__digit-options'>{DIGITS.slice(0, 8).map(digit => <button key={`over-${digit}`} type='button' className={overDigit === digit ? 'is-selected' : ''} onClick={() => setOverDigit(digit)}>Over {digit}</button>)}</div></div><div><strong>Under digit</strong><div className='dcircles__digit-options'>{DIGITS.slice(2, 10).map(digit => <button key={`under-${digit}`} type='button' className={underDigit === digit ? 'is-selected' : ''} onClick={() => setUnderDigit(digit)}>Under {digit}</button>)}</div></div></div>}
-            </div>
+            <div className='dcircles__circle-panel'><div className='dcircles__circles'>{stats.map(item => <div className={`${digitClass(item.digit)} dcircles__digit--rank-${item.rankTone}`} key={item.digit}><div className='dcircles__circle'><span>{item.digit}</span>{item.digit === latestDigit && <i className='dcircles__pointer'>▲</i>}</div><b>{item.percentage.toFixed(2)}%</b><div className='dcircles__digit-bar'><span /></div></div>)}</div><div className='dcircles__status'>{connected ? '● Live · Deriv' : '○ Connecting to Deriv…'} · {analysisTicks.length} / {windowSize} ticks{connectionError && <span className='dcircles__error'> · {connectionError}</span>}</div></div>
+            <div className='dcircles__section'><div className='dcircles__section-heading'><span className='dcircles__section-icon'>◧</span><strong>Over/Under</strong><button type='button' className='dcircles__expand-toggle' onClick={() => setOverUnderOpen(open => !open)} aria-expanded={overUnderOpen}>{overUnderOpen ? '▲' : '▼'}</button><small>Over {overDigit} · Under {underDigit}</small></div><div className='dcircles__cards'>{renderDistributionCard(`Over ${overDigit}`, distribution.over, 'green')}{renderDistributionCard(`Under ${underDigit}`, distribution.under, 'red')}</div>{overUnderOpen && <div className='dcircles__over-under-picker'><div><strong>Over digit</strong><div className='dcircles__digit-options'>{DIGITS.slice(0, 8).map(digit => <button key={`over-${digit}`} type='button' className={overDigit === digit ? 'is-selected' : ''} onClick={() => setOverDigit(digit)}>Over {digit}</button>)}</div></div><div><strong>Under digit</strong><div className='dcircles__digit-options'>{DIGITS.slice(2, 10).map(digit => <button key={`under-${digit}`} type='button' className={underDigit === digit ? 'is-selected' : ''} onClick={() => setUnderDigit(digit)}>Under {digit}</button>)}</div></div></div>}</div>
             <div className='dcircles__section'><div className='dcircles__section-heading'><span className='dcircles__section-icon dcircles__section-icon--blue'>▣</span><strong>Matches/Differs Analysis</strong><label>Prediction<select value={prediction} onChange={event => setPrediction(Number(event.target.value))}>{DIGITS.map(digit => <option key={digit}>{digit}</option>)}</select></label><small>Current digit {latestDigit ?? '—'}</small></div><div className='dcircles__cards'>{renderDistributionCard(`Matches ${prediction}`, distribution.matches, 'blue')}{renderDistributionCard(`Differs ${prediction}`, distribution.differs, 'orange')}</div></div>
             <div className='dcircles__section'><div className='dcircles__section-heading'><span className='dcircles__section-icon dcircles__section-icon--purple'>✣</span><strong>Even/Odd Analysis</strong><small>Current streak: {distribution.streakType}</small></div><div className='dcircles__cards'>{renderDistributionCard('Even', distribution.even, 'blue')}{renderDistributionCard('Odd', distribution.odd, 'orange')}</div></div>
         </>}
