@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './styles.scss';
 
 type AnalysisTab = 'dcircles' | 'ldp';
+type TickRecord = { quote: number; digit: number };
+type RankTone = 'most' | 'second-most' | 'second-least' | 'least' | 'normal';
 
 const DIGITS = Array.from({ length: 10 }, (_, i) => i);
 const VOLATILITY_INDICES = [
@@ -13,10 +15,10 @@ const VOLATILITY_INDICES = [
 ] as const;
 
 const TICK_WINDOWS = [1000, 500, 300, 100, 50];
-const WS_URL = 'wss://ws.derivws.com/websockets/v3';
 const MAX_TICKS = 1000;
-
-type TickRecord = { quote: number; digit: number };
+// Public Deriv market-data app id. No account authentication is used for tick data.
+const DERIV_APP_ID = '1089';
+const WS_URL = `wss://ws.derivws.com/websockets/v3?app_id=${DERIV_APP_ID}`;
 
 const getLastDigit = (quote: number, pipSize = 2) => {
     const decimals = Math.max(0, Math.min(8, Number(pipSize) || 2));
@@ -42,13 +44,20 @@ const AnalysisTool = () => {
     const [latestPrice, setLatestPrice] = useState<number | null>(null);
     const [pipSize, setPipSize] = useState(2);
     const [connected, setConnected] = useState(false);
+    const [connectionError, setConnectionError] = useState('');
     const wsRef = useRef<WebSocket | null>(null);
     const reconnectRef = useRef<number | null>(null);
     const stoppedRef = useRef(false);
+    const pipSizeRef = useRef(2);
     const selectedSymbol = VOLATILITY_INDICES.find(([name]) => name === selectedIndex)?.[1] || 'R_100';
+
+    useEffect(() => {
+        pipSizeRef.current = pipSize;
+    }, [pipSize]);
 
     const connect = useCallback(() => {
         stoppedRef.current = false;
+        setConnectionError('');
         if (reconnectRef.current) window.clearTimeout(reconnectRef.current);
         wsRef.current?.close();
 
@@ -58,6 +67,8 @@ const AnalysisTool = () => {
         ws.onopen = () => {
             if (stoppedRef.current) return;
             setConnected(true);
+            setConnectionError('');
+            // Fetch real Deriv history first, then keep the subscription running for live ticks.
             ws.send(JSON.stringify({
                 ticks_history: selectedSymbol,
                 count: MAX_TICKS,
@@ -72,15 +83,25 @@ const AnalysisTool = () => {
                 const data = JSON.parse(event.data);
                 if (data.error) {
                     setConnected(false);
+                    setConnectionError(data.error.message || 'Deriv tick stream error');
                     return;
                 }
 
-                const historyPipSize = Number(data.history?.pip_size ?? data.tick?.pip_size);
-                if (Number.isFinite(historyPipSize) && historyPipSize >= 0) setPipSize(historyPipSize);
+                const receivedPipSize = Number(data.history?.pip_size ?? data.tick?.pip_size);
+                const decimals = Number.isFinite(receivedPipSize) && receivedPipSize >= 0
+                    ? receivedPipSize
+                    : pipSizeRef.current;
+
+                if (Number.isFinite(receivedPipSize) && receivedPipSize >= 0) {
+                    pipSizeRef.current = receivedPipSize;
+                    setPipSize(receivedPipSize);
+                }
 
                 if (Array.isArray(data.history?.prices)) {
-                    const decimals = Number.isFinite(historyPipSize) ? historyPipSize : pipSize;
-                    const history = data.history.prices.map(Number).filter(Number.isFinite).slice(-MAX_TICKS);
+                    const history = data.history.prices
+                        .map(Number)
+                        .filter(Number.isFinite)
+                        .slice(-MAX_TICKS);
                     if (history.length) {
                         const records = history.map(quote => ({ quote, digit: getLastDigit(quote, decimals) }));
                         setTicks(records);
@@ -93,14 +114,13 @@ const AnalysisTool = () => {
                 if (data.tick?.quote !== undefined) {
                     const quote = Number(data.tick.quote);
                     if (!Number.isFinite(quote)) return;
-                    const decimals = Number.isFinite(historyPipSize) ? historyPipSize : pipSize;
                     const digit = getLastDigit(quote, decimals);
                     setLatestPrice(quote);
                     setLatestDigit(digit);
                     setTicks(previous => [...previous, { quote, digit }].slice(-MAX_TICKS));
                 }
             } catch {
-                // Ignore malformed WebSocket messages.
+                // Ignore malformed WebSocket messages without breaking the stream.
             }
         };
 
@@ -108,14 +128,18 @@ const AnalysisTool = () => {
             setConnected(false);
             if (!stoppedRef.current) reconnectRef.current = window.setTimeout(connect, 2500);
         };
-        ws.onerror = () => setConnected(false);
-    }, [pipSize, selectedSymbol]);
+        ws.onerror = () => {
+            setConnected(false);
+            setConnectionError('Unable to connect to Deriv live ticks');
+        };
+    }, [selectedSymbol]);
 
     useEffect(() => {
         setTicks([]);
         setLatestDigit(null);
         setLatestPrice(null);
         setPipSize(2);
+        pipSizeRef.current = 2;
         connect();
         return () => {
             stoppedRef.current = true;
@@ -126,15 +150,25 @@ const AnalysisTool = () => {
     }, [connect]);
 
     const analysisTicks = useMemo(() => ticks.slice(-windowSize), [ticks, windowSize]);
+
     const stats = useMemo(() => {
         const counts = DIGITS.map(digit => analysisTicks.filter(tick => tick.digit === digit).length);
         const total = counts.reduce((sum, count) => sum + count, 0);
-        const max = Math.max(0, ...counts);
+        const ranked = DIGITS.map((digit, index) => ({ digit, count: counts[index] }))
+            .sort((a, b) => b.count - a.count || a.digit - b.digit);
+        const rankToneByDigit = new Map<number, RankTone>();
+        if (total > 0) {
+            rankToneByDigit.set(ranked[0].digit, 'most');
+            rankToneByDigit.set(ranked[1].digit, 'second-most');
+            rankToneByDigit.set(ranked[ranked.length - 2].digit, 'second-least');
+            rankToneByDigit.set(ranked[ranked.length - 1].digit, 'least');
+        }
+
         return DIGITS.map((digit, index) => ({
             digit,
             count: counts[index],
             percentage: total ? (counts[index] / total) * 100 : 0,
-            isMost: total > 0 && counts[index] === max,
+            rankTone: rankToneByDigit.get(digit) || 'normal' as RankTone,
         }));
     }, [analysisTicks]);
 
@@ -174,7 +208,7 @@ const AnalysisTool = () => {
             {activeTab === 'ldp' ? (
                 <div className='dcircles__placeholder'>
                     <h2>Last Digit Probability Analyzer</h2>
-                    <p>Choose DCircles for the live digit distribution view. The live Deriv tick connection remains active for this analysis page.</p>
+                    <p>Choose DCircles for the live Deriv digit distribution view.</p>
                     <button type='button' onClick={() => setActiveTab('dcircles')}>Open DCircles</button>
                 </div>
             ) : (
@@ -188,16 +222,20 @@ const AnalysisTool = () => {
                     <div className='dcircles__circle-panel'>
                         <div className='dcircles__circles' aria-label={`${selectedIndex} digit circles`}>
                             {stats.map(item => (
-                                <div className={digitClass(item.digit)} key={item.digit}>
+                                <div className={`${digitClass(item.digit)} dcircles__digit--rank-${item.rankTone}`} key={item.digit}>
                                     <div className='dcircles__circle'>
                                         <span>{item.digit}</span>
                                         {item.digit === latestDigit && <i className='dcircles__pointer' aria-label='Latest digit'>▲</i>}
                                     </div>
                                     <b>{item.percentage.toFixed(2)}%</b>
+                                    <div className='dcircles__digit-bar' aria-hidden='true'><span /></div>
                                 </div>
                             ))}
                         </div>
-                        <div className='dcircles__status'>{connected ? '● Live · Deriv' : '○ Reconnecting…'} · {analysisTicks.length} / {windowSize} ticks</div>
+                        <div className='dcircles__status'>
+                            {connected ? '● Live · Deriv' : '○ Connecting to Deriv…'} · {analysisTicks.length} / {windowSize} ticks
+                            {connectionError && <span className='dcircles__error'> · {connectionError}</span>}
+                        </div>
                     </div>
 
                     <div className='dcircles__section'>
