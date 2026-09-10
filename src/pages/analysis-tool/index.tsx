@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './styles.scss';
 
+type AnalysisTab = 'dcircles' | 'ldp';
+
 const DIGITS = Array.from({ length: 10 }, (_, i) => i);
 const VOLATILITY_INDICES = [
     ['Volatility 10', 'R_10'], ['Volatility 10 (1s)', '1HZ10V'], ['Volatility 15 (1s)', '1HZ15V'],
@@ -10,8 +12,9 @@ const VOLATILITY_INDICES = [
     ['Volatility 100 (1s)', '1HZ100V'],
 ] as const;
 
-const ANALYSIS_WINDOWS = [500, 300, 100, 50, 10];
+const TICK_WINDOWS = [1000, 500, 300, 100, 50];
 const WS_URL = 'wss://ws.derivws.com/websockets/v3';
+const MAX_TICKS = 1000;
 
 const getLastDigit = (quote: number) => {
     const text = String(quote);
@@ -19,16 +22,21 @@ const getLastDigit = (quote: number) => {
     return Number((decimal || text).slice(-1));
 };
 
+const formatPrice = (quote: number | null) => quote === null ? '—' : quote.toFixed(2);
+
+const digitClass = (digit: number) => `dcircles__digit dcircles__digit--${digit}`;
+
 const AnalysisTool = () => {
-    const [expanded, setExpanded] = useState<string | null>(null);
-    const [selectedIndex, setSelectedIndex] = useState(VOLATILITY_INDICES[0][0]);
-    const [windowSize, setWindowSize] = useState(500);
+    const [activeTab, setActiveTab] = useState<AnalysisTab>('dcircles');
+    const [selectedIndex, setSelectedIndex] = useState(VOLATILITY_INDICES.find(([name]) => name === 'Volatility 100')?.[0] || VOLATILITY_INDICES[0][0]);
+    const [windowSize, setWindowSize] = useState(1000);
     const [ticks, setTicks] = useState<number[]>([]);
     const [latestDigit, setLatestDigit] = useState<number | null>(null);
+    const [latestPrice, setLatestPrice] = useState<number | null>(null);
     const [connected, setConnected] = useState(false);
     const wsRef = useRef<WebSocket | null>(null);
     const reconnectRef = useRef<number | null>(null);
-    const selectedSymbol = VOLATILITY_INDICES.find(([name]) => name === selectedIndex)?.[1] || 'R_10';
+    const selectedSymbol = VOLATILITY_INDICES.find(([name]) => name === selectedIndex)?.[1] || 'R_100';
 
     const connect = useCallback(() => {
         if (reconnectRef.current) window.clearTimeout(reconnectRef.current);
@@ -39,27 +47,39 @@ const AnalysisTool = () => {
 
         ws.onopen = () => {
             setConnected(true);
-            ws.send(JSON.stringify({ ticks_history: selectedSymbol, count: 500, end: 'latest', style: 'ticks', subscribe: 1 }));
+            ws.send(JSON.stringify({
+                ticks_history: selectedSymbol,
+                count: MAX_TICKS,
+                end: 'latest',
+                style: 'ticks',
+                subscribe: 1,
+            }));
         };
 
         ws.onmessage = event => {
             try {
                 const data = JSON.parse(event.data);
                 if (data.error) return;
+
                 if (Array.isArray(data.history?.prices)) {
-                    const history = data.history.prices.map(Number).filter(Number.isFinite);
-                    setTicks(history.slice(-500));
-                    if (history.length) setLatestDigit(getLastDigit(history[history.length - 1]));
+                    const history = data.history.prices.map(Number).filter(Number.isFinite).slice(-MAX_TICKS);
+                    if (history.length) {
+                        setTicks(history);
+                        const price = history[history.length - 1];
+                        setLatestPrice(price);
+                        setLatestDigit(getLastDigit(price));
+                    }
                 }
+
                 if (data.tick?.quote !== undefined) {
                     const quote = Number(data.tick.quote);
                     if (!Number.isFinite(quote)) return;
-                    const digit = getLastDigit(quote);
-                    setLatestDigit(digit);
-                    setTicks(previous => [...previous, quote].slice(-500));
+                    setLatestPrice(quote);
+                    setLatestDigit(getLastDigit(quote));
+                    setTicks(previous => [...previous, quote].slice(-MAX_TICKS));
                 }
             } catch {
-                // Ignore malformed/non-data WebSocket messages.
+                // Ignore malformed WebSocket messages.
             }
         };
 
@@ -73,6 +93,7 @@ const AnalysisTool = () => {
     useEffect(() => {
         setTicks([]);
         setLatestDigit(null);
+        setLatestPrice(null);
         connect();
         return () => {
             if (reconnectRef.current) window.clearTimeout(reconnectRef.current);
@@ -82,76 +103,108 @@ const AnalysisTool = () => {
     }, [connect]);
 
     const analysisTicks = useMemo(() => ticks.slice(-windowSize), [ticks, windowSize]);
+
     const stats = useMemo(() => {
-        const counts = DIGITS.map(digit => ({ digit, count: analysisTicks.filter(quote => getLastDigit(quote) === digit).length }));
-        const total = counts.reduce((sum, item) => sum + item.count, 0);
-        const max = Math.max(0, ...counts.map(item => item.count));
-        const min = total ? Math.min(...counts.map(item => item.count)) : 0;
-        return counts.map(item => ({
-            ...item,
-            percentage: total ? (item.count / total) * 100 : 0,
-            rankPercentage: max ? (item.count / max) * 100 : 0,
-            isMost: total > 0 && item.count === max,
-            isLeast: total > 0 && item.count === min,
+        const counts = DIGITS.map(digit => analysisTicks.filter(quote => getLastDigit(quote) === digit).length);
+        const total = counts.reduce((sum, count) => sum + count, 0);
+        const max = Math.max(0, ...counts);
+        return DIGITS.map((digit, index) => ({
+            digit,
+            count: counts[index],
+            percentage: total ? (counts[index] / total) * 100 : 0,
+            isMost: total > 0 && counts[index] === max,
         }));
     }, [analysisTicks]);
 
+    const distribution = useMemo(() => {
+        const total = analysisTicks.length;
+        const zero = stats[0]?.count || 0;
+        const prediction = latestDigit ?? 0;
+        const matches = stats[prediction]?.count || 0;
+        const even = stats.filter(item => item.digit % 2 === 0).reduce((sum, item) => sum + item.count, 0);
+        const streakType = latestDigit === null ? '—' : latestDigit % 2 === 0 ? 'Even' : 'Odd';
+        return {
+            overZero: total ? ((total - zero) / total) * 100 : 0,
+            underZero: total ? (zero / total) * 100 : 0,
+            matches: total ? (matches / total) * 100 : 0,
+            differs: total ? ((total - matches) / total) * 100 : 0,
+            even: total ? (even / total) * 100 : 0,
+            odd: total ? ((total - even) / total) * 100 : 0,
+            prediction,
+            streakType,
+        };
+    }, [analysisTicks.length, latestDigit, stats]);
+
+    const renderDistributionCard = (label: string, value: number, tone: 'green' | 'red' | 'blue' | 'orange') => (
+        <div className={`dcircles__distribution-card dcircles__distribution-card--${tone}`}>
+            <div className='dcircles__distribution-icon' aria-hidden='true' />
+            <strong>{label}</strong>
+            <b>{value.toFixed(1)}%</b>
+            <div className='dcircles__distribution-bar'><span style={{ width: `${Math.min(100, Math.max(0, value))}%` }} /></div>
+        </div>
+    );
+
     return (
-        <section className='lda'>
-            <header className='lda__header'>
-                <div>
-                    <h2>🎯 Last Digit Analysis (LDA)</h2>
-                    <p>Live analysis of the last digit appearing on each tick.</p>
-                </div>
-                <div>
-                    <select value={selectedIndex} onChange={event => setSelectedIndex(event.target.value)}>
-                        {VOLATILITY_INDICES.map(([name]) => <option key={name}>{name}</option>)}
-                    </select>
-                    <select value={windowSize} onChange={event => setWindowSize(Number(event.target.value))} aria-label='Analysis tick window'>
-                        {ANALYSIS_WINDOWS.map(size => <option key={size} value={size}>Last {size} ticks</option>)}
-                    </select>
-                </div>
-            </header>
-
-            <div className='lda__latest'>
-                <span>Latest last digit</span>
-                <strong>{latestDigit ?? '—'}</strong>
-                <small>{connected ? '● Live' : '○ Reconnecting…'} · Analysing {analysisTicks.length} / {windowSize} ticks</small>
+        <section className='dcircles'>
+            <div className='dcircles__subtabs' role='tablist' aria-label='Analysis modes'>
+                <button type='button' className={activeTab === 'dcircles' ? 'is-active' : ''} onClick={() => setActiveTab('dcircles')} role='tab'>DCircles</button>
+                <button type='button' className={activeTab === 'ldp' ? 'is-active' : ''} onClick={() => setActiveTab('ldp')} role='tab'>LDP Analyzer</button>
             </div>
 
-            <div className='lda__circles' aria-label={`${selectedIndex} last digit analysis`}>
-                {stats.map(item => (
-                    <div className={`lda__digit ${item.isMost ? 'lda__digit--most' : ''} ${item.isLeast ? 'lda__digit--least' : ''}`} key={item.digit}>
-                        <div className='lda__circle'>
-                            <span>{item.digit}</span>
-                            {item.digit === latestDigit && <i className='lda__pointer' aria-label='Latest digit pointer'>➤</i>}
-                        </div>
-                        <b>{item.percentage.toFixed(1)}%</b>
-                        <div className='lda__bar'><span style={{ width: `${item.rankPercentage}%` }} /></div>
-                        <small>{item.count} appearances</small>
+            {activeTab === 'ldp' ? (
+                <div className='dcircles__placeholder'>
+                    <h2>Last Digit Probability Analyzer</h2>
+                    <p>Choose DCircles for the live digit distribution view. The existing live tick connection remains shared with this analysis page.</p>
+                    <button type='button' onClick={() => setActiveTab('dcircles')}>Open DCircles</button>
+                </div>
+            ) : (
+                <>
+                    <div className='dcircles__controls'>
+                        <label>Market<select value={selectedIndex} onChange={event => setSelectedIndex(event.target.value)}>{VOLATILITY_INDICES.map(([name]) => <option key={name}>{name}</option>)}</select></label>
+                        <label>Ticks<select value={windowSize} onChange={event => setWindowSize(Number(event.target.value))}>{TICK_WINDOWS.map(size => <option key={size} value={size}>{size}</option>)}</select></label>
+                        <div className='dcircles__price'><span>Price</span><strong>{formatPrice(latestPrice)}</strong></div>
                     </div>
-                ))}
-            </div>
 
-            <div className='lda__legend'>
-                <span>🟢 Green = most appearing digit</span>
-                <span>🔴 Red = least appearing digit</span>
-                <span>➤ = latest digit</span>
-            </div>
+                    <div className='dcircles__circle-panel'>
+                        <div className='dcircles__circles' aria-label={`${selectedIndex} digit circles`}>
+                            {stats.map(item => (
+                                <div className={digitClass(item.digit)} key={item.digit}>
+                                    <div className='dcircles__circle'>
+                                        <span>{item.digit}</span>
+                                        {item.digit === latestDigit && <i className='dcircles__pointer' aria-label='Latest digit'>▲</i>}
+                                    </div>
+                                    <b>{item.percentage.toFixed(2)}%</b>
+                                </div>
+                            ))}
+                        </div>
+                        <div className='dcircles__status'>{connected ? '● Live' : '○ Reconnecting…'} · {analysisTicks.length} / {windowSize} ticks</div>
+                    </div>
 
-            <div className='lda__sections'>
-                {[
-                    ['frequency', '📊 Digit frequency', `Frequency calculated from the selected last ${windowSize} ticks.`],
-                    ['distribution', '⚖️ Percentage distribution', `Each digit's percentage is calculated from the ${analysisTicks.length} ticks currently collected for this window.`],
-                    ['sequence', '🔢 Recent sequence', 'The analyzer follows live digits in order and continuously keeps the latest 500 ticks available for analysis.'],
-                    ['note', '⚠️ Important note', 'A frequent or rare digit does not guarantee what the next tick will be. This tool describes observed market data only.'],
-                ].map(([key, title, description]) => (
-                    <button type='button' className='lda__section' key={key} onClick={() => setExpanded(expanded === key ? null : key)}>
-                        <span>{title}</span><em>{expanded === key ? '−' : '+'}</em>
-                        {expanded === key && <p>{description}</p>}
-                    </button>
-                ))}
-            </div>
+                    <div className='dcircles__section'>
+                        <div className='dcircles__section-heading'><span className='dcircles__section-icon'>◧</span><strong>Over/Under 0</strong><small>Current digit {latestDigit ?? '—'}</small></div>
+                        <div className='dcircles__cards'>
+                            {renderDistributionCard('Over 0', distribution.overZero, 'green')}
+                            {renderDistributionCard('Under 0', distribution.underZero, 'red')}
+                        </div>
+                    </div>
+
+                    <div className='dcircles__section'>
+                        <div className='dcircles__section-heading'><span className='dcircles__section-icon dcircles__section-icon--blue'>▣</span><strong>Matches/Differs Analysis</strong><label>Prediction<select value={distribution.prediction} onChange={() => undefined}><option value={distribution.prediction}>{distribution.prediction}</option></select></label><small>Current digit {latestDigit ?? '—'}</small></div>
+                        <div className='dcircles__cards'>
+                            {renderDistributionCard(`Matches ${distribution.prediction}`, distribution.matches, 'blue')}
+                            {renderDistributionCard(`Differs ${distribution.prediction}`, distribution.differs, 'orange')}
+                        </div>
+                    </div>
+
+                    <div className='dcircles__section'>
+                        <div className='dcircles__section-heading'><span className='dcircles__section-icon dcircles__section-icon--purple'>✣</span><strong>Even/Odd Analysis</strong><small>Current streak: {distribution.streakType}</small></div>
+                        <div className='dcircles__cards'>
+                            {renderDistributionCard('Even', distribution.even, 'blue')}
+                            {renderDistributionCard('Odd', distribution.odd, 'orange')}
+                        </div>
+                    </div>
+                </>
+            )}
         </section>
     );
 };
