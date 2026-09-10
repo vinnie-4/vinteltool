@@ -16,7 +16,6 @@ const VOLATILITY_INDICES = [
 
 const TICK_WINDOWS = [1000, 500, 300, 100, 50];
 const MAX_TICKS = 1000;
-// Use Deriv's documented public market-data WebSocket. No authentication is required.
 const WS_URL = 'wss://ws.binaryws.com/websockets/v3';
 
 const getLastDigit = (quote: number, pipSize = 2) => {
@@ -54,11 +53,23 @@ const AnalysisTool = () => {
 
         ws.onopen = () => {
             if (stoppedRef.current) return;
+            setConnected(true);
             setConnectionError('');
-            // The selected volatility symbol is already known, so avoid active_symbols
-            // discovery/gating and request the public history + live stream directly.
-            ws.send(JSON.stringify({ ticks_history: selectedSymbol, count: MAX_TICKS, end: 'latest', style: 'ticks', subscribe: 0, req_id: 1 }));
-            ws.send(JSON.stringify({ ticks: selectedSymbol, subscribe: 1, req_id: 2 }));
+            // Use the documented public market-data requests directly. Symbol discovery
+            // is intentionally not a prerequisite because the selected symbols are known.
+            ws.send(JSON.stringify({
+                ticks_history: selectedSymbol,
+                count: MAX_TICKS,
+                end: 'latest',
+                style: 'ticks',
+                subscribe: 0,
+                req_id: 1,
+            }));
+            ws.send(JSON.stringify({
+                ticks: selectedSymbol,
+                subscribe: 1,
+                req_id: 2,
+            }));
         };
 
         ws.onmessage = event => {
@@ -102,6 +113,7 @@ const AnalysisTool = () => {
                     setConnectionError('');
                 }
             } catch {
+                setConnected(false);
                 setConnectionError('Invalid response received from Deriv');
             }
         };
@@ -109,14 +121,14 @@ const AnalysisTool = () => {
         ws.onclose = event => {
             setConnected(false);
             if (!stoppedRef.current) {
-                const reason = event.reason ? ` (${event.reason})` : '';
-                if (event.code !== 1000) setConnectionError(`Deriv WebSocket closed (${event.code})${reason}`);
+                const detail = event.reason || `WebSocket closed (${event.code})`;
+                setConnectionError(detail);
                 reconnectRef.current = window.setTimeout(connect, 2500);
             }
         };
         ws.onerror = () => {
             setConnected(false);
-            setConnectionError('Deriv WebSocket connection failed');
+            setConnectionError('Unable to open Deriv public WebSocket');
         };
     }, [selectedSymbol]);
 
