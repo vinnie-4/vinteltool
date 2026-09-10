@@ -16,7 +16,6 @@ const VOLATILITY_INDICES = [
 
 const TICK_WINDOWS = [1000, 500, 300, 100, 50];
 const MAX_TICKS = 1000;
-// Public Deriv market-data endpoint; authentication is not required for ticks.
 const WS_URL = 'wss://ws.binaryws.com/websockets/v3';
 
 const getLastDigit = (quote: number, pipSize = 2) => {
@@ -48,34 +47,46 @@ const AnalysisTool = () => {
         setConnectionError('');
         if (reconnectRef.current) window.clearTimeout(reconnectRef.current);
         wsRef.current?.close();
+
         const ws = new WebSocket(WS_URL);
         wsRef.current = ws;
 
         ws.onopen = () => {
             if (stoppedRef.current) return;
-            setConnected(true);
             setConnectionError('');
-            // History request supplies the 1000-tick baseline; the separate ticks
-            // subscription guarantees a continuous real-time Deriv stream.
-            ws.send(JSON.stringify({ ticks_history: selectedSymbol, count: MAX_TICKS, end: 'latest', style: 'ticks', subscribe: 0, req_id: 1 }));
-            ws.send(JSON.stringify({ ticks: selectedSymbol, subscribe: 1, req_id: 2 }));
+            ws.send(JSON.stringify({ active_symbols: 'brief', product_type: 'basic', req_id: 1 }));
         };
 
         ws.onmessage = event => {
             try {
                 const data = JSON.parse(event.data);
                 if (data.error) {
+                    setConnected(false);
                     setConnectionError(data.error.message || 'Deriv tick stream error');
                     return;
                 }
-                const receivedPipSize = Number(data.history?.pip_size ?? data.tick?.pip_size);
+
+                if (data.msg_type === 'active_symbols') {
+                    const available = Array.isArray(data.active_symbols)
+                        && data.active_symbols.some((item: { symbol?: string }) => item.symbol === selectedSymbol);
+                    if (!available) {
+                        setConnected(false);
+                        setConnectionError(`${selectedSymbol} is not available from Deriv`);
+                        return;
+                    }
+                    ws.send(JSON.stringify({ ticks_history: selectedSymbol, count: MAX_TICKS, end: 'latest', style: 'ticks', subscribe: 0, req_id: 2 }));
+                    ws.send(JSON.stringify({ ticks: selectedSymbol, subscribe: 1, req_id: 3 }));
+                    return;
+                }
+
+                const receivedPipSize = Number(data.pip_size ?? data.history?.pip_size ?? data.tick?.pip_size);
                 if (Number.isFinite(receivedPipSize) && receivedPipSize >= 0) {
                     pipSizeRef.current = receivedPipSize;
                     setPipSize(receivedPipSize);
                 }
                 const decimals = Number.isFinite(receivedPipSize) && receivedPipSize >= 0 ? receivedPipSize : pipSizeRef.current;
 
-                if (Array.isArray(data.history?.prices)) {
+                if (data.msg_type === 'history' && Array.isArray(data.history?.prices)) {
                     const history = data.history.prices.map(Number).filter(Number.isFinite).slice(-MAX_TICKS);
                     if (history.length) {
                         const records = history.map(quote => ({ quote, digit: getLastDigit(quote, decimals) }));
@@ -83,27 +94,33 @@ const AnalysisTool = () => {
                         const latest = records[records.length - 1];
                         setLatestPrice(latest.quote);
                         setLatestDigit(latest.digit);
+                        setConnected(true);
+                        setConnectionError('');
                     }
                 }
-                if (data.tick?.quote !== undefined) {
+
+                if (data.msg_type === 'tick' && data.tick?.quote !== undefined) {
                     const quote = Number(data.tick.quote);
                     if (!Number.isFinite(quote)) return;
                     const digit = getLastDigit(quote, decimals);
                     setLatestPrice(quote);
                     setLatestDigit(digit);
                     setTicks(previous => [...previous, { quote, digit }].slice(-MAX_TICKS));
+                    setConnected(true);
+                    setConnectionError('');
                 }
             } catch {
-                // Ignore malformed messages.
+                setConnectionError('Invalid response received from Deriv');
             }
         };
+
         ws.onclose = () => {
             setConnected(false);
             if (!stoppedRef.current) reconnectRef.current = window.setTimeout(connect, 2500);
         };
         ws.onerror = () => {
             setConnected(false);
-            setConnectionError('Unable to connect to Deriv live ticks');
+            setConnectionError('Deriv WebSocket connection failed');
         };
     }, [selectedSymbol]);
 
