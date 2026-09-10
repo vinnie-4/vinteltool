@@ -16,13 +16,20 @@ const TICK_WINDOWS = [1000, 500, 300, 100, 50];
 const WS_URL = 'wss://ws.derivws.com/websockets/v3';
 const MAX_TICKS = 1000;
 
-const getLastDigit = (quote: number) => {
-    const text = String(quote);
-    const decimal = text.split('.')[1];
-    return Number((decimal || text).slice(-1));
+type TickRecord = { quote: number; digit: number };
+
+const getLastDigit = (quote: number, pipSize = 2) => {
+    const decimals = Math.max(0, Math.min(8, Number(pipSize) || 2));
+    const fixed = quote.toFixed(decimals);
+    return Number(fixed.replace('.', '').slice(-1));
 };
 
-const formatPrice = (quote: number | null) => quote === null ? '—' : quote.toFixed(2);
+const formatPrice = (quote: number | null, pipSize: number) => {
+    if (quote === null) return '—';
+    const decimals = Math.max(0, Math.min(8, Number(pipSize) || 2));
+    return quote.toFixed(decimals);
+};
+
 const digitClass = (digit: number) => `dcircles__digit dcircles__digit--${digit}`;
 
 const AnalysisTool = () => {
@@ -30,60 +37,88 @@ const AnalysisTool = () => {
     const [selectedIndex, setSelectedIndex] = useState(VOLATILITY_INDICES.find(([name]) => name === 'Volatility 100')?.[0] || VOLATILITY_INDICES[0][0]);
     const [windowSize, setWindowSize] = useState(1000);
     const [prediction, setPrediction] = useState(0);
-    const [ticks, setTicks] = useState<number[]>([]);
+    const [ticks, setTicks] = useState<TickRecord[]>([]);
     const [latestDigit, setLatestDigit] = useState<number | null>(null);
     const [latestPrice, setLatestPrice] = useState<number | null>(null);
+    const [pipSize, setPipSize] = useState(2);
     const [connected, setConnected] = useState(false);
     const wsRef = useRef<WebSocket | null>(null);
     const reconnectRef = useRef<number | null>(null);
+    const stoppedRef = useRef(false);
     const selectedSymbol = VOLATILITY_INDICES.find(([name]) => name === selectedIndex)?.[1] || 'R_100';
 
     const connect = useCallback(() => {
+        stoppedRef.current = false;
         if (reconnectRef.current) window.clearTimeout(reconnectRef.current);
         wsRef.current?.close();
+
         const ws = new WebSocket(WS_URL);
         wsRef.current = ws;
+
         ws.onopen = () => {
+            if (stoppedRef.current) return;
             setConnected(true);
-            ws.send(JSON.stringify({ ticks_history: selectedSymbol, count: MAX_TICKS, end: 'latest', style: 'ticks', subscribe: 1 }));
+            ws.send(JSON.stringify({
+                ticks_history: selectedSymbol,
+                count: MAX_TICKS,
+                end: 'latest',
+                style: 'ticks',
+                subscribe: 1,
+            }));
         };
+
         ws.onmessage = event => {
             try {
                 const data = JSON.parse(event.data);
-                if (data.error) return;
+                if (data.error) {
+                    setConnected(false);
+                    return;
+                }
+
+                const historyPipSize = Number(data.history?.pip_size ?? data.tick?.pip_size);
+                if (Number.isFinite(historyPipSize) && historyPipSize >= 0) setPipSize(historyPipSize);
+
                 if (Array.isArray(data.history?.prices)) {
+                    const decimals = Number.isFinite(historyPipSize) ? historyPipSize : pipSize;
                     const history = data.history.prices.map(Number).filter(Number.isFinite).slice(-MAX_TICKS);
                     if (history.length) {
-                        setTicks(history);
-                        const price = history[history.length - 1];
-                        setLatestPrice(price);
-                        setLatestDigit(getLastDigit(price));
+                        const records = history.map(quote => ({ quote, digit: getLastDigit(quote, decimals) }));
+                        setTicks(records);
+                        const latest = records[records.length - 1];
+                        setLatestPrice(latest.quote);
+                        setLatestDigit(latest.digit);
                     }
                 }
+
                 if (data.tick?.quote !== undefined) {
                     const quote = Number(data.tick.quote);
                     if (!Number.isFinite(quote)) return;
+                    const decimals = Number.isFinite(historyPipSize) ? historyPipSize : pipSize;
+                    const digit = getLastDigit(quote, decimals);
                     setLatestPrice(quote);
-                    setLatestDigit(getLastDigit(quote));
-                    setTicks(previous => [...previous, quote].slice(-MAX_TICKS));
+                    setLatestDigit(digit);
+                    setTicks(previous => [...previous, { quote, digit }].slice(-MAX_TICKS));
                 }
             } catch {
                 // Ignore malformed WebSocket messages.
             }
         };
+
         ws.onclose = () => {
             setConnected(false);
-            reconnectRef.current = window.setTimeout(connect, 2500);
+            if (!stoppedRef.current) reconnectRef.current = window.setTimeout(connect, 2500);
         };
         ws.onerror = () => setConnected(false);
-    }, [selectedSymbol]);
+    }, [pipSize, selectedSymbol]);
 
     useEffect(() => {
         setTicks([]);
         setLatestDigit(null);
         setLatestPrice(null);
+        setPipSize(2);
         connect();
         return () => {
+            stoppedRef.current = true;
             if (reconnectRef.current) window.clearTimeout(reconnectRef.current);
             wsRef.current?.close();
             wsRef.current = null;
@@ -92,10 +127,15 @@ const AnalysisTool = () => {
 
     const analysisTicks = useMemo(() => ticks.slice(-windowSize), [ticks, windowSize]);
     const stats = useMemo(() => {
-        const counts = DIGITS.map(digit => analysisTicks.filter(quote => getLastDigit(quote) === digit).length);
+        const counts = DIGITS.map(digit => analysisTicks.filter(tick => tick.digit === digit).length);
         const total = counts.reduce((sum, count) => sum + count, 0);
         const max = Math.max(0, ...counts);
-        return DIGITS.map((digit, index) => ({ digit, count: counts[index], percentage: total ? (counts[index] / total) * 100 : 0, isMost: total > 0 && counts[index] === max }));
+        return DIGITS.map((digit, index) => ({
+            digit,
+            count: counts[index],
+            percentage: total ? (counts[index] / total) * 100 : 0,
+            isMost: total > 0 && counts[index] === max,
+        }));
     }, [analysisTicks]);
 
     const distribution = useMemo(() => {
@@ -134,7 +174,7 @@ const AnalysisTool = () => {
             {activeTab === 'ldp' ? (
                 <div className='dcircles__placeholder'>
                     <h2>Last Digit Probability Analyzer</h2>
-                    <p>Choose DCircles for the live digit distribution view. The live tick connection remains available to this analysis page.</p>
+                    <p>Choose DCircles for the live digit distribution view. The live Deriv tick connection remains active for this analysis page.</p>
                     <button type='button' onClick={() => setActiveTab('dcircles')}>Open DCircles</button>
                 </div>
             ) : (
@@ -142,7 +182,7 @@ const AnalysisTool = () => {
                     <div className='dcircles__controls'>
                         <label>Market<select value={selectedIndex} onChange={event => setSelectedIndex(event.target.value)}>{VOLATILITY_INDICES.map(([name]) => <option key={name}>{name}</option>)}</select></label>
                         <label>Ticks<select value={windowSize} onChange={event => setWindowSize(Number(event.target.value))}>{TICK_WINDOWS.map(size => <option key={size} value={size}>{size}</option>)}</select></label>
-                        <div className='dcircles__price'><span>Price</span><strong>{formatPrice(latestPrice)}</strong></div>
+                        <div className='dcircles__price'><span>Price</span><strong>{formatPrice(latestPrice, pipSize)}</strong></div>
                     </div>
 
                     <div className='dcircles__circle-panel'>
@@ -157,7 +197,7 @@ const AnalysisTool = () => {
                                 </div>
                             ))}
                         </div>
-                        <div className='dcircles__status'>{connected ? '● Live' : '○ Reconnecting…'} · {analysisTicks.length} / {windowSize} ticks</div>
+                        <div className='dcircles__status'>{connected ? '● Live · Deriv' : '○ Reconnecting…'} · {analysisTicks.length} / {windowSize} ticks</div>
                     </div>
 
                     <div className='dcircles__section'>
@@ -171,7 +211,7 @@ const AnalysisTool = () => {
                     </div>
 
                     <div className='dcircles__section'>
-                        <div className='dcircles__section-heading'><span className='dcircles__section-icon dcircles__section-icon--purple'>✣</span><strong>Even/Odd Analysis</strong><small>Current digit: {distribution.streakType}</small></div>
+                        <div className='dcircles__section-heading'><span className='dcircles__section-icon dcircles__section-icon--purple'>✣</span><strong>Even/Odd Analysis</strong><small>Current streak: {distribution.streakType}</small></div>
                         <div className='dcircles__cards'>{renderDistributionCard('Even', distribution.even, 'blue')}{renderDistributionCard('Odd', distribution.odd, 'orange')}</div>
                     </div>
                 </>
