@@ -16,8 +16,8 @@ const VOLATILITY_INDICES = [
 
 const TICK_WINDOWS = [1000, 500, 300, 100, 50];
 const MAX_TICKS = 1000;
-// Deriv's documented public WebSocket endpoint. App 1089 is the public market-data app.
-const WS_URL = 'wss://ws.derivws.com/websockets/v3?app_id=1089';
+// Use Deriv's documented public market-data WebSocket. No authentication is required.
+const WS_URL = 'wss://ws.binaryws.com/websockets/v3';
 
 const getLastDigit = (quote: number, pipSize = 2) => {
     const decimals = Math.max(0, Math.min(8, Number(pipSize) || 2));
@@ -55,7 +55,10 @@ const AnalysisTool = () => {
         ws.onopen = () => {
             if (stoppedRef.current) return;
             setConnectionError('');
-            ws.send(JSON.stringify({ active_symbols: 'brief', product_type: 'basic', req_id: 1 }));
+            // The selected volatility symbol is already known, so avoid active_symbols
+            // discovery/gating and request the public history + live stream directly.
+            ws.send(JSON.stringify({ ticks_history: selectedSymbol, count: MAX_TICKS, end: 'latest', style: 'ticks', subscribe: 0, req_id: 1 }));
+            ws.send(JSON.stringify({ ticks: selectedSymbol, subscribe: 1, req_id: 2 }));
         };
 
         ws.onmessage = event => {
@@ -64,18 +67,6 @@ const AnalysisTool = () => {
                 if (data.error) {
                     setConnected(false);
                     setConnectionError(data.error.message || 'Deriv tick stream error');
-                    return;
-                }
-
-                if (data.msg_type === 'active_symbols') {
-                    const available = Array.isArray(data.active_symbols) && data.active_symbols.some((item: { symbol?: string }) => item.symbol === selectedSymbol);
-                    if (!available) {
-                        setConnected(false);
-                        setConnectionError(`${selectedSymbol} is not available from Deriv`);
-                        return;
-                    }
-                    ws.send(JSON.stringify({ ticks_history: selectedSymbol, count: MAX_TICKS, end: 'latest', style: 'ticks', subscribe: 0, req_id: 2 }));
-                    ws.send(JSON.stringify({ ticks: selectedSymbol, subscribe: 1, req_id: 3 }));
                     return;
                 }
 
@@ -97,6 +88,7 @@ const AnalysisTool = () => {
                         setConnected(true);
                         setConnectionError('');
                     }
+                    return;
                 }
 
                 if (data.msg_type === 'tick' && data.tick?.quote !== undefined) {
@@ -114,9 +106,13 @@ const AnalysisTool = () => {
             }
         };
 
-        ws.onclose = () => {
+        ws.onclose = event => {
             setConnected(false);
-            if (!stoppedRef.current) reconnectRef.current = window.setTimeout(connect, 2500);
+            if (!stoppedRef.current) {
+                const reason = event.reason ? ` (${event.reason})` : '';
+                if (event.code !== 1000) setConnectionError(`Deriv WebSocket closed (${event.code})${reason}`);
+                reconnectRef.current = window.setTimeout(connect, 2500);
+            }
         };
         ws.onerror = () => {
             setConnected(false);
