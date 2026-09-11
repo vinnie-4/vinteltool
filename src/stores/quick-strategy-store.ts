@@ -103,14 +103,27 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
 
     /**
      * Entry point for XML bots coming from the homepage Free Bots tab.
-     * It deliberately reuses Quick Strategy's existing Blockly import
-     * primitives so Free Bots never creates a second Blockly/trading engine.
+     * Free Bots always load into the existing Quick Strategy/Blockly workspace.
+     * If the Bot Builder workspace has not mounted yet, wait for it instead of
+     * leaving the bot stranded in pending_free_bot.
      */
     loadFreeBotXml = async (xml: string, botName = 'Free Bot') => {
         if (!xml?.trim()) return;
-        const workspace = window.Blockly?.derivWorkspace;
+
+        this.pending_free_bot = { xml, name: botName };
+
+        const waitForWorkspace = async () => {
+            for (let attempt = 0; attempt < 100; attempt += 1) {
+                const workspace = window.Blockly?.derivWorkspace;
+                if (workspace) return workspace;
+                await new Promise<void>(resolve => setTimeout(resolve, 50));
+            }
+            return null;
+        };
+
+        const workspace = await waitForWorkspace();
         if (!workspace) {
-            this.pending_free_bot = { xml, name: botName };
+            console.error(`Quick Strategy workspace did not mount while loading free bot: ${botName}`);
             return;
         }
 
