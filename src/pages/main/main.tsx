@@ -35,37 +35,47 @@ import './main.scss';
 const ChartWrapper = lazy(() => import('../chart/chart-wrapper'));
 const Tutorial = lazy(() => import('../tutorials'));
 
-const ManualTraderStructure = () => <div className='manual-trader'>
-    <div className='manual-trader__top-row'>
-        <div className='manual-trader__volatility'>
-            <span>Volatility Index</span>
-            <select defaultValue='Volatility 100'>
-                <option>Volatility 10</option><option>Volatility 10 (1s)</option><option>Volatility 15 (1s)</option><option>Volatility 25</option><option>Volatility 25 (1s)</option><option>Volatility 30 (1s)</option><option>Volatility 50</option><option>Volatility 50 (1s)</option><option>Volatility 75</option><option>Volatility 75 (1s)</option><option>Volatility 90 (1s)</option><option>Volatility 100</option><option>Volatility 100 (1s)</option>
-            </select>
+const ManualTraderStructure = () => {
+    const [tradeType, setTradeType] = useState('Even/Odd');
+
+    return <div className='manual-trader'>
+        <div className='manual-trader__top-row'>
+            <div className='manual-trader__volatility'>
+                <span>Volatility Index</span>
+                <select defaultValue='Volatility 100'>
+                    <option>Volatility 10</option><option>Volatility 10 (1s)</option><option>Volatility 15 (1s)</option><option>Volatility 25</option><option>Volatility 25 (1s)</option><option>Volatility 30 (1s)</option><option>Volatility 50</option><option>Volatility 50 (1s)</option><option>Volatility 75</option><option>Volatility 75 (1s)</option><option>Volatility 90 (1s)</option><option>Volatility 100</option><option>Volatility 100 (1s)</option>
+                </select>
+            </div>
+            <div className='manual-trader__trade-type'>
+                <span>TRADE TYPE</span>
+                <select value={tradeType} onChange={event => setTradeType(event.target.value)}>
+                    <option>Even/Odd</option>
+                    <option>Over/Under</option>
+                </select>
+            </div>
         </div>
-        <div className='manual-trader__trade-type'>
-            <span>TRADE TYPE</span>
-            <select defaultValue='Even/Odd'>
-                <option>Even/Odd</option>
-                <option>Over/Under</option>
-            </select>
+        <div className='manual-trader__analysis-ticks'>
+            <span>Ticks</span>
+            <select defaultValue='1000'><option>1000</option><option>500</option><option>300</option><option>100</option><option>60</option><option>30</option></select>
         </div>
-    </div>
-    <div className='manual-trader__analysis-ticks'>
-        <span>Ticks</span>
-        <select defaultValue='1000'><option>1000</option><option>500</option><option>300</option><option>100</option><option>60</option><option>30</option></select>
-    </div>
-    <AnalysisTool showLegend={false} showSubtabs={false} showControls={false} />
-    <div className='manual-trader__trade-inputs'>
-        <label>Ticks<select defaultValue='1'><option>1</option></select></label>
-        <label>Stake<select defaultValue='0.50 USD'><option>0.50 USD</option></select></label>
-        <label>No. of trades<select defaultValue='1'><option>1</option></select></label>
-    </div>
-    <div className='manual-trader__trade-buttons'>
-        <button type='button' className='manual-trader__even'>Even</button>
-        <button type='button' className='manual-trader__odd'>Odd</button>
-    </div>
-</div>;
+        <AnalysisTool showLegend={false} showSubtabs={false} showControls={false} />
+        <div className='manual-trader__trade-inputs'>
+            <label>Ticks<input type='number' min='1' step='1' defaultValue='1' /></label>
+            <label>Stake<input type='number' min='0' step='0.01' defaultValue='0.50' /></label>
+            <label>No. of trades<input type='number' min='1' step='1' defaultValue='1' /></label>
+            <label>Prediction<input type='number' min='0' max='9' step='1' defaultValue='1' /></label>
+        </div>
+        <div className='manual-trader__trade-buttons'>
+            {tradeType === 'Even/Odd' ? <>
+                <button type='button' className='manual-trader__even'>Even</button>
+                <button type='button' className='manual-trader__odd'>Odd</button>
+            </> : <>
+                <button type='button' className='manual-trader__over'>Over</button>
+                <button type='button' className='manual-trader__under'>Under</button>
+            </>}
+        </div>
+    </div>;
+};
 
 const AppWrapper = observer(() => {
     const { connectionStatus } = useApiBase();
