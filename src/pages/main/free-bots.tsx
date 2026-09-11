@@ -27,7 +27,7 @@ export const FREE_BOTS: TFreeBot[] = [
         id: 'ultimate-even-odd-switcher-ai',
         name: 'Ultimate Even ODD Switcher Ai DBot',
         description: 'Even/Odd percentage strategy • R_100 • 1 tick • base stake $0.50 • Martingale ×2.1 • TP $10 • SL $20',
-        tags: ['Digits', 'EVEN/ODD', 'R_100', '1 TICK', 'AI SWITCHER'],
+        tags: ['Digits', 'EVEN/ODD', 'R_100', '1 TICK', '$0.50 STAKE', 'MARTINGALE ×2.1', 'TP $10', 'SL $20'],
         xml: ULTIMATE_EVEN_ODD_SWITCHER_XML,
     },
 ];
