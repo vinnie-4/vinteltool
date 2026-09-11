@@ -201,7 +201,9 @@ const AppWrapper = observer(() => {
                             <div label={<>📊 <Localize i18n_default_text='Analysis Tool' /></>} id='id-analysis-tool'>
                                 <AnalysisTool />
                             </div>
-                            <div label={<>⚙️ <Localize i18n_default_text='Manual Trader' /></>} id='id-manual-trader' />
+                            <div label={<>⚙️ <Localize i18n_default_text='Manual Trader' /></>} id='id-manual-trader'>
+                                <AnalysisTool />
+                            </div>
                             <div label={<>🎯 <Localize i18n_default_text='Ultimate Bot 2026' /></>} id='id-ultimate-bot-2026' />
                             <div label={<>📉 <Localize i18n_default_text='Charts' /></>} id='id-charts'>
                                 <Suspense fallback={<ChunkLoader message={localize('Please wait, loading chart...')} />}><ChartWrapper show_digits_stats={false} /></Suspense>
