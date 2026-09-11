@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { api_base } from '@/external/bot-skeleton';
+import { doUntilDone } from '@/external/bot-skeleton/services/tradeEngine/utils/helpers';
 import AnalysisTool from '../analysis-tool';
 import './main.scss';
 
@@ -26,6 +27,19 @@ const CONTRACT_TYPES: Record<string, string> = {
     Under: 'DIGITUNDER',
 };
 
+const waitForTradingApi = async () => {
+    const started = Date.now();
+    const timeout = 10000;
+
+    while (Date.now() - started < timeout) {
+        const api = api_base.api;
+        if (api?.connection?.readyState === WebSocket.OPEN && api_base.is_authorized) return api;
+        await new Promise(resolve => setTimeout(resolve, 200));
+    }
+
+    throw new Error('Deriv trading connection is not ready. Please log in and try again.');
+};
+
 const ManualTraderStructure = () => {
     const [tradeType, setTradeType] = useState('Even/Odd');
     const [symbol, setSymbol] = useState('R_100');
@@ -37,28 +51,27 @@ const ManualTraderStructure = () => {
     const tradeLockRef = useRef(false);
 
     const executeOneTrade = async (contractType: string) => {
-        const api = api_base.api;
-        if (!api || api.connection?.readyState !== WebSocket.OPEN || !api_base.is_authorized) {
-            throw new Error('Please log in to Deriv before placing a trade.');
-        }
-
+        const api = await waitForTradingApi();
         const currency = api_base.account_info?.currency || 'USD';
+
         const proposalRequest: Record<string, unknown> = {
             proposal: 1,
-            amount: stake,
+            amount: Number(stake),
             basis: 'stake',
             contract_type: contractType,
             currency,
-            duration,
+            duration: Number(duration),
             duration_unit: 't',
             underlying_symbol: symbol,
         };
 
         if (contractType === 'DIGITOVER' || contractType === 'DIGITUNDER') {
-            proposalRequest.barrier = prediction;
+            proposalRequest.barrier = Number(prediction);
         }
 
-        const proposalResponse = await api.send(proposalRequest);
+        // Use the same retry wrapper used by the existing transaction engine,
+        // but do not enter the bot engine or Run Panel.
+        const proposalResponse = await doUntilDone(() => api.send(proposalRequest), [], api_base);
         if (proposalResponse?.error) {
             throw new Error(proposalResponse.error.message || 'Unable to create trade proposal.');
         }
@@ -68,16 +81,21 @@ const ManualTraderStructure = () => {
             throw new Error('Deriv returned an invalid trade proposal.');
         }
 
-        const buyResponse = await api.send({
-            buy: proposal.id,
-            price: proposal.ask_price,
-        });
+        const buyResponse = await doUntilDone(
+            () => api.send({ buy: proposal.id, price: proposal.ask_price }),
+            [],
+            api_base
+        );
 
         if (buyResponse?.error) {
             throw new Error(buyResponse.error.message || 'Unable to purchase the contract.');
         }
 
-        return buyResponse?.buy;
+        if (!buyResponse?.buy?.contract_id && !buyResponse?.buy?.transaction_id) {
+            throw new Error('Deriv did not confirm the purchased contract.');
+        }
+
+        return buyResponse.buy;
     };
 
     const handleTrade = async (selection: 'Even' | 'Odd' | 'Over' | 'Under') => {
@@ -104,10 +122,12 @@ const ManualTraderStructure = () => {
         setIsTrading(true);
 
         try {
-            // One button tap creates exactly `count` identical contracts. They are
-            // separate Deriv transactions, with the same symbol, duration, stake,
-            // and last-digit contract specification.
-            await Promise.all(Array.from({ length: count }, () => executeOneTrade(CONTRACT_TYPES[selection])));
+            // Each requested bulk trade is a separate Deriv contract with the
+            // exact same selected trade specification. Nothing is sent to the bot.
+            const results = await Promise.all(
+                Array.from({ length: count }, () => executeOneTrade(CONTRACT_TYPES[selection]))
+            );
+            console.info(`[Manual Trader] ${results.length} ${selection} transaction(s) purchased.`);
         } catch (error) {
             console.error('[Manual Trader] transaction error:', error);
             window.alert(error instanceof Error ? error.message : 'Trade failed.');
