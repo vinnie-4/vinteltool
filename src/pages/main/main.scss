@@ -145,99 +145,127 @@
     }
 
     &__trade-type span { color: #20252b; font-size: 11px; letter-spacing: .4px; }
-
     &__analysis-ticks { align-items: stretch; }
     &__analysis-ticks span { color: #20252b; font-size: 11px; text-align: center; }
-
-    &__price {
-        text-align: center;
-        margin: 0 auto 6px;
-        color: #20252b;
-        font-size: 13px;
-        font-weight: 800;
-    }
-
+    &__price { text-align: center; margin: 0 auto 6px; color: #20252b; font-size: 13px; font-weight: 800; }
     .dcircles { padding-left: 0; padding-right: 0; }
-
-    &__trade-inputs {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 8px;
-        margin: 5px 0;
-    }
-
-    &__trade-inputs label {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        color: #92959a;
-        font-size: 11px;
-        font-weight: 700;
-        min-width: 0;
-    }
-
-    &__trade-inputs input {
-        width: 100%;
-        box-sizing: border-box;
-        border: 1px solid #d8dce1;
-        border-radius: 9px;
-        background: #f7f8fa;
-        color: #34373b;
-        font-size: 14px;
-        font-weight: 700;
-        padding: 8px 7px;
-        height: 42px;
-        outline: none;
-    }
-
+    &__trade-inputs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 5px 0; }
+    &__trade-inputs label { display: flex; flex-direction: column; gap: 4px; color: #92959a; font-size: 11px; font-weight: 700; min-width: 0; }
+    &__trade-inputs input { width: 100%; box-sizing: border-box; border: 1px solid #d8dce1; border-radius: 9px; background: #f7f8fa; color: #34373b; font-size: 14px; font-weight: 700; padding: 8px 7px; height: 42px; outline: none; }
     &__trade-inputs input:focus { border-color: #2196f3; box-shadow: 0 0 0 2px rgba(33,150,243,.12); }
-
-    &__trade-buttons {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        margin-top: 6px;
-        justify-content: center;
-    }
-
-    &__trade-buttons button {
-        border: 0;
-        border-radius: 10px;
-        min-height: 48px;
-        color: #fff;
-        font-size: 17px;
-        font-weight: 800;
-        cursor: pointer;
-        text-align: center;
-    }
-
+    &__trade-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; justify-content: center; }
+    &__trade-buttons button { border: 0; border-radius: 10px; min-height: 48px; color: #fff; font-size: 17px; font-weight: 800; cursor: pointer; text-align: center; }
     &__even { background: #35b94a; }
     &__odd { background: #ff3d4b; }
     &__over { background: #35b94a; }
     &__under { background: #ff3d4b; }
-
     @include mobile-or-tablet-screen {
         padding-left: 8px;
         padding-right: 8px;
         &__top-row { grid-template-columns: minmax(0, 1.2fr) minmax(68px, .65fr) minmax(108px, .85fr); gap: 5px; }
-        &__volatility select,
-        &__trade-type select,
-        &__analysis-ticks select { font-size: 13px; padding-left: 5px; padding-right: 3px; }
+        &__volatility select, &__trade-type select, &__analysis-ticks select { font-size: 13px; padding-left: 5px; padding-right: 3px; }
         &__trade-inputs { gap: 5px; }
         &__trade-inputs input { font-size: 13px; padding-left: 5px; padding-right: 5px; }
     }
-
     @media(max-width:380px) {
         padding-left: 5px;
         padding-right: 5px;
         &__top-row { grid-template-columns: minmax(0, 1.15fr) 62px 100px; gap: 3px; }
-        &__volatility select,
-        &__trade-type select,
-        &__analysis-ticks select { font-size: 11px; }
+        &__volatility select, &__trade-type select, &__analysis-ticks select { font-size: 11px; }
         &__trade-inputs { gap: 3px; }
         &__trade-inputs label { font-size: 10px; }
         &__trade-inputs input { font-size: 11px; padding-left: 4px; padding-right: 4px; }
         &__trade-buttons { gap: 6px; }
+    }
+}
+
+.ultimate-bot-2026 {
+    width: 100%;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 12px 10px 110px;
+    box-sizing: border-box;
+    color: #20252b;
+    overflow-y: auto;
+
+    &__hero {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 14px;
+        margin-bottom: 10px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #061a3a, #0d2e60);
+        color: #fff;
+        box-shadow: 0 5px 18px rgba(6,26,58,.18);
+    }
+    &__eyebrow { font-size: 10px; font-weight: 900; letter-spacing: 1.4px; opacity: .7; }
+    h2 { margin: 3px 0 2px; font-size: 21px; }
+    p { margin: 0; font-size: 11px; opacity: .78; }
+    &__status { padding: 5px 8px; border-radius: 999px; font-size: 9px; font-weight: 900; letter-spacing: .6px; }
+    &__status--ready { background: rgba(255,255,255,.16); }
+    &__status--running { background: #35b94a; color: #fff; }
+
+    &__card {
+        background: #fff;
+        border: 1px solid #e2e5e9;
+        border-radius: 13px;
+        padding: 12px;
+        margin-bottom: 9px;
+        box-shadow: 0 2px 9px rgba(0,0,0,.05);
+        h3 { margin: 0 0 9px; font-size: 14px; }
+    }
+    &__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    label { display: flex; flex-direction: column; gap: 4px; color: #747a82; font-size: 10px; font-weight: 800; min-width: 0; }
+    select, input {
+        width: 100%;
+        box-sizing: border-box;
+        height: 38px;
+        padding: 7px 8px;
+        border: 1px solid #d7dbe0;
+        border-radius: 8px;
+        background: #f8f9fa;
+        color: #20252b;
+        font-size: 12px;
+        font-weight: 700;
+        outline: none;
+    }
+    select:focus, input:focus { border-color: #2196f3; box-shadow: 0 0 0 2px rgba(33,150,243,.1); }
+
+    &__signal { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 9px; padding: 9px; border-radius: 9px; background: #f5f7f9; }
+    &__signal b { display: block; font-size: 12px; }
+    &__signal span { display: block; font-size: 9px; color: #7b8087; }
+    &__signal-values { display: flex !important; gap: 4px; align-items: center; }
+    &__signal-values span { display: inline-block; padding: 4px 6px; border-radius: 999px; font-weight: 900; color: #fff; }
+    .green { background: #35b94a; color: #fff; }
+    .blue { background: #2196f3; color: #fff; }
+    .yellow { background: #e5b800; color: #fff; }
+    .red { background: #ff3d4b; color: #fff; }
+
+    &__sample-row { display: flex; align-items: center; gap: 4px; margin-top: 9px; overflow-x: auto; white-space: nowrap; }
+    &__sample-row > span { margin-right: 3px; color: #747a82; font-size: 9px; font-weight: 800; }
+    &__sample-row button { border: 1px solid #d7dbe0; border-radius: 7px; padding: 5px 7px; background: #fff; color: #4d535a; font-size: 10px; font-weight: 800; }
+    &__sample-row button.active { background: #2196f3; border-color: #2196f3; color: #fff; }
+    &__inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    &__inputs--limits { grid-template-columns: 1fr 1fr; }
+    &__safety { margin-top: 8px; padding: 8px; border-radius: 8px; background: #fff6f6; color: #b43a42; font-size: 9px; font-weight: 800; line-height: 1.45; }
+    &__live { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin: 9px 0; }
+    &__live div { padding: 8px 6px; border-radius: 8px; background: #061a3a; color: #fff; min-width: 0; }
+    &__live span { display: block; font-size: 8px; opacity: .65; }
+    &__live b { display: block; margin-top: 2px; font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    &__run { width: 100%; min-height: 48px; border: 0; border-radius: 10px; background: #2196f3; color: #fff; font-size: 15px; font-weight: 900; box-shadow: 0 4px 12px rgba(33,150,243,.2); }
+    &__run.stop { background: #ff3d4b; }
+
+    @include mobile-or-tablet-screen {
+        padding-left: 8px;
+        padding-right: 8px;
+        &__hero { padding: 12px; }
+        &__grid { grid-template-columns: 1fr; }
+        &__inputs { grid-template-columns: 1fr 1fr; gap: 6px; }
+        &__live { grid-template-columns: 1fr 1fr; }
+        &__signal { align-items: flex-start; flex-direction: column; }
+        &__signal-values { width: 100%; justify-content: space-between; }
     }
 }
 
