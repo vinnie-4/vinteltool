@@ -42,13 +42,15 @@ const waitForTradingApi = async () => {
 
 const ManualTraderStructure = () => {
     const [tradeType, setTradeType] = useState('Even/Odd');
-    const [symbol, setSymbol] = useState('R_100');
+    const [symbol, setSymbol] = useState('1HZ100V');
+    const [analysisTicks, setAnalysisTicks] = useState(1000);
     const [duration, setDuration] = useState(1);
     const [stake, setStake] = useState(0.5);
     const [bulkTrades, setBulkTrades] = useState(1);
     const [prediction, setPrediction] = useState(1);
     const [isTrading, setIsTrading] = useState(false);
     const tradeLockRef = useRef(false);
+    const selectedVolatility = Object.keys(VOLATILITY_SYMBOLS).find(name => VOLATILITY_SYMBOLS[name] === symbol) || 'Volatility 100 (1s)';
 
     const executeOneTrade = async (contractType: string) => {
         const api = await waitForTradingApi();
@@ -65,68 +67,34 @@ const ManualTraderStructure = () => {
             underlying_symbol: symbol,
         };
 
-        if (contractType === 'DIGITOVER' || contractType === 'DIGITUNDER') {
-            proposalRequest.barrier = Number(prediction);
-        }
+        if (contractType === 'DIGITOVER' || contractType === 'DIGITUNDER') proposalRequest.barrier = Number(prediction);
 
-        // Use the same retry wrapper used by the existing transaction engine,
-        // but do not enter the bot engine or Run Panel.
         const proposalResponse = await doUntilDone(() => api.send(proposalRequest), [], api_base);
-        if (proposalResponse?.error) {
-            throw new Error(proposalResponse.error.message || 'Unable to create trade proposal.');
-        }
+        if (proposalResponse?.error) throw new Error(proposalResponse.error.message || 'Unable to create trade proposal.');
 
         const proposal = proposalResponse?.proposal;
-        if (!proposal?.id || proposal.ask_price === undefined) {
-            throw new Error('Deriv returned an invalid trade proposal.');
-        }
+        if (!proposal?.id || proposal.ask_price === undefined) throw new Error('Deriv returned an invalid trade proposal.');
 
-        const buyResponse = await doUntilDone(
-            () => api.send({ buy: proposal.id, price: proposal.ask_price }),
-            [],
-            api_base
-        );
-
-        if (buyResponse?.error) {
-            throw new Error(buyResponse.error.message || 'Unable to purchase the contract.');
-        }
-
-        if (!buyResponse?.buy?.contract_id && !buyResponse?.buy?.transaction_id) {
-            throw new Error('Deriv did not confirm the purchased contract.');
-        }
-
+        const buyResponse = await doUntilDone(() => api.send({ buy: proposal.id, price: proposal.ask_price }), [], api_base);
+        if (buyResponse?.error) throw new Error(buyResponse.error.message || 'Unable to purchase the contract.');
+        if (!buyResponse?.buy?.contract_id && !buyResponse?.buy?.transaction_id) throw new Error('Deriv did not confirm the purchased contract.');
         return buyResponse.buy;
     };
 
     const handleTrade = async (selection: 'Even' | 'Odd' | 'Over' | 'Under') => {
         if (tradeLockRef.current) return;
-
         const count = Math.max(1, Math.floor(Number(bulkTrades) || 1));
         const amount = Number(stake);
         const ticks = Math.max(1, Math.floor(Number(duration) || 1));
 
-        if (!Number.isFinite(amount) || amount <= 0) {
-            window.alert('Enter a valid stake greater than 0.');
-            return;
-        }
-        if (!Number.isFinite(ticks) || ticks < 1) {
-            window.alert('Ticks must be at least 1.');
-            return;
-        }
-        if ((selection === 'Over' || selection === 'Under') && (!Number.isInteger(Number(prediction)) || Number(prediction) < 0 || Number(prediction) > 9)) {
-            window.alert('Prediction must be a digit from 0 to 9.');
-            return;
-        }
+        if (!Number.isFinite(amount) || amount <= 0) { window.alert('Enter a valid stake greater than 0.'); return; }
+        if (!Number.isFinite(ticks) || ticks < 1) { window.alert('Ticks must be at least 1.'); return; }
+        if ((selection === 'Over' || selection === 'Under') && (!Number.isInteger(Number(prediction)) || Number(prediction) < 0 || Number(prediction) > 9)) { window.alert('Prediction must be a digit from 0 to 9.'); return; }
 
         tradeLockRef.current = true;
         setIsTrading(true);
-
         try {
-            // Each requested bulk trade is a separate Deriv contract with the
-            // exact same selected trade specification. Nothing is sent to the bot.
-            const results = await Promise.all(
-                Array.from({ length: count }, () => executeOneTrade(CONTRACT_TYPES[selection]))
-            );
+            const results = await Promise.all(Array.from({ length: count }, () => executeOneTrade(CONTRACT_TYPES[selection])));
             console.info(`[Manual Trader] ${results.length} ${selection} transaction(s) purchased.`);
         } catch (error) {
             console.error('[Manual Trader] transaction error:', error);
@@ -141,23 +109,30 @@ const ManualTraderStructure = () => {
         <div className='manual-trader__top-row'>
             <div className='manual-trader__volatility'>
                 <span>Volatility</span>
-                <select value={Object.keys(VOLATILITY_SYMBOLS).find(name => VOLATILITY_SYMBOLS[name] === symbol) || 'Volatility 100'} onChange={event => setSymbol(VOLATILITY_SYMBOLS[event.target.value])}>
+                <select value={selectedVolatility} onChange={event => setSymbol(VOLATILITY_SYMBOLS[event.target.value])}>
                     {Object.keys(VOLATILITY_SYMBOLS).map(name => <option key={name}>{name}</option>)}
                 </select>
             </div>
             <div className='manual-trader__analysis-ticks'>
                 <span>Ticks</span>
-                <select defaultValue='1000'><option>1000</option><option>500</option><option>300</option><option>100</option><option>60</option><option>30</option></select>
+                <select value={analysisTicks} onChange={event => setAnalysisTicks(Number(event.target.value))}>
+                    <option value='1000'>1000</option><option value='500'>500</option><option value='300'>300</option><option value='100'>100</option><option value='60'>60</option><option value='30'>30</option>
+                </select>
             </div>
             <div className='manual-trader__trade-type'>
                 <span>TRADE TYPE</span>
                 <select value={tradeType} onChange={event => setTradeType(event.target.value)}>
-                    <option>Even/Odd</option>
-                    <option>Over/Under</option>
+                    <option>Even/Odd</option><option>Over/Under</option>
                 </select>
             </div>
         </div>
-        <AnalysisTool showLegend={false} showSubtabs={false} showControls={false} />
+        <AnalysisTool
+            showLegend={false}
+            showSubtabs={false}
+            showControls={false}
+            selectedIndex={selectedVolatility}
+            windowSize={analysisTicks}
+        />
         <div className='manual-trader__trade-inputs'>
             <label>Ticks<input type='number' min='1' step='1' value={duration} onChange={event => setDuration(Number(event.target.value))} /></label>
             <label>Stake<input type='number' min='0' step='0.01' value={stake} onChange={event => setStake(Number(event.target.value))} /></label>
