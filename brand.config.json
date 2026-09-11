@@ -48,30 +48,9 @@
         }
     },
     "color_variants": {
-        "light_variants": [
-            100,
-            200,
-            300,
-            400,
-            500
-        ],
-        "dark_variants": [
-            600,
-            700,
-            800,
-            900
-        ],
-        "opacity_variants": [
-            10,
-            20,
-            30,
-            40,
-            50,
-            60,
-            70,
-            80,
-            90
-        ]
+        "light_variants": [100, 200, 300, 400, 500],
+        "dark_variants": [600, 700, 800, 900],
+        "opacity_variants": [10, 20, 30, 40, 50, 60, 70, 80, 90]
     },
     "theme_config": {
         "enable_dynamic_themes": true,
@@ -86,10 +65,10 @@
         },
         "hostname": {
             "production": {
-                "com": "bot.yourbrand.com"
+                "com": "www.vinteltool.site"
             },
             "staging": {
-                "com": "staging-bot.yourbrand.com"
+                "com": "staging.vinteltool.site"
             }
         },
         "auth2_url": {
