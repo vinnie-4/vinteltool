@@ -24,11 +24,25 @@ export default defineConfig({
     entry: { index: './src/main.tsx' },
     define: {
       'process.env': {
-        NEXT_PUBLIC_DERIV_APP_ID: JSON.stringify(process.env.DERIV_APP_ID ?? process.env.NEXT_PUBLIC_DERIV_APP_ID ?? ''),
-        NEXT_PUBLIC_DERIV_REDIRECT_URL: JSON.stringify(process.env.DERIV_REDIRECT_URL ?? process.env.NEXT_PUBLIC_DERIV_REDIRECT_URL ?? ''),
-        NEXT_PUBLIC_DERIV_OAUTH_SCOPE: JSON.stringify(process.env.DERIV_OAUTH_SCOPE ?? process.env.NEXT_PUBLIC_DERIV_OAUTH_SCOPE ?? 'trade'),
+        NEXT_PUBLIC_DERIV_APP_ID: JSON.stringify(
+          process.env.DERIV_OAUTH_CLIENT_ID ??
+            process.env.DERIV_APP_ID ??
+            process.env.NEXT_PUBLIC_DERIV_APP_ID ??
+            ''
+        ),
+        NEXT_PUBLIC_DERIV_REDIRECT_URL: JSON.stringify(
+          process.env.DERIV_REDIRECT_URL ?? process.env.NEXT_PUBLIC_DERIV_REDIRECT_URL ?? ''
+        ),
+        NEXT_PUBLIC_DERIV_OAUTH_SCOPE: JSON.stringify(
+          process.env.DERIV_OAUTH_SCOPE ??
+            process.env.NEXT_PUBLIC_DERIV_OAUTH_SCOPE ??
+            process.env.NEXT_PUBLIC_DERIV_OAUTH_SCOPES ??
+            'trade'
+        ),
         NEXT_PUBLIC_DERIV_ENV: JSON.stringify(process.env.NEXT_PUBLIC_DERIV_ENV ?? ''),
-        NEXT_PUBLIC_DERIV_REFERRAL_LINK: JSON.stringify(process.env.NEXT_PUBLIC_DERIV_REFERRAL_LINK ?? ''),
+        NEXT_PUBLIC_DERIV_REFERRAL_LINK: JSON.stringify(
+          process.env.DERIV_REFERRAL_LINK ?? process.env.NEXT_PUBLIC_DERIV_REFERRAL_LINK ?? ''
+        ),
         NEXT_PUBLIC_DERIV_APP_NAME: JSON.stringify(process.env.NEXT_PUBLIC_DERIV_APP_NAME ?? ''),
         NEXT_PUBLIC_APP_BUILD: JSON.stringify(process.env.NEXT_PUBLIC_APP_BUILD ?? ''),
         GD_CLIENT_ID: JSON.stringify(process.env.GD_CLIENT_ID),
