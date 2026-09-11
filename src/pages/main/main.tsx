@@ -31,6 +31,7 @@ import RunStrategy from '../dashboard/run-strategy';
 import DerivCourse from '../deriv-course';
 import AnalysisTool from '../analysis-tool';
 import ManualTraderStructure from './manual-trader';
+import UltimateBot2026 from './ultimate-bot-2026';
 import './main.scss';
 
 const ChartWrapper = lazy(() => import('../chart/chart-wrapper'));
@@ -138,7 +139,7 @@ const AppWrapper = observer(() => {
             <div label={<>🤖 <Localize i18n_default_text='Free Bots' /></>} id='id-free-bots'><FreeBots onLoadBot={handleFreeBotLoad} /></div>
             <div label={<>📊 <Localize i18n_default_text='Analysis Tool' /></>} id='id-analysis-tool'><AnalysisTool /></div>
             <div label={<>⚙️ <Localize i18n_default_text='Manual Trader' /></>} id='id-manual-trader'><ManualTraderStructure /></div>
-            <div label={<>🎯 <Localize i18n_default_text='Ultimate Bot 2026' /></>} id='id-ultimate-bot-2026' />
+            <div label={<>🎯 <Localize i18n_default_text='Ultimate Bot 2026' /></>} id='id-ultimate-bot-2026'><UltimateBot2026 /></div>
             <div label={<>📉 <Localize i18n_default_text='Charts' /></>} id='id-charts'><Suspense fallback={<ChunkLoader message={localize('Please wait, loading chart...')} />}><ChartWrapper show_digits_stats={false} /></Suspense></div>
             <div label={<><LegacyGuide1pxIcon height='16px' width='16px' fill='var(--text-general)' className='icon-general-fill-g-path' /><Localize i18n_default_text='Tutorials' /></>} id='id-tutorials'><div className='tutorials-wrapper'><Suspense fallback={<ChunkLoader message={localize('Please wait, loading tutorials...')} />}><Tutorial handleTabChange={handleTabChange} /></Suspense></div></div>
             <div label={<>🎓 <Localize i18n_default_text='Deriv Course' /></>} id='id-deriv-course'><DerivCourse /></div>
