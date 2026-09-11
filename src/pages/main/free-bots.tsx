@@ -9,9 +9,9 @@ type TFreeBotsProps = { bots?: TFreeBot[]; onLoadBot: (bot: TFreeBot) => void | 
 export const FREE_BOTS: TFreeBot[] = [
     {
         id: 'vintel-over-under-destroyer',
-        name: 'VintelTool Over/Under destroyer',
-        description: 'Over/Under • R_10 • $1 stake • Martingale ×2 • TP $5 • SL $50',
-        tags: ['Digits', 'OVER/UNDER', 'R_10', '$1 STAKE'],
+        name: 'VintelTool Under Destroyer',
+        description: 'Digits • UNDER 7 → UNDER 4 on loss • R_50 • 1 tick • base stake $1 • Martingale ×2',
+        tags: ['Digits', 'UNDER 7', 'LOSS → UNDER 4', 'R_50', '1 TICK', '$1 STAKE', 'MARTINGALE ×2'],
         xml: VINTEL_OVER_UNDER_DESTROYER_XML,
     },
 ];
