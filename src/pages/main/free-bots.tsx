@@ -2,8 +2,6 @@ import React from 'react';
 import './free-bots.scss';
 // @ts-ignore — raw-loader exposes XML assets as strings at build time.
 import VINTEL_OVER_UNDER_DESTROYER_XML from '@/xml/VintelTool Over Under destroyer.xml';
-import UNDER_4_RECOVERY_XML from '@/xml/VintelTool Under 4 Recovery.xml';
-import { ULTIMATE_EVEN_ODD_SWITCHER_XML } from '@/xml/ultimate-even-odd-switcher';
 
 export type TFreeBot = { id: string; name: string; xml: string; description?: string; tags?: string[] };
 type TFreeBotsProps = { bots?: TFreeBot[]; onLoadBot: (bot: TFreeBot) => void | Promise<void> };
@@ -15,20 +13,6 @@ export const FREE_BOTS: TFreeBot[] = [
         description: 'Over/Under • R_10 • $1 stake • Martingale ×2 • TP $5 • SL $50',
         tags: ['Digits', 'OVER/UNDER', 'R_10', '$1 STAKE'],
         xml: VINTEL_OVER_UNDER_DESTROYER_XML,
-    },
-    {
-        id: 'under-4-recovery',
-        name: 'Under 4 Recovery',
-        description: 'Digits • UNDER 4 • R_50 • 1 TICK • base stake $0.50 • RECOVERY ×2',
-        tags: ['Digits', 'UNDER 4', 'R_50', '1 TICK', '$0.50 STAKE', 'RECOVERY ×2'],
-        xml: UNDER_4_RECOVERY_XML,
-    },
-    {
-        id: 'ultimate-even-odd-switcher-ai',
-        name: 'Ultimate Even ODD Switcher Ai DBot',
-        description: 'Even/Odd percentage strategy • R_100 • 1 tick • base stake $0.50 • Martingale ×2.1 • TP $10 • SL $20',
-        tags: ['Digits', 'EVEN/ODD', 'R_100', '1 TICK', '$0.50 STAKE', 'MARTINGALE ×2.1', 'TP $10', 'SL $20'],
-        xml: ULTIMATE_EVEN_ODD_SWITCHER_XML,
     },
 ];
 
