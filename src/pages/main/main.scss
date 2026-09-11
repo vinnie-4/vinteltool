@@ -100,6 +100,135 @@
     }
 }
 
+.manual-trader {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 10px 10px 110px;
+    color: #20252b;
+    box-sizing: border-box;
+
+    &__top-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(150px, 0.55fr);
+        gap: 10px;
+        align-items: end;
+        margin-bottom: 8px;
+    }
+
+    &__volatility,
+    &__trade-type {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        color: #92959a;
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    &__volatility select,
+    &__trade-type select,
+    &__analysis-ticks select,
+    &__trade-inputs select {
+        appearance: auto;
+        border: 1px solid #d8dce1;
+        border-radius: 9px;
+        background: #f7f8fa;
+        color: #34373b;
+        font-size: 16px;
+        font-weight: 700;
+        padding: 9px 10px;
+        min-width: 0;
+        height: 46px;
+    }
+
+    &__trade-type {
+        position: relative;
+        align-items: stretch;
+    }
+
+    &__trade-type span {
+        color: #20252b;
+        font-size: 12px;
+        letter-spacing: .4px;
+    }
+
+    &__analysis-ticks {
+        width: 120px;
+        margin: 0 auto 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        color: #92959a;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    &__analysis-ticks select { width: 100%; text-align: center; }
+
+    .dcircles { padding-left: 0; padding-right: 0; }
+
+    &__trade-inputs {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin: 10px 0;
+    }
+
+    &__trade-inputs label {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        color: #92959a;
+        font-size: 12px;
+        font-weight: 700;
+        min-width: 0;
+    }
+
+    &__trade-inputs select { width: 100%; }
+
+    &__trade-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 8px;
+    }
+
+    &__trade-buttons button {
+        border: 0;
+        border-radius: 10px;
+        min-height: 48px;
+        color: #fff;
+        font-size: 17px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    &__even { background: #35b94a; }
+    &__odd { background: #ff3d4b; }
+
+    @include mobile-or-tablet-screen {
+        padding-left: 10px;
+        padding-right: 10px;
+
+        &__top-row { grid-template-columns: minmax(0, 1fr) minmax(130px, .6fr); gap: 7px; }
+        &__volatility select,
+        &__trade-type select { font-size: 14px; padding-left: 7px; padding-right: 4px; }
+        &__trade-inputs { gap: 6px; }
+        &__trade-inputs select { font-size: 14px; padding-left: 6px; padding-right: 4px; }
+    }
+
+    @media(max-width:380px) {
+        padding-left: 6px;
+        padding-right: 6px;
+        &__top-row { grid-template-columns: minmax(0, 1fr) 110px; }
+        &__trade-inputs { gap: 4px; }
+        &__trade-inputs select { font-size: 12px; }
+        &__trade-buttons { gap: 6px; }
+    }
+}
+
 .animation__wrapper .animation__button#db-animation {
     &__run-button { background-color: var(--button-primary-default); }
     &__stop-button { background-color: var(--button-primary-hover); }
