@@ -30,52 +30,11 @@ import FreeBots from './free-bots';
 import RunStrategy from '../dashboard/run-strategy';
 import DerivCourse from '../deriv-course';
 import AnalysisTool from '../analysis-tool';
+import ManualTraderStructure from './manual-trader';
 import './main.scss';
 
 const ChartWrapper = lazy(() => import('../chart/chart-wrapper'));
 const Tutorial = lazy(() => import('../tutorials'));
-
-const ManualTraderStructure = () => {
-    const [tradeType, setTradeType] = useState('Even/Odd');
-
-    return <div className='manual-trader'>
-        <div className='manual-trader__top-row'>
-            <div className='manual-trader__volatility'>
-                <span>Volatility</span>
-                <select defaultValue='Volatility 100'>
-                    <option>Volatility 10</option><option>Volatility 10 (1s)</option><option>Volatility 15 (1s)</option><option>Volatility 25</option><option>Volatility 25 (1s)</option><option>Volatility 30 (1s)</option><option>Volatility 50</option><option>Volatility 50 (1s)</option><option>Volatility 75</option><option>Volatility 75 (1s)</option><option>Volatility 90 (1s)</option><option>Volatility 100</option><option>Volatility 100 (1s)</option>
-                </select>
-            </div>
-            <div className='manual-trader__analysis-ticks'>
-                <span>Ticks</span>
-                <select defaultValue='1000'><option>1000</option><option>500</option><option>300</option><option>100</option><option>60</option><option>30</option></select>
-            </div>
-            <div className='manual-trader__trade-type'>
-                <span>TRADE TYPE</span>
-                <select value={tradeType} onChange={event => setTradeType(event.target.value)}>
-                    <option>Even/Odd</option>
-                    <option>Over/Under</option>
-                </select>
-            </div>
-        </div>
-        <AnalysisTool showLegend={false} showSubtabs={false} showControls={false} />
-        <div className='manual-trader__trade-inputs'>
-            <label>Ticks<input type='number' min='1' step='1' defaultValue='1' /></label>
-            <label>Stake<input type='number' min='0' step='0.01' defaultValue='0.50' /></label>
-            <label>No. of Bulk Trades<input type='number' min='1' step='1' defaultValue='1' /></label>
-            {tradeType === 'Over/Under' && <label>Prediction<input type='number' min='0' max='9' step='1' defaultValue='1' /></label>}
-        </div>
-        <div className='manual-trader__trade-buttons'>
-            {tradeType === 'Even/Odd' ? <>
-                <button type='button' className='manual-trader__even'>Even</button>
-                <button type='button' className='manual-trader__odd'>Odd</button>
-            </> : <>
-                <button type='button' className='manual-trader__over'>Over</button>
-                <button type='button' className='manual-trader__under'>Under</button>
-            </>}
-        </div>
-    </div>;
-};
 
 const AppWrapper = observer(() => {
     const { connectionStatus } = useApiBase();
@@ -181,7 +140,7 @@ const AppWrapper = observer(() => {
             <div label={<>⚙️ <Localize i18n_default_text='Manual Trader' /></>} id='id-manual-trader'><ManualTraderStructure /></div>
             <div label={<>🎯 <Localize i18n_default_text='Ultimate Bot 2026' /></>} id='id-ultimate-bot-2026' />
             <div label={<>📉 <Localize i18n_default_text='Charts' /></>} id='id-charts'><Suspense fallback={<ChunkLoader message={localize('Please wait, loading chart...')} />}><ChartWrapper show_digits_stats={false} /></Suspense></div>
-            <div label={<><LegacyGuide1pxIcon height='16px' width='16px' fill='var(--text-general)' className='icon-general-fill-g-path' /><Localize i18n_default_text='Tutorials' /></>} id='id-tutorials'><div className='tutorials-wrapper'><Suspense fallback={<ChunkLoader message={localize('Please wait, loading tutorials...')} />}><Tutorial handleTabChange={handleTabChange} /></div></div>
+            <div label={<><LegacyGuide1pxIcon height='16px' width='16px' fill='var(--text-general)' className='icon-general-fill-g-path' /><Localize i18n_default_text='Tutorials' /></>} id='id-tutorials'><div className='tutorials-wrapper'><Suspense fallback={<ChunkLoader message={localize('Please wait, loading tutorials...')} />}><Tutorial handleTabChange={handleTabChange} /></Suspense></div></div>
             <div label={<>🎓 <Localize i18n_default_text='Deriv Course' /></>} id='id-deriv-course'><DerivCourse /></div>
         </Tabs>
         {!isDesktop && right_tab_shadow && <span className='tabs-shadow tabs-shadow--right' />}
