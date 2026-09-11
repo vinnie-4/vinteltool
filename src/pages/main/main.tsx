@@ -35,6 +35,38 @@ import './main.scss';
 const ChartWrapper = lazy(() => import('../chart/chart-wrapper'));
 const Tutorial = lazy(() => import('../tutorials'));
 
+const ManualTraderStructure = () => <div className='manual-trader'>
+    <div className='manual-trader__top-row'>
+        <div className='manual-trader__volatility'>
+            <span>Volatility Index</span>
+            <select defaultValue='Volatility 100'>
+                <option>Volatility 10</option><option>Volatility 10 (1s)</option><option>Volatility 15 (1s)</option><option>Volatility 25</option><option>Volatility 25 (1s)</option><option>Volatility 30 (1s)</option><option>Volatility 50</option><option>Volatility 50 (1s)</option><option>Volatility 75</option><option>Volatility 75 (1s)</option><option>Volatility 90 (1s)</option><option>Volatility 100</option><option>Volatility 100 (1s)</option>
+            </select>
+        </div>
+        <div className='manual-trader__trade-type'>
+            <span>TRADE TYPE</span>
+            <select defaultValue='Even/Odd'>
+                <option>Even/Odd</option>
+                <option>Over/Under</option>
+            </select>
+        </div>
+    </div>
+    <div className='manual-trader__analysis-ticks'>
+        <span>Ticks</span>
+        <select defaultValue='1000'><option>1000</option><option>500</option><option>300</option><option>100</option><option>60</option><option>30</option></select>
+    </div>
+    <AnalysisTool showLegend={false} showSubtabs={false} showControls={false} />
+    <div className='manual-trader__trade-inputs'>
+        <label>Ticks<select defaultValue='1'><option>1</option></select></label>
+        <label>Stake<select defaultValue='0.50 USD'><option>0.50 USD</option></select></label>
+        <label>No. of trades<select defaultValue='1'><option>1</option></select></label>
+    </div>
+    <div className='manual-trader__trade-buttons'>
+        <button type='button' className='manual-trader__even'>Even</button>
+        <button type='button' className='manual-trader__odd'>Odd</button>
+    </div>
+</div>;
+
 const AppWrapper = observer(() => {
     const { connectionStatus } = useApiBase();
     const { dashboard, load_modal, run_panel, quick_strategy, summary_card, blockly_store } = useStore();
@@ -78,7 +110,6 @@ const AppWrapper = observer(() => {
 
     React.useEffect(() => { setModalStateChangeCallback(new_state => setTradeTypeModalState(new_state)); }, [is_loading]);
     React.useEffect(() => { resetUrlParamProcessing(); }, [location.search]);
-
     React.useEffect(() => {
         const el_dashboard = document.getElementById('id-dbot-dashboard');
         const el_tutorial = document.getElementById('id-tutorials');
@@ -88,21 +119,18 @@ const AppWrapper = observer(() => {
         observer_dashboard.observe(el_dashboard); observer_tutorial.observe(el_tutorial);
         return () => { observer_dashboard.disconnect(); observer_tutorial.disconnect(); };
     });
-
     React.useEffect(() => {
         if (connectionStatus !== CONNECTION_STATUS.OPENED) {
             const is_bot_running = document.getElementById('db-animation__stop-button') !== null;
             if (is_bot_running) { clear(); stopBot(); api_base.setIsRunning(false); setWebSocketState(false); }
         }
     }, [clear, connectionStatus, setWebSocketState, stopBot]);
-
     const updateTabShadowsHeight = () => {
         const botBuilderEl = document.getElementById('id-bot-builder');
         const leftShadow = document.querySelector('.tabs-shadow--left') as HTMLElement;
         const rightShadow = document.querySelector('.tabs-shadow--right') as HTMLElement;
         if (botBuilderEl && leftShadow && rightShadow) { const height = botBuilderEl.offsetHeight; leftShadow.style.height = `${height}px`; rightShadow.style.height = `${height}px`; }
     };
-
     React.useEffect(() => {
         let pollTimeoutId: ReturnType<typeof setTimeout> | null = null;
         if (active_tab === BOT_BUILDER) {
@@ -115,7 +143,6 @@ const AppWrapper = observer(() => {
         }
         return () => { if (pollTimeoutId) clearTimeout(pollTimeoutId); };
     }, [active_tab, is_loading]);
-
     React.useEffect(() => {
         updateTabShadowsHeight(); if (is_open) setTourDialogVisibility(false);
         if (init_render.current) { setActiveTab(Number(active_hash_tab)); if (!isDesktop) handleTabChange(Number(active_hash_tab)); init_render.current = false; }
@@ -125,14 +152,11 @@ const AppWrapper = observer(() => {
         if (active_tab === DBOT_TABS.TUTORIAL && !isDesktop) { document.body.style.overflow = 'hidden'; if (mainElement instanceof HTMLElement) mainElement.classList.add('no-scroll'); }
         else { document.body.style.overflow = ''; if (mainElement instanceof HTMLElement) mainElement.classList.remove('no-scroll'); }
     }, [active_tab]);
-
     React.useEffect(() => {
         const trashcan_init_id = setTimeout(() => { if (active_tab === BOT_BUILDER && Blockly?.derivWorkspace?.trashcan) { const trashcanY = window.innerHeight - 250; const trashcanX = is_drawer_open ? (isDbotRTL() ? 380 : window.innerWidth - 460) : (isDbotRTL() ? 20 : window.innerWidth - 100); Blockly?.derivWorkspace?.trashcan?.setTrashcanPosition(trashcanX, trashcanY); } }, 100);
         return () => clearTimeout(trashcan_init_id);
     }, [active_tab, is_drawer_open]);
-
     useEffect(() => { let timer: ReturnType<typeof setTimeout>; if (dashboard_strategies.length > 0) timer = setTimeout(() => updateWorkspaceName()); return () => { if (timer) clearTimeout(timer); }; }, [dashboard_strategies, active_tab]);
-
     const handleTabChange = React.useCallback((tab_index: number) => { setActiveTab(tab_index); const el_id = TAB_IDS[tab_index]; if (el_id) setTimeout(() => document.getElementById(el_id)?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }), 10); }, [active_tab]);
     const handleFreeBotLoad = React.useCallback(async (bot) => { setActiveTab(BOT_BUILDER); await new Promise<void>(resolve => setTimeout(resolve, 50)); await quick_strategy.loadFreeBotXml(bot.xml, bot.name); }, [quick_strategy, setActiveTab]);
     const handleLoginGeneration = async () => { const oauthUrl = await generateOAuthURL(); if (oauthUrl) window.location.replace(oauthUrl); else console.error('Failed to generate OAuth URL'); };
@@ -144,7 +168,7 @@ const AppWrapper = observer(() => {
             <div label={<><LabelPairedPuzzlePieceTwoCaptionBoldIcon height='24px' width='24px' fill='var(--text-general)' /><Localize i18n_default_text='Bot Builder' /></>} id='id-bot-builder' />
             <div label={<>🤖 <Localize i18n_default_text='Free Bots' /></>} id='id-free-bots'><FreeBots onLoadBot={handleFreeBotLoad} /></div>
             <div label={<>📊 <Localize i18n_default_text='Analysis Tool' /></>} id='id-analysis-tool'><AnalysisTool /></div>
-            <div label={<>⚙️ <Localize i18n_default_text='Manual Trader' /></>} id='id-manual-trader'><AnalysisTool showLegend={false} showSubtabs={false} /></div>
+            <div label={<>⚙️ <Localize i18n_default_text='Manual Trader' /></>} id='id-manual-trader'><ManualTraderStructure /></div>
             <div label={<>🎯 <Localize i18n_default_text='Ultimate Bot 2026' /></>} id='id-ultimate-bot-2026' />
             <div label={<>📉 <Localize i18n_default_text='Charts' /></>} id='id-charts'><Suspense fallback={<ChunkLoader message={localize('Please wait, loading chart...')} />}><ChartWrapper show_digits_stats={false} /></Suspense></div>
             <div label={<><LegacyGuide1pxIcon height='16px' width='16px' fill='var(--text-general)' className='icon-general-fill-g-path' /><Localize i18n_default_text='Tutorials' /></>} id='id-tutorials'><div className='tutorials-wrapper'><Suspense fallback={<ChunkLoader message={localize('Please wait, loading tutorials...')} />}><Tutorial handleTabChange={handleTabChange} /></Suspense></div></div>
