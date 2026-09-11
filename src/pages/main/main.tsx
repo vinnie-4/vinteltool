@@ -63,7 +63,7 @@ const ManualTraderStructure = () => {
             <label>Ticks<input type='number' min='1' step='1' defaultValue='1' /></label>
             <label>Stake<input type='number' min='0' step='0.01' defaultValue='0.50' /></label>
             <label>No. of Bulk Trades<input type='number' min='1' step='1' defaultValue='1' /></label>
-            <label>Prediction<input type='number' min='0' max='9' step='1' defaultValue='1' /></label>
+            {tradeType === 'Over/Under' && <label>Prediction<input type='number' min='0' max='9' step='1' defaultValue='1' /></label>}
         </div>
         <div className='manual-trader__trade-buttons'>
             {tradeType === 'Even/Odd' ? <>
@@ -181,7 +181,7 @@ const AppWrapper = observer(() => {
             <div label={<>⚙️ <Localize i18n_default_text='Manual Trader' /></>} id='id-manual-trader'><ManualTraderStructure /></div>
             <div label={<>🎯 <Localize i18n_default_text='Ultimate Bot 2026' /></>} id='id-ultimate-bot-2026' />
             <div label={<>📉 <Localize i18n_default_text='Charts' /></>} id='id-charts'><Suspense fallback={<ChunkLoader message={localize('Please wait, loading chart...')} />}><ChartWrapper show_digits_stats={false} /></Suspense></div>
-            <div label={<><LegacyGuide1pxIcon height='16px' width='16px' fill='var(--text-general)' className='icon-general-fill-g-path' /><Localize i18n_default_text='Tutorials' /></>} id='id-tutorials'><div className='tutorials-wrapper'><Suspense fallback={<ChunkLoader message={localize('Please wait, loading tutorials...')} />}><Tutorial handleTabChange={handleTabChange} /></Suspense></div></div>
+            <div label={<><LegacyGuide1pxIcon height='16px' width='16px' fill='var(--text-general)' className='icon-general-fill-g-path' /><Localize i18n_default_text='Tutorials' /></>} id='id-tutorials'><div className='tutorials-wrapper'><Suspense fallback={<ChunkLoader message={localize('Please wait, loading tutorials...')} />}><Tutorial handleTabChange={handleTabChange} /></div></div>
             <div label={<>🎓 <Localize i18n_default_text='Deriv Course' /></>} id='id-deriv-course'><DerivCourse /></div>
         </Tabs>
         {!isDesktop && right_tab_shadow && <span className='tabs-shadow tabs-shadow--right' />}
