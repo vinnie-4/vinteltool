@@ -41,10 +41,14 @@ const ManualTraderStructure = () => {
     return <div className='manual-trader'>
         <div className='manual-trader__top-row'>
             <div className='manual-trader__volatility'>
-                <span>Volatility Index</span>
+                <span>Volatility</span>
                 <select defaultValue='Volatility 100'>
                     <option>Volatility 10</option><option>Volatility 10 (1s)</option><option>Volatility 15 (1s)</option><option>Volatility 25</option><option>Volatility 25 (1s)</option><option>Volatility 30 (1s)</option><option>Volatility 50</option><option>Volatility 50 (1s)</option><option>Volatility 75</option><option>Volatility 75 (1s)</option><option>Volatility 90 (1s)</option><option>Volatility 100</option><option>Volatility 100 (1s)</option>
                 </select>
+            </div>
+            <div className='manual-trader__analysis-ticks'>
+                <span>Ticks</span>
+                <select defaultValue='1000'><option>1000</option><option>500</option><option>300</option><option>100</option><option>60</option><option>30</option></select>
             </div>
             <div className='manual-trader__trade-type'>
                 <span>TRADE TYPE</span>
@@ -54,10 +58,7 @@ const ManualTraderStructure = () => {
                 </select>
             </div>
         </div>
-        <div className='manual-trader__analysis-ticks'>
-            <span>Ticks</span>
-            <select defaultValue='1000'><option>1000</option><option>500</option><option>300</option><option>100</option><option>60</option><option>30</option></select>
-        </div>
+        <div className='manual-trader__price'>Price</div>
         <AnalysisTool showLegend={false} showSubtabs={false} showControls={false} />
         <div className='manual-trader__trade-inputs'>
             <label>Ticks<input type='number' min='1' step='1' defaultValue='1' /></label>
