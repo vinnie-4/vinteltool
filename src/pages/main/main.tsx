@@ -63,7 +63,7 @@ const ManualTraderStructure = () => {
         <div className='manual-trader__trade-inputs'>
             <label>Ticks<input type='number' min='1' step='1' defaultValue='1' /></label>
             <label>Stake<input type='number' min='0' step='0.01' defaultValue='0.50' /></label>
-            <label>No. of trades<input type='number' min='1' step='1' defaultValue='1' /></label>
+            <label>No. of Bulk Trades<input type='number' min='1' step='1' defaultValue='1' /></label>
             <label>Prediction<input type='number' min='0' max='9' step='1' defaultValue='1' /></label>
         </div>
         <div className='manual-trader__trade-buttons'>
