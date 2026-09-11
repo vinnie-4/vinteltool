@@ -19,8 +19,8 @@ export const FREE_BOTS: TFreeBot[] = [
     {
         id: 'under-4-recovery',
         name: 'Under 4 Recovery',
-        description: 'Digit Under 4 • R_50 • 1 tick • base stake $0.50 • Martingale ×2',
-        tags: ['Digits', 'UNDER 4', 'R_50', '1 TICK', 'RECOVERY ×2'],
+        description: 'Digits • UNDER 4 • R_50 • 1 TICK • base stake $0.50 • RECOVERY ×2',
+        tags: ['Digits', 'UNDER 4', 'R_50', '1 TICK', '$0.50 STAKE', 'RECOVERY ×2'],
         xml: UNDER_4_RECOVERY_XML,
     },
     {
