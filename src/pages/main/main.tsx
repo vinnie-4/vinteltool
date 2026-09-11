@@ -58,7 +58,6 @@ const ManualTraderStructure = () => {
                 </select>
             </div>
         </div>
-        <div className='manual-trader__price'>Price</div>
         <AnalysisTool showLegend={false} showSubtabs={false} showControls={false} />
         <div className='manual-trader__trade-inputs'>
             <label>Ticks<input type='number' min='1' step='1' defaultValue='1' /></label>
