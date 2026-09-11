@@ -144,7 +144,7 @@ const AppWrapper = observer(() => {
             <div label={<><LabelPairedPuzzlePieceTwoCaptionBoldIcon height='24px' width='24px' fill='var(--text-general)' /><Localize i18n_default_text='Bot Builder' /></>} id='id-bot-builder' />
             <div label={<>🤖 <Localize i18n_default_text='Free Bots' /></>} id='id-free-bots'><FreeBots onLoadBot={handleFreeBotLoad} /></div>
             <div label={<>📊 <Localize i18n_default_text='Analysis Tool' /></>} id='id-analysis-tool'><AnalysisTool /></div>
-            <div label={<>⚙️ <Localize i18n_default_text='Manual Trader' /></>} id='id-manual-trader'><AnalysisTool showLegend={false} /></div>
+            <div label={<>⚙️ <Localize i18n_default_text='Manual Trader' /></>} id='id-manual-trader'><AnalysisTool showLegend={false} showSubtabs={false} /></div>
             <div label={<>🎯 <Localize i18n_default_text='Ultimate Bot 2026' /></>} id='id-ultimate-bot-2026' />
             <div label={<>📉 <Localize i18n_default_text='Charts' /></>} id='id-charts'><Suspense fallback={<ChunkLoader message={localize('Please wait, loading chart...')} />}><ChartWrapper show_digits_stats={false} /></Suspense></div>
             <div label={<><LegacyGuide1pxIcon height='16px' width='16px' fill='var(--text-general)' className='icon-general-fill-g-path' /><Localize i18n_default_text='Tutorials' /></>} id='id-tutorials'><div className='tutorials-wrapper'><Suspense fallback={<ChunkLoader message={localize('Please wait, loading tutorials...')} />}><Tutorial handleTabChange={handleTabChange} /></Suspense></div></div>
