@@ -161,10 +161,6 @@ const AppHeader = observer(() => {
                     <MobileMenu onLogout={handleLogout} />
                     <AppLogo />
                 </Wrapper>
-                <div className='app-header__currency-center' aria-label='Currency display'>
-                    <span>USD/KSH</span>
-                    <span aria-hidden='true'>▼</span>
-                </div>
                 <Wrapper variant='right'>
                     {renderAccountSection('right')}
                 </Wrapper>
