@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
 import { addComma, getCurrencyDisplayCode, getDecimalPlaces } from '@/components/shared';
+import { CurrencyIcon } from '@/components/currency/currency-icon';
 import Text from '@/components/shared_ui/text';
 import { api_base } from '@/external/bot-skeleton/services/api/api-base';
 import { useApiBase } from '@/hooks/useApiBase';
@@ -23,9 +24,7 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
-            if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-                setIsOpen(false);
-            }
+            if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setIsOpen(false);
         };
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') setIsOpen(false);
@@ -45,30 +44,42 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
 
     const handleAccountSelect = useCallback(
         (loginid: string) => {
+            if (loginid === activeLoginid) {
+                setIsOpen(false);
+                return;
+            }
             localStorage.setItem('active_loginid', loginid);
             client?.checkAndRegenerateWebSocket();
             setIsOpen(false);
         },
-        [client]
+        [activeLoginid, client]
     );
 
     const formattedAccounts = useMemo(() => {
         if (!accountList) return [];
+
         return accountList
-            .map(account => ({
-                loginid: account.loginid,
-                currency: account.currency,
-                balance: addComma(Number(account.balance ?? 0).toFixed(getDecimalPlaces(account.currency))),
-                isVirtual: isDemoAccount(account.loginid),
-                isActive: account.loginid === activeLoginid,
-            }))
+            .map(account => {
+                const liveBalance = client?.all_accounts_balance?.accounts?.[account.loginid];
+                const currency = liveBalance?.currency ?? account.currency;
+                const numericBalance = liveBalance?.balance ?? account.balance ?? 0;
+
+                return {
+                    loginid: account.loginid,
+                    currency,
+                    balance: addComma(Number(numericBalance).toFixed(getDecimalPlaces(currency))),
+                    isVirtual: isDemoAccount(account.loginid),
+                    isActive: account.loginid === activeLoginid,
+                };
+            })
             .sort((a, b) => (a.isActive ? -1 : b.isActive ? 1 : 0));
-    }, [accountList, activeLoginid]);
+    }, [accountList, activeLoginid, client?.all_accounts_balance]);
 
     if (!activeAccount) return null;
 
     const { currency, isVirtual, balance } = activeAccount;
     const showChevron = !isSingleAccount && !is_bot_running;
+    const accountLabel = isVirtual ? 'Demo' : 'Real';
 
     return (
         <div className='acc-info__wrapper' ref={wrapperRef}>
@@ -92,15 +103,13 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                         }
                     }}
                 >
-                    <span className='acc-info__id' aria-hidden='true'></span>
+                    <span className='acc-info__id' aria-hidden='true'>
+                        <CurrencyIcon currency={currency?.toLowerCase()} isVirtual={isVirtual} />
+                    </span>
                     <div className='acc-info__content'>
                         <div className='acc-info__account-type-header'>
                             <Text as='p' size='xs' className='acc-info__account-type'>
-                                {isVirtual ? (
-                                    <Localize i18n_default_text='Demo account' />
-                                ) : (
-                                    <Localize i18n_default_text='Real account' />
-                                )}
+                                {accountLabel}
                             </Text>
                             {showChevron && (
                                 <span
@@ -120,27 +129,34 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                                 </span>
                             )}
                         </div>
-                        {(typeof balance !== 'undefined' || !currency) && (
-                            <div className='acc-info__balance-section'>
-                                <p
-                                    data-testid='dt_balance'
-                                    className={classNames('acc-info__balance', {
-                                        'acc-info__balance--no-currency': !currency && !isVirtual,
-                                    })}
-                                >
-                                    {!currency ? (
-                                        <Localize i18n_default_text='No currency assigned' />
-                                    ) : (
-                                        `${balance} ${getCurrencyDisplayCode(currency)}`
-                                    )}
-                                </p>
-                            </div>
-                        )}
+                        <div className='acc-info__balance-section'>
+                            <p
+                                data-testid='dt_balance'
+                                className={classNames('acc-info__balance', {
+                                    'acc-info__balance--no-currency': !currency && !isVirtual,
+                                })}
+                            >
+                                {!currency ? (
+                                    <Localize i18n_default_text='No currency assigned' />
+                                ) : (
+                                    `${balance} ${getCurrencyDisplayCode(currency)}`
+                                )}
+                            </p>
+                        </div>
                     </div>
                 </div>
             </AccountInfoWrapper>
+
             {isOpen && (
                 <div className='acc-dropdown' role='listbox'>
+                    <div className='acc-dropdown__header'>
+                        <Text size='xxs' className='acc-dropdown__title'>
+                            Accounts
+                        </Text>
+                        <Text size='xxxs' className='acc-dropdown__status'>
+                            Live balance
+                        </Text>
+                    </div>
                     {formattedAccounts.map(account => (
                         <div
                             key={account.loginid}
@@ -149,35 +165,32 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                             tabIndex={0}
                             className={classNames('acc-dropdown__account', {
                                 'acc-dropdown__account--selected': account.isActive,
-                                'acc-dropdown__account--virtual': account.isVirtual,
                             })}
-                            onClick={() => !account.isActive && handleAccountSelect(account.loginid)}
+                            onClick={() => handleAccountSelect(account.loginid)}
                             onKeyDown={e => {
-                                if (!account.isActive && (e.key === 'Enter' || e.key === ' ')) {
+                                if (e.key === 'Enter' || e.key === ' ') {
                                     e.preventDefault();
                                     handleAccountSelect(account.loginid);
                                 }
                             }}
                         >
-                            <Text
-                                size='xxxs'
-                                className={classNames('acc-dropdown__account-type', {
+                            <span className='acc-dropdown__icon' aria-hidden='true'>
+                                <CurrencyIcon currency={account.currency?.toLowerCase()} isVirtual={account.isVirtual} />
+                            </span>
+                            <span className='acc-dropdown__details'>
+                                <span className={classNames('acc-dropdown__account-type', {
                                     'acc-dropdown__account-type--virtual': account.isVirtual,
-                                })}
-                            >
-                                {account.isVirtual ? (
-                                    <Localize i18n_default_text='Demo account' />
-                                ) : (
-                                    <Localize i18n_default_text='Real account' />
-                                )}
-                            </Text>
-                            <Text size='xs' weight='bold' className='acc-dropdown__balance'>
-                                {account.currency ? (
-                                    `${account.balance} ${getCurrencyDisplayCode(account.currency)}`
-                                ) : (
-                                    <Localize i18n_default_text='No currency assigned' />
-                                )}
-                            </Text>
+                                })}>
+                                    {account.isVirtual ? 'Demo account' : 'Real account'}
+                                </span>
+                                <span className='acc-dropdown__loginid'>{account.loginid}</span>
+                            </span>
+                            <span className='acc-dropdown__balance'>
+                                {account.currency
+                                    ? `${account.balance} ${getCurrencyDisplayCode(account.currency)}`
+                                    : 'No currency'}
+                            </span>
+                            {account.isActive && <span className='acc-dropdown__check' aria-label='Selected'>✓</span>}
                         </div>
                     ))}
                 </div>
