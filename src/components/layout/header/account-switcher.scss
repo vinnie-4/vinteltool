@@ -13,9 +13,7 @@
     width: max-content;
     border-radius: 18px;
 
-    &:hover {
-        background: transparent !important;
-    }
+    &:hover { background: transparent !important; }
 
     &__preloader,
     &__preloader__dtrader {
@@ -26,7 +24,6 @@
         height: 4rem;
         z-index: 2;
         background: var(--general-main-1);
-
         &:before {
             content: '';
             position: absolute;
@@ -36,7 +33,6 @@
             top: 0;
             background: var(--general-main-1);
         }
-
         @include mobile-screen {
             width: 14rem;
             height: 4rem;
@@ -45,10 +41,7 @@
         }
     }
 
-    &__container {
-        align-items: center;
-        display: flex;
-    }
+    &__container { align-items: center; display: flex; }
 
     &__wrapper {
         align-items: center;
@@ -67,7 +60,7 @@
         display: flex;
         flex-direction: column;
         justify-content: center;
-        margin-inline-start: 8px;
+        margin-inline-start: 1px;
         min-width: 0;
     }
 
@@ -86,14 +79,9 @@
         font-weight: 700;
     }
 
-    &--is-virtual .acc-info__account-type {
-        color: $color-yellow;
-    }
+    &--is-virtual .acc-info__account-type { color: $color-yellow; }
 
-    &__balance-section {
-        display: flex;
-        align-items: center;
-    }
+    &__balance-section { display: flex; align-items: center; }
 
     &__balance {
         @include typeface(--paragraph-left-bold-black);
@@ -103,7 +91,6 @@
         font-size: 14px;
         font-weight: 800;
         color: var(--status-success);
-
         &--no-currency {
             @include typeface(--small-left-normal-grey);
             white-space: nowrap;
@@ -125,13 +112,14 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 12px;
-        height: 12px;
-        margin-left: 5px;
+        width: 14px;
+        height: 14px;
+        margin-left: 10px;
         transform: rotate(0);
         transform-origin: 50% 50%;
         transition: transform 0.2s ease;
-        svg path { stroke: var(--text-general); }
+        svg { width: 14px; height: 14px; }
+        svg path { stroke: var(--text-general); stroke-width: 2.5; }
         &--invert { transform: rotate(180deg); }
     }
 
@@ -141,9 +129,10 @@
     }
 
     @include mobile-screen {
-        padding: 0 8px;
+        padding: 0 3px 0 8px;
         margin-right: -4px;
         &__balance { font-size: 14px; }
+        &__select-arrow { margin-left: 10px; }
     }
 }
 
@@ -155,7 +144,6 @@
     margin: 0 0.8rem;
     height: 4rem;
     position: relative;
-
     &--is-loading {
         position: absolute;
         height: 100%;
@@ -164,7 +152,6 @@
         left: 0;
         background: var(--general-main-2);
     }
-
     &__wrapper {
         border-radius: $BORDER_RADIUS;
         position: absolute;
@@ -209,7 +196,6 @@
     border-radius: 14px;
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
     overflow: hidden;
-
     &__header {
         display: flex;
         align-items: center;
@@ -217,10 +203,8 @@
         padding: 12px 14px 9px;
         border-bottom: 1px solid var(--general-section-1);
     }
-
     &__title { margin: 0; font-weight: 700; color: var(--text-prominent); }
     &__status { margin: 0; color: var(--status-success); }
-
     &__account {
         display: grid;
         grid-template-columns: 32px minmax(0, 1fr) auto 18px;
@@ -231,11 +215,9 @@
         cursor: pointer;
         background: var(--general-main-2);
         transition: background 0.15s ease;
-
         &:hover:not(.acc-dropdown__account--selected) { background: var(--state-hover); }
         &--selected { background: var(--state-active); }
     }
-
     &__icon {
         display: flex;
         align-items: center;
@@ -243,13 +225,11 @@
         width: 30px;
         height: 30px;
     }
-
     &__details {
         display: flex;
         flex-direction: column;
         min-width: 0;
     }
-
     &__account-type {
         color: var(--status-success);
         line-height: 1.2;
@@ -258,7 +238,6 @@
         white-space: nowrap;
         &--virtual { color: $color-yellow; }
     }
-
     &__loginid {
         margin-top: 2px;
         color: var(--text-less-prominent);
@@ -268,7 +247,6 @@
         text-overflow: ellipsis;
         white-space: nowrap;
     }
-
     &__balance {
         color: var(--text-prominent);
         line-height: 1.2;
@@ -277,14 +255,12 @@
         text-align: right;
         white-space: nowrap;
     }
-
     &__check {
         color: var(--status-success);
         font-size: 15px;
         font-weight: 800;
         text-align: center;
     }
-
     @include mobile-screen {
         width: calc(100vw - 16px);
         right: -4px;
