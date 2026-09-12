@@ -6,8 +6,10 @@ window.Blockly.Blocks.purchase = {
     init() {
         this.jsonInit(this.definition());
 
-        // Ensure one of this type per statement-stack
+        // Purchase is a mandatory execution block: it cannot be deleted or disabled.
         this.setNextStatement(false);
+        this.setDeletable(false);
+        this.setDisabledReason?.('');
     },
     definition() {
         return {
@@ -31,7 +33,7 @@ window.Blockly.Blocks.purchase = {
         return {
             display_name: localize('Purchase'),
             description: localize(
-                'Use this block to purchase the specific contract you want. You may add multiple Purchase blocks together with conditional blocks to define your purchase conditions. This block can only be used within the Purchase conditions block.'
+                'This block is mandatory and cannot be deleted or disabled. It purchases the specific contract type you select.'
             ),
             key_words: localize('buy'),
         };
@@ -39,6 +41,11 @@ window.Blockly.Blocks.purchase = {
     onchange(event) {
         if (!this.workspace || window.Blockly.derivWorkspace.isFlyoutVisible || this.workspace.isDragging()) {
             return;
+        }
+
+        // Never allow the mandatory Purchase block to remain disabled.
+        if (this.isEnabled && !this.isEnabled()) {
+            this.setEnabled(true);
         }
 
         if (event.type === window.Blockly.Events.BLOCK_CREATE && event.ids.includes(this.id)) {
@@ -76,7 +83,8 @@ window.Blockly.Blocks.purchase = {
         }
     },
     customContextMenu(menu) {
-        const menu_items = [localize('Enable Block'), localize('Disable Block')];
+        // Explicitly remove Enable/Disable as well as Delete for this mandatory block.
+        const menu_items = [localize('Enable Block'), localize('Disable Block'), localize('Delete Block')];
         excludeOptionFromContextMenu(menu, menu_items);
         modifyContextMenu(menu);
     },
@@ -86,6 +94,6 @@ window.Blockly.Blocks.purchase = {
 window.Blockly.JavaScript.javascriptGenerator.forBlock.purchase = block => {
     const purchaseList = block.getFieldValue('PURCHASE_LIST');
 
-    const code = `Bot.purchase('${purchaseList}');\n`;
+    const code = `Bot.purchase('${purchaseList}');\\n`;
     return code;
 };
