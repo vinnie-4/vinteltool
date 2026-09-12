@@ -1,24 +1,12 @@
 import React from 'react';
 import './free-bots.scss';
-// PROTECTED BOT: this source is isolated from user-uploaded XML bots.
-// Do not point this import at a user-uploadable XML path.
-// @ts-ignore — raw-loader exposes XML assets as strings at build time.
-import VINTEL_OVER_UNDER_DESTROYER_XML from '@/xml/protected/VintelTool Under Destroyer.locked.xml';
 // @ts-ignore — raw-loader exposes XML assets as strings at build time.
 import VINTEL_UNDER_6_RECOVERY_UNDER_5_XML from '@/xml/VintelTool Under 6 Recovery Under 5.xml';
 
 export type TFreeBot = { id: string; name: string; xml: string; description?: string; tags?: string[] };
 type TFreeBotsProps = { bots?: TFreeBot[]; onLoadBot: (bot: TFreeBot) => void | Promise<void> };
 
-// Under Destroyer remains isolated and its source cannot be replaced by uploaded XML bots.
 export const FREE_BOTS: TFreeBot[] = [
-    {
-        id: 'vintel-over-under-destroyer',
-        name: 'VintelTool Under Destroyer',
-        description: 'Digits • UNDER 7 → UNDER 4 on loss • R_50 • 1 tick • base stake $1 • Martingale ×2',
-        tags: ['Digits', 'UNDER 7', 'LOSS → UNDER 4', 'R_50', '1 TICK', '$1 STAKE', 'MARTINGALE ×2'],
-        xml: VINTEL_OVER_UNDER_DESTROYER_XML,
-    },
     {
         id: 'vintel-under-6-recovery-under-5',
         name: 'VintelTool Under 6 Recovery Under 5',
