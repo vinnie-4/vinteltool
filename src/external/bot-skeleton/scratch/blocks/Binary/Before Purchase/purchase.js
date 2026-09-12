@@ -5,11 +5,8 @@ import { excludeOptionFromContextMenu, modifyContextMenu } from '../../../utils'
 window.Blockly.Blocks.purchase = {
     init() {
         this.jsonInit(this.definition());
-
-        // Purchase is a mandatory execution block: it cannot be deleted or disabled.
         this.setNextStatement(false);
         this.setDeletable(false);
-        this.setDisabledReason?.('');
     },
     definition() {
         return {
@@ -43,7 +40,6 @@ window.Blockly.Blocks.purchase = {
             return;
         }
 
-        // Never allow the mandatory Purchase block to remain disabled.
         if (this.isEnabled && !this.isEnabled()) {
             this.setEnabled(true);
         }
@@ -56,7 +52,7 @@ window.Blockly.Blocks.purchase = {
             }
         } else if (event.type === window.Blockly.Events.BLOCK_DRAG && !event.isStart && event.blockId === this.id) {
             const purchase_type_list = this.getField('PURCHASE_LIST');
-            const purchase_options = purchase_type_list.menuGenerator_; // eslint-disable-line
+            const purchase_options = purchase_type_list.menuGenerator_;
 
             if (purchase_options[0][0] === '') {
                 this.populatePurchaseList(event);
@@ -83,7 +79,6 @@ window.Blockly.Blocks.purchase = {
         }
     },
     customContextMenu(menu) {
-        // Explicitly remove Enable/Disable as well as Delete for this mandatory block.
         const menu_items = [localize('Enable Block'), localize('Disable Block'), localize('Delete Block')];
         excludeOptionFromContextMenu(menu, menu_items);
         modifyContextMenu(menu);
@@ -93,7 +88,5 @@ window.Blockly.Blocks.purchase = {
 
 window.Blockly.JavaScript.javascriptGenerator.forBlock.purchase = block => {
     const purchaseList = block.getFieldValue('PURCHASE_LIST');
-
-    const code = `Bot.purchase('${purchaseList}');\\n`;
-    return code;
+    return `Bot.purchase('${purchaseList}');\n`;
 };
