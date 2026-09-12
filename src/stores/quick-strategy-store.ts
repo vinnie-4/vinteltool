@@ -82,13 +82,14 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
     setValue = (name: string, value: string | number | boolean) => { this.form_data[name as keyof TFormData] = value; };
     setCurrentDurationMinMax = (min = 0, max = 10) => { this.current_duration_min_max = { min, max }; };
 
-    // Under Destroyer keeps the last known working Free Bot loading path.
-    // Under 6 Recovery Under 5 continues through the newer queued importer.
+    // Under Destroyer uses the original Quick Strategy Free Bot loading sequence.
+    // Under 6 Recovery Under 5 keeps its existing queued importer untouched.
     loadFreeBotXml = async (xml: string, botName = 'Free Bot') => {
         if (!xml?.trim()) return;
 
         if (botName.toLowerCase().includes('under destroyer')) {
             this.pending_free_bot = { xml, name: botName };
+            this.setFormVisibility(true);
             const waitForWorkspace = async () => {
                 for (let attempt = 0; attempt < 100; attempt += 1) {
                     const workspace = window.Blockly?.derivWorkspace;
@@ -103,7 +104,8 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
                 return;
             }
             const strategy_dom = window.Blockly.utils.xml.textToDom(xml);
-            const blockTypes = Array.from(strategy_dom.querySelectorAll('block')).map(block => block.getAttribute('type')).filter(Boolean);
+            const blockly_xml = strategy_dom.querySelectorAll('block');
+            const blockTypes = Array.from(blockly_xml).map(block => block.getAttribute('type')).filter(Boolean);
             removeLimitedBlocks(workspace, blockTypes);
             loadBlocks(strategy_dom, null, `free-bot-load-${Date.now()}`, workspace);
             this.pending_free_bot = null;
