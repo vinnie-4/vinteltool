@@ -18,13 +18,13 @@
 
     &--desktop {
         .auth-actions {
-            margin-inline-end: 4.3rem;
+            margin-inline-end: 4.8rem;
         }
     }
 
     @include mobile-or-tablet-screen {
         .auth-actions {
-            margin-inline-end: 1.9rem;
+            margin-inline-end: 2.4rem;
         }
     }
 }
