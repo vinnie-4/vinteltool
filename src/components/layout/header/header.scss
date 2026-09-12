@@ -15,6 +15,27 @@
             fill: var(--text-prominent);
         }
     }
+
+    &__currency-control {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        margin-inline-start: 1.2rem;
+        padding: 0.65rem 0.9rem;
+        border-radius: 1.2rem;
+        color: var(--text-prominent);
+        font-size: 1.3rem;
+        font-weight: 600;
+        line-height: 1;
+        white-space: nowrap;
+        user-select: none;
+    }
+
+    &--desktop {
+        .auth-actions {
+            margin-inline-end: 2.4rem;
+        }
+    }
 }
 
 .account-switcher {
