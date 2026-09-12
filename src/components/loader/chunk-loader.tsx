@@ -1,179 +1,169 @@
 import { useEffect, useState } from 'react';
 
-const LOADER_STEPS = [
-    'Initializing VintelTool...',
-    'Loading Vintel trading environment...',
-    'Connecting to Deriv...',
-    'Preparing workspace...',
-    'Loading dashboard...',
-    'Initializing...',
-];
-
 export default function ChunkLoader({ message: _message }: { message: string }) {
-    const [progress, setProgress] = useState(0);
-    const [step, setStep] = useState(0);
+    const [activeDot, setActiveDot] = useState(0);
 
     useEffect(() => {
         const interval = window.setInterval(() => {
-            setProgress(current => {
-                if (current >= 100) return 100;
-                const next = Math.min(100, current + (current < 70 ? 2 : 1));
-                setStep(Math.min(LOADER_STEPS.length - 1, Math.floor(next / 20)));
-                return next;
-            });
-        }, 90);
+            setActiveDot(current => (current + 1) % 3);
+        }, 450);
 
         return () => window.clearInterval(interval);
     }, []);
 
     return (
-        <div
-            className='vinteltool-loader'
-            role='status'
-            aria-live='polite'
-            style={{
-                minHeight: '100vh',
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                position: 'relative',
-                overflow: 'hidden',
-                background: '#061a3a',
-                color: '#fff',
-                fontFamily: 'Times New Roman, Times, serif',
-                boxSizing: 'border-box',
-                padding: '24px',
-            }}
-        >
-            <div className='vinteltool-loader-floaters' aria-hidden='true'>
-                <span>vinteltool.site</span>
-                <span>↗ vinteltool.site</span>
-                <span>vinteltool.site</span>
-                <span>↗</span>
-                <span>vinteltool.site</span>
-                <span>↘ vinteltool.site</span>
-                <span>vinteltool.site</span>
-                <span>↗ vinteltool.site</span>
-            </div>
-
-            <div style={{ width: 'min(420px, 100%)', textAlign: 'center', position: 'relative', zIndex: 2 }}>
-                <div
-                    style={{
-                        width: 92,
-                        height: 92,
-                        margin: '0 auto 18px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: '3px solid #1687ff',
-                        background: 'transparent',
-                        boxShadow: '0 0 30px rgba(22,135,255,0.35)',
-                        animation: 'vinteltool-box-fade 2.2s ease-in-out infinite, vinteltool-box-rotate 4s linear infinite',
-                    }}
-                >
-                    <span style={{ fontSize: 30, fontWeight: 700, letterSpacing: '-1px' }}>
-                        <span style={{ color: '#fff' }}>V</span><span style={{ color: '#e53935' }}>T</span>
+        <div className='vinteltool-loader' role='status' aria-live='polite'>
+            <div className='vinteltool-loader__glow' aria-hidden='true' />
+            <div className='vinteltool-loader__content'>
+                <div className='vinteltool-loader__mark' aria-hidden='true'>
+                    <span className='vinteltool-loader__ring' />
+                    <span className='vinteltool-loader__letters'>
+                        <span>V</span><span>T</span>
                     </span>
                 </div>
-
-                <div style={{ fontSize: 27, fontWeight: 700, marginBottom: 7 }}>
-                    Vintel<span style={{ color: '#e53935' }}>Tool</span>
+                <div className='vinteltool-loader__brand'>
+                    Vintel<span>Tool</span>
                 </div>
-                <div style={{ fontSize: 15, lineHeight: 1.35, opacity: 0.78, marginBottom: 28 }}>
-                    Your Ultimate Trusted Deriv Advanced
-                    <br />
-                    Trading Tool
-                </div>
-
-                <div style={{ textAlign: 'left', marginBottom: 14 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>
-                        Loading Vintel trading environment...
-                    </div>
-                    <div style={{ fontSize: 12, opacity: 0.6 }}>{LOADER_STEPS[step]}</div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
-                    <div
-                        style={{
-                            flex: 1,
-                            height: 7,
-                            overflow: 'hidden',
-                            border: '1px solid rgba(255,255,255,0.24)',
-                            background: 'rgba(0,0,0,0.18)',
-                        }}
-                    >
-                        <div
-                            style={{
-                                width: `${progress}%`,
-                                height: '100%',
-                                background: '#1687ff',
-                                transition: 'width 90ms linear',
-                            }}
-                        />
-                    </div>
-                    <span style={{ minWidth: 38, textAlign: 'right', fontSize: 14, fontWeight: 700 }}>
-                        {progress}%
+                <div className='vinteltool-loader__status'>
+                    <span>Loading</span>
+                    <span className='vinteltool-loader__dots' aria-hidden='true'>
+                        {[0, 1, 2].map(index => (
+                            <i key={index} className={index === activeDot ? 'is-active' : ''} />
+                        ))}
                     </span>
-                </div>
-
-                <div style={{ marginTop: 13, fontSize: 12, opacity: 0.65, letterSpacing: 1.2 }}>
-                    BOOT SEQUENCE
                 </div>
             </div>
 
             <style>{`
-                .vinteltool-loader-floaters {
+                .vinteltool-loader {
+                    min-height: 100vh;
+                    width: 100%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    position: relative;
+                    overflow: hidden;
+                    box-sizing: border-box;
+                    background: #061a3a;
+                    color: #fff;
+                    font-family: Arial, Helvetica, sans-serif;
+                    isolation: isolate;
+                }
+
+                .vinteltool-loader__glow {
+                    position: absolute;
+                    width: 320px;
+                    height: 320px;
+                    border-radius: 50%;
+                    background: radial-gradient(circle, rgba(22,135,255,.22) 0%, rgba(22,135,255,.08) 38%, transparent 70%);
+                    filter: blur(8px);
+                    animation: vinteltool-loader-glow 2.8s ease-in-out infinite;
+                }
+
+                .vinteltool-loader__content {
+                    position: relative;
+                    z-index: 1;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    text-align: center;
+                }
+
+                .vinteltool-loader__mark {
+                    width: 86px;
+                    height: 86px;
+                    position: relative;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin-bottom: 22px;
+                }
+
+                .vinteltool-loader__ring {
                     position: absolute;
                     inset: 0;
-                    overflow: hidden;
-                    pointer-events: none;
-                    opacity: 0.16;
+                    border: 2px solid rgba(255,255,255,.18);
+                    border-top-color: #1687ff;
+                    border-right-color: #1687ff;
+                    border-radius: 50%;
+                    animation: vinteltool-loader-spin 1.25s linear infinite;
                 }
 
-                .vinteltool-loader-floaters span {
-                    position: absolute;
-                    font-size: 14px;
+                .vinteltool-loader__letters {
+                    width: 64px;
+                    height: 64px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: rgba(255,255,255,.045);
+                    border: 1px solid rgba(255,255,255,.16);
+                    box-shadow: 0 0 28px rgba(22,135,255,.2);
+                    font-size: 25px;
+                    font-weight: 800;
+                    letter-spacing: -2px;
+                }
+
+                .vinteltool-loader__letters span:first-child { color: #fff; }
+                .vinteltool-loader__letters span:last-child { color: #e53935; }
+
+                .vinteltool-loader__brand {
+                    font-size: 28px;
+                    line-height: 1;
                     font-weight: 700;
-                    color: #fff;
-                    white-space: nowrap;
-                    animation: vinteltool-float 9s linear infinite;
+                    letter-spacing: -.7px;
                 }
 
-                .vinteltool-loader-floaters span:nth-child(1) { left: 6%; top: 72%; animation-delay: -2s; }
-                .vinteltool-loader-floaters span:nth-child(2) { left: 15%; top: 20%; animation-delay: -6s; }
-                .vinteltool-loader-floaters span:nth-child(3) { left: 73%; top: 25%; animation-delay: -4s; }
-                .vinteltool-loader-floaters span:nth-child(4) { left: 88%; top: 70%; animation-delay: -8s; }
-                .vinteltool-loader-floaters span:nth-child(5) { left: 64%; top: 82%; animation-delay: -1s; }
-                .vinteltool-loader-floaters span:nth-child(6) { left: 27%; top: 84%; animation-delay: -5s; }
-                .vinteltool-loader-floaters span:nth-child(7) { left: 86%; top: 42%; animation-delay: -7s; }
-                .vinteltool-loader-floaters span:nth-child(8) { left: 3%; top: 38%; animation-delay: -3s; }
+                .vinteltool-loader__brand span { color: #e53935; }
 
-                @keyframes vinteltool-float {
-                    0% { transform: translate3d(0, 35px, 0); opacity: 0; }
-                    15% { opacity: 0.8; }
-                    50% { transform: translate3d(22px, -35px, 0); opacity: 0.55; }
-                    85% { opacity: 0.8; }
-                    100% { transform: translate3d(-18px, -110px, 0); opacity: 0; }
+                .vinteltool-loader__status {
+                    display: flex;
+                    align-items: center;
+                    gap: 7px;
+                    margin-top: 15px;
+                    min-height: 20px;
+                    color: rgba(255,255,255,.68);
+                    font-size: 13px;
+                    letter-spacing: .35px;
                 }
 
-                @keyframes vinteltool-box-fade {
-                    0%, 100% { opacity: 0.45; box-shadow: 0 0 16px rgba(22,135,255,0.18); }
-                    50% { opacity: 1; box-shadow: 0 0 34px rgba(22,135,255,0.5); }
+                .vinteltool-loader__dots {
+                    display: inline-flex;
+                    gap: 4px;
+                    align-items: center;
                 }
 
-                @keyframes vinteltool-box-rotate {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
+                .vinteltool-loader__dots i {
+                    width: 4px;
+                    height: 4px;
+                    border-radius: 50%;
+                    background: rgba(255,255,255,.28);
+                    transition: transform .2s ease, background .2s ease;
+                }
+
+                .vinteltool-loader__dots i.is-active {
+                    background: #1687ff;
+                    transform: scale(1.5);
+                }
+
+                @keyframes vinteltool-loader-spin {
+                    to { transform: rotate(360deg); }
+                }
+
+                @keyframes vinteltool-loader-glow {
+                    0%, 100% { transform: scale(.86); opacity: .55; }
+                    50% { transform: scale(1.08); opacity: 1; }
                 }
 
                 @media (prefers-reduced-motion: reduce) {
-                    .vinteltool-loader-floaters span,
-                    .vinteltool-loader > div > div:first-child {
-                        animation: none !important;
-                    }
+                    .vinteltool-loader__ring,
+                    .vinteltool-loader__glow { animation: none; }
                 }
             `}</style>
         </div>
     );
 }
+
+// Visual splash only. AppContent removes it when real initialization is ready;
+// there is no artificial timeout or fake progress bar.
