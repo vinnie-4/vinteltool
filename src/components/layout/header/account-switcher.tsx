@@ -93,7 +93,12 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                 }}>
                     <span className='acc-info__id' aria-hidden='true'><CurrencyIcon currency={currency?.toLowerCase()} isVirtual={isVirtual} /></span>
                     <div className='acc-info__content'>
-                        <div className='acc-info__balance-section'><p data-testid='dt_balance' className='acc-info__balance'>{!currency ? <Localize i18n_default_text='No currency assigned' /> : `${balance} ${getCurrencyDisplayCode(currency)}`}</p></div>
+                        <div className='acc-info__balance-section'>
+                            <p data-testid='dt_balance' className='acc-info__balance'>{!currency ? <Localize i18n_default_text='No currency assigned' /> : `${balance} ${getCurrencyDisplayCode(currency)}`}</p>
+                            {showChevron && <span className={classNames('acc-info__select-arrow', { 'acc-info__select-arrow--invert': isOpen })} aria-hidden='true'>
+                                <svg width='12' height='12' viewBox='0 0 12 12' fill='none'><path d='M2 4L6 8L10 4' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round' /></svg>
+                            </span>}
+                        </div>
                     </div>
                 </div>
             </AccountInfoWrapper>
