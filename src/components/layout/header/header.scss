@@ -16,25 +16,6 @@
         }
     }
 
-    &__currency-center {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        display: inline-flex;
-        align-items: center;
-        gap: 0.45rem;
-        padding: 0.65rem 0.9rem;
-        border-radius: 1.2rem;
-        color: var(--text-prominent);
-        font-size: 1.3rem;
-        font-weight: 600;
-        line-height: 1;
-        white-space: nowrap;
-        user-select: none;
-        z-index: 2;
-    }
-
     &--desktop {
         .auth-actions {
             margin-inline-end: 2.4rem;
