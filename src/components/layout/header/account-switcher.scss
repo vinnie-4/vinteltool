@@ -124,6 +124,10 @@
         pointer-events: none;
         display: flex;
         align-items: center;
+        justify-content: center;
+        width: 12px;
+        height: 12px;
+        margin-left: 5px;
         transform: rotate(0);
         transform-origin: 50% 50%;
         transition: transform 0.2s ease;
