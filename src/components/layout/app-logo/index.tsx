@@ -8,9 +8,24 @@ import { LogoMark } from './LogoMark';
 import './app-logo.scss';
 
 export const AppLogo = () => {
+    const handleRefresh = () => {
+        window.location.reload();
+    };
+
     return (
-        <a href='/' className='app-header__logo' aria-label={localize('Home')}>
-            <LogoMark height={34} />
-        </a>
+        <div className='app-header__logo-group'>
+            <a href='/' className='app-header__logo' aria-label={localize('Home')}>
+                <LogoMark height={34} />
+            </a>
+            <button
+                type='button'
+                className='app-header__refresh'
+                onClick={handleRefresh}
+                aria-label={localize('Refresh page')}
+                title={localize('Refresh page')}
+            >
+                ↻
+            </button>
+        </div>
     );
 };
