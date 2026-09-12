@@ -82,14 +82,15 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
     setValue = (name: string, value: string | number | boolean) => { this.form_data[name as keyof TFormData] = value; };
     setCurrentDurationMinMax = (min = 0, max = 10) => { this.current_duration_min_max = { min, max }; };
 
-    // Free Bots now enter through Quick Strategy first. Quick Strategy performs the Blockly import.
+    // Free Bots first enter Quick Strategy, then immediately import their XML into Bot Builder.
     loadFreeBotXml = async (xml: string, botName = 'Free Bot') => {
         if (!xml?.trim()) return;
         this.pending_free_bot = { xml, name: botName };
         this.setFormVisibility(true);
+        void this.importPendingFreeBot();
     };
 
-    // Uses the same queued loadBlocks path as Quick Strategy's normal import.
+    // Same queued Blockly loader used by Quick Strategy, with no competing workspace loader.
     importPendingFreeBot = async () => {
         if (!this.pending_free_bot) return;
         const pending = this.pending_free_bot;
