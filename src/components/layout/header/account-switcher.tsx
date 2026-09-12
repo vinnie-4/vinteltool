@@ -81,7 +81,6 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
     const { currency, balance } = activeAccount;
     const isVirtual = getNewApiAccountType(activeAccount, activeLoginid) === 'demo';
     const showChevron = !isSingleAccount && !is_bot_running;
-    const accountLabel = isVirtual ? 'Demo' : 'Real';
 
     return (
         <div className='acc-info__wrapper' ref={wrapperRef}>
@@ -94,12 +93,6 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                 }}>
                     <span className='acc-info__id' aria-hidden='true'><CurrencyIcon currency={currency?.toLowerCase()} isVirtual={isVirtual} /></span>
                     <div className='acc-info__content'>
-                        <div className='acc-info__account-type-header'>
-                            <Text as='p' size='xs' className='acc-info__account-type'>{accountLabel}</Text>
-                            {showChevron && <span className={classNames('acc-info__select-arrow', { 'acc-info__select-arrow--invert': isOpen })}>
-                                <svg width='12' height='12' viewBox='0 0 12 12' fill='none'><path d='M2 4L6 8L10 4' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round' /></svg>
-                            </span>}
-                        </div>
                         <div className='acc-info__balance-section'><p data-testid='dt_balance' className='acc-info__balance'>{!currency ? <Localize i18n_default_text='No currency assigned' /> : `${balance} ${getCurrencyDisplayCode(currency)}`}</p></div>
                     </div>
                 </div>
