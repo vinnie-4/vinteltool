@@ -98,15 +98,7 @@ const AppHeader = observer(() => {
     const renderAccountSection = useCallback(
         (position: 'left' | 'right' = 'right') => {
             if (activeLoginid && !is_account_regenerating) {
-                if (position === 'left' && !isDesktop) {
-                    return (
-                        <div className='auth-actions'>
-                            <div className='account-info'>
-                                <AccountSwitcher activeAccount={activeAccount} />
-                            </div>
-                        </div>
-                    );
-                } else if (position === 'right') {
+                if (position === 'right') {
                     return (
                         <div className='auth-actions'>
                             <div className='account-info'>
@@ -144,7 +136,6 @@ const AppHeader = observer(() => {
         },
         [
             isAuthorizing,
-            isDesktop,
             activeLoginid,
             client,
             activeAccount,
@@ -169,12 +160,11 @@ const AppHeader = observer(() => {
                 <Wrapper variant='left'>
                     <MobileMenu onLogout={handleLogout} />
                     <AppLogo />
-                    <div className='app-header__currency-control' aria-label='Currency display'>
-                        <span>USD/KSH</span>
-                        <span aria-hidden='true'>▼</span>
-                    </div>
-                    {isDesktop ? <MenuItems /> : renderAccountSection('left')}
                 </Wrapper>
+                <div className='app-header__currency-center' aria-label='Currency display'>
+                    <span>USD/KSH</span>
+                    <span aria-hidden='true'>▼</span>
+                </div>
                 <Wrapper variant='right'>
                     {renderAccountSection('right')}
                 </Wrapper>
