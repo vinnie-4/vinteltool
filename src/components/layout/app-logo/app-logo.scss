@@ -1,4 +1,9 @@
 .app-header {
+    &__logo-group {
+        display: flex;
+        align-items: center;
+    }
+
     &__logo {
         padding-inline-start: 1.6rem;
         padding-inline-end: 1.6rem;
@@ -6,6 +11,32 @@
         display: flex;
         align-items: center;
         text-decoration: none;
+    }
+
+    &__refresh {
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        margin: 0 0.4rem 0 0;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: var(--text-general);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.4rem;
+        line-height: 1;
+        cursor: pointer;
+        transition: background-color 0.15s ease, transform 0.15s ease;
+
+        &:hover {
+            background: var(--general-section-1);
+        }
+
+        &:active {
+            transform: rotate(-25deg) scale(0.94);
+        }
     }
 
     &__logo-mark {
