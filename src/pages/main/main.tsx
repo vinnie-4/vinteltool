@@ -128,18 +128,7 @@ const AppWrapper = observer(() => {
     }, [active_tab, is_drawer_open]);
     useEffect(() => { let timer: ReturnType<typeof setTimeout>; if (dashboard_strategies.length > 0) timer = setTimeout(() => updateWorkspaceName()); return () => { if (timer) clearTimeout(timer); }; }, [dashboard_strategies, active_tab]);
     const handleTabChange = React.useCallback((tab_index: number) => { setActiveTab(tab_index); const el_id = TAB_IDS[tab_index]; if (el_id) setTimeout(() => document.getElementById(el_id)?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }), 10); }, [active_tab]);
-    const handleFreeBotLoad = React.useCallback(async (bot) => {
-        // Under Destroyer intentionally follows the original Free Bots → Quick Strategy
-        // sequencing. Under 6 keeps its current loading path untouched.
-        if (bot?.id === 'vintel-over-under-destroyer') {
-            await quick_strategy.loadFreeBotXml(bot.xml, bot.name);
-            setActiveTab(BOT_BUILDER);
-            return;
-        }
-        setActiveTab(BOT_BUILDER);
-        await new Promise<void>(resolve => setTimeout(resolve, 50));
-        await quick_strategy.loadFreeBotXml(bot.xml, bot.name);
-    }, [quick_strategy, setActiveTab]);
+    const handleFreeBotLoad = React.useCallback(async (bot) => { setActiveTab(BOT_BUILDER); await new Promise<void>(resolve => setTimeout(resolve, 50)); await quick_strategy.loadFreeBotXml(bot.xml, bot.name); }, [quick_strategy, setActiveTab]);
     const handleLoginGeneration = async () => { const oauthUrl = await generateOAuthURL(); if (oauthUrl) window.location.replace(oauthUrl); else console.error('Failed to generate OAuth URL'); };
 
     return <React.Fragment><div className='main'><div className={classNames('main__container', { 'main__container--active': active_tour && active_tab === DASHBOARD && !isDesktop })}><div>
@@ -152,7 +141,7 @@ const AppWrapper = observer(() => {
             <div label={<>⚙️ <Localize i18n_default_text='Manual Trader' /></>} id='id-manual-trader'><ManualTraderStructure /></div>
             <div label={<>🎯 <Localize i18n_default_text='Ultimate Bot 2026' /></>} id='id-ultimate-bot-2026'><UltimateBot2026 /></div>
             <div label={<>📉 <Localize i18n_default_text='Charts' /></>} id='id-charts'><Suspense fallback={<ChunkLoader message={localize('Please wait, loading chart...')} />}><ChartWrapper show_digits_stats={false} /></Suspense></div>
-            <div label={<><LegacyGuide1pxIcon height='16px' width='16px' fill='var(--text-general)' className='icon-general-fill-g-path' /><Localize i18n_default_text='Tutorials' /></>} id='id-tutorials'><div className='tutorials-wrapper'><Suspense fallback={<ChunkLoader message={localize('Please wait, loading tutorials...')} />}><Tutorial handleTabChange={handleTabChange} /></div></div>
+            <div label={<><LegacyGuide1pxIcon height='16px' width='16px' fill='var(--text-general)' className='icon-general-fill-g-path' /><Localize i18n_default_text='Tutorials' /></>} id='id-tutorials'><div className='tutorials-wrapper'><Suspense fallback={<ChunkLoader message={localize('Please wait, loading tutorials...')} />}><Tutorial handleTabChange={handleTabChange} /></Suspense></div></div>
             <div label={<>🎓 <Localize i18n_default_text='Deriv Course' /></>} id='id-deriv-course'><DerivCourse /></div>
         </Tabs>
         {!isDesktop && right_tab_shadow && <span className='tabs-shadow tabs-shadow--right' />}
