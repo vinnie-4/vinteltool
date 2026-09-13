@@ -43,7 +43,6 @@ export {
   setActiveLoginId,
   getActiveLoginId,
   setAccountType,
-  getAccountType,
   markOnlineAuth,
   getLastOnlineAuthAt,
   clearOnlineAuthTimestamp,
