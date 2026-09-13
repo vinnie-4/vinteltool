@@ -6,6 +6,7 @@ const AUTH_INFO_KEY = 'auth_info';
 const DERIV_ACCOUNTS_KEY = 'deriv_accounts';
 const ACTIVE_LOGINID_KEY = 'active_loginid';
 const ACCOUNT_TYPE_KEY = 'account_type';
+const LAST_ONLINE_AUTH_KEY = 'vintel_last_online_auth_at';
 
 const TOKEN_MAX_AGE_MS = 10 * 60 * 1000; // 10 minutes
 
@@ -61,19 +62,48 @@ export function storeAuthInfo(authInfo: AuthInfo): void {
   localStorage.setItem(AUTH_INFO_KEY, JSON.stringify(authInfo));
 }
 
+/** Return the current auth info only when its access token is still valid. */
 export function getAuthInfo(): AuthInfo | null {
-  const raw = localStorage.getItem(AUTH_INFO_KEY);
-  if (!raw) return null;
-
-  const authInfo: AuthInfo = JSON.parse(raw);
+  const authInfo = getStoredAuthInfo();
+  if (!authInfo) return null;
   if (authInfo.expires_at && Date.now() > authInfo.expires_at * 1000) {
-    return null; // Token expired
+    return null;
   }
   return authInfo;
 }
 
+/** Return persisted auth info even when the access token has expired, so it can be refreshed. */
+export function getStoredAuthInfo(): AuthInfo | null {
+  const raw = localStorage.getItem(AUTH_INFO_KEY);
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw) as AuthInfo;
+  } catch {
+    clearAuthInfo();
+    return null;
+  }
+}
+
 export function clearAuthInfo(): void {
   localStorage.removeItem(AUTH_INFO_KEY);
+}
+
+// --- Online/offline session timestamp ---
+
+export function markOnlineAuth(): void {
+  localStorage.setItem(LAST_ONLINE_AUTH_KEY, String(Date.now()));
+}
+
+export function getLastOnlineAuthAt(): number | null {
+  const raw = localStorage.getItem(LAST_ONLINE_AUTH_KEY);
+  if (!raw) return null;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : null;
+}
+
+export function clearOnlineAuthTimestamp(): void {
+  localStorage.removeItem(LAST_ONLINE_AUTH_KEY);
 }
 
 // --- Deriv Accounts ---
@@ -119,6 +149,7 @@ export function clearAllAuthData(): void {
   clearCodeVerifier();
   clearAuthInfo();
   clearDerivAccounts();
+  clearOnlineAuthTimestamp();
   localStorage.removeItem(ACTIVE_LOGINID_KEY);
   localStorage.removeItem(ACCOUNT_TYPE_KEY);
 }
