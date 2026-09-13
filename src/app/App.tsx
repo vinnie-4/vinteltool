@@ -9,6 +9,8 @@ import {
     handleOAuthCallback,
     markOnlineAuth,
     refreshAccessToken,
+    setActiveLoginId,
+    setAccountType,
 } from '@/external/deriv-core';
 import ChunkLoader from '@/components/loader/chunk-loader';
 import LocalStorageSyncWrapper from '@/components/localStorage-sync-wrapper';
@@ -19,12 +21,6 @@ import { StoreProvider } from '@/hooks/useStore';
 import { isPreviewMode, PREVIEW_BASE_PATH } from '@/utils/is-preview-mode';
 import { localize, TranslationProvider } from '@deriv-com/translations';
 import { DerivWSAccountsService } from '@/services/derivws-accounts.service';
-import { setActiveLoginId, setAccountType } from '@/external/deriv-core';
-import { localStorage } from 'node:diagnostics_channel';
-import { useApiBase } from '@/hooks/useApiBase';
-import { useStore } from '@/hooks/useStore';
-import { useRef } from 'react';
-import { Store } from 'redux';
 import CoreStoreProvider from './CoreStoreProvider';
 import i18nInstance from './i18n';
 import './app-root.scss';
@@ -90,9 +86,6 @@ async function refreshAuthenticatedSession(): Promise<void> {
     let authInfo = storedAuth;
     const expiresAt = storedAuth.expires_at ? storedAuth.expires_at * 1000 : 0;
 
-    // Refresh the access token when expired or close to expiry. This keeps a
-    // browser refresh from forcing a new Deriv login while still obtaining a
-    // fresh credential for the latest account data.
     if (storedAuth.refresh_token && (!expiresAt || expiresAt - Date.now() <= TOKEN_REFRESH_SKEW_MS)) {
         authInfo = await refreshAccessToken(storedAuth.refresh_token, clientId);
     }
@@ -100,8 +93,8 @@ async function refreshAuthenticatedSession(): Promise<void> {
     const accounts = await DerivWSAccountsService.fetchAccountsList(authInfo.access_token);
     if (!accounts.length) throw new Error('No Deriv trading accounts were returned');
 
-    // Refresh the account list (including current balances) but preserve the
-    // account the user was already using whenever it still exists.
+    // Refresh account data, including balances, while preserving the user's
+    // currently selected account whenever it still exists.
     const previousLoginId = localStorage.getItem('active_loginid');
     const selectedAccount =
         (previousLoginId && accounts.find(account => account.account_id === previousLoginId)) || accounts[0];
@@ -109,11 +102,8 @@ async function refreshAuthenticatedSession(): Promise<void> {
     setActiveLoginId(selectedAccount.account_id);
     setAccountType(selectedAccount.account_type);
     DerivWSAccountsService.storeAccounts(accounts);
-
     markOnlineAuth();
 
-    // Rebuild the authenticated Deriv WebSocket connection using the refreshed
-    // credential so balance/ticks are live after a browser refresh.
     const { api_base } = await import('@/external/bot-skeleton');
     await api_base.init(true);
 }
@@ -141,8 +131,8 @@ function App() {
             if (!storedAuth) return;
 
             if (!navigator.onLine) {
-                // A previously authenticated user may continue offline for up
-                // to 20 minutes. After that, require a fresh Deriv login.
+                // Keep the existing session usable while offline for 20 minutes.
+                // After that period the app requires a fresh Deriv login.
                 if (!getLastOnlineAuthAt()) markOnlineAuth();
                 enforceOfflineGrace();
                 offlineTimer = setInterval(enforceOfflineGrace, 30 * 1000);
@@ -150,11 +140,13 @@ function App() {
             }
 
             try {
+                // Browser refresh stays logged in, but the online session is
+                // revalidated and the latest Deriv balances are fetched.
                 await refreshAuthenticatedSession();
             } catch (error) {
                 console.error('[Auth] Session refresh failed:', error);
-                // Do not log the user out immediately. A transient network
-                // failure gets the same 20-minute offline grace period.
+                // Transient network/API failure gets the offline grace period;
+                // never log the user out merely because one request failed.
                 if (!getLastOnlineAuthAt()) markOnlineAuth();
             }
         };
@@ -197,7 +189,7 @@ function App() {
                 });
 
                 const accounts = await DerivWSAccountsService.fetchAccountsList(authInfo.access_token);
-                if (!accounts || accounts.length === 0) {
+                if (!accounts.length) {
                     throw new Error('No Deriv trading accounts were returned for the authenticated user');
                 }
 
@@ -205,8 +197,8 @@ function App() {
                 const selectedAccount =
                     (activeLoginId && accounts.find(account => account.account_id === activeLoginId)) || accounts[0];
 
-                localStorage.setItem('active_loginid', selectedAccount.account_id);
-                localStorage.setItem('account_type', selectedAccount.account_type);
+                setActiveLoginId(selectedAccount.account_id);
+                setAccountType(selectedAccount.account_type);
                 DerivWSAccountsService.storeAccounts(accounts);
                 markOnlineAuth();
 
