@@ -12,10 +12,6 @@ import {
 } from './storage';
 import { getAuthBaseUrl } from '../config/urls';
 
-/**
- * Build the base PKCE URLSearchParams shared by login and sign-up.
- * Stores a fresh CSRF token and code verifier in sessionStorage.
- */
 async function buildPkceParams(config: AuthConfig): Promise<URLSearchParams> {
   const csrfToken = generateRandomBase64url(32);
   const codeVerifier = generateRandomBase64url(32);
@@ -25,8 +21,6 @@ async function buildPkceParams(config: AuthConfig): Promise<URLSearchParams> {
   storeCodeVerifier(codeVerifier);
 
   return new URLSearchParams({
-    // 'trade' only: a request for a scope the app is not registered with is
-    // rejected outright (error=invalid_scope), so the fallback stays minimal.
     scope: config.scopes ?? 'trade',
     response_type: 'code',
     client_id: config.clientId,
@@ -37,13 +31,6 @@ async function buildPkceParams(config: AuthConfig): Promise<URLSearchParams> {
   });
 }
 
-/**
- * Build the OAuth 2.0 login authorization URL with PKCE parameters.
- * Includes optional partner attribution params (affiliate token, utm_*) when
- * present in config — so attribution carries through if the user clicks Login
- * then signs up from Deriv's home page.
- * Stores CSRF token and code verifier in sessionStorage.
- */
 export async function buildAuthorizationUrl(config: AuthConfig): Promise<string> {
   const params = await buildPkceParams(config);
 
@@ -51,56 +38,38 @@ export async function buildAuthorizationUrl(config: AuthConfig): Promise<string>
     const tokenParam = config.affiliateTokenParam ?? 't';
     params.set(tokenParam, config.affiliateToken);
   }
-  if (config.utmSource)   params.set('utm_source', config.utmSource);
-  if (config.utmMedium)   params.set('utm_medium', config.utmMedium);
+  if (config.utmSource) params.set('utm_source', config.utmSource);
+  if (config.utmMedium) params.set('utm_medium', config.utmMedium);
   if (config.utmCampaign) params.set('utm_campaign', config.utmCampaign);
 
   return `${getAuthBaseUrl()}/auth?${params.toString()}`;
 }
 
-/**
- * Build the OAuth 2.0 sign-up authorization URL.
- * Includes prompt=registration (required to show the Deriv registration form)
- * and optional partner attribution params forwarded using the exact parameter
- * name from the referral link (t, affiliate_token, sidi, or ca).
- * Stores CSRF token and code verifier in sessionStorage.
- */
 export async function buildSignUpUrl(config: AuthConfig): Promise<string> {
   const params = await buildPkceParams(config);
-
   params.set('prompt', 'registration');
 
   if (config.affiliateToken) {
     const tokenParam = config.affiliateTokenParam ?? 't';
     params.set(tokenParam, config.affiliateToken);
   }
-  if (config.utmSource)   params.set('utm_source', config.utmSource);
-  if (config.utmMedium)   params.set('utm_medium', config.utmMedium);
+  if (config.utmSource) params.set('utm_source', config.utmSource);
+  if (config.utmMedium) params.set('utm_medium', config.utmMedium);
   if (config.utmCampaign) params.set('utm_campaign', config.utmCampaign);
 
   return `${getAuthBaseUrl()}/auth?${params.toString()}`;
 }
 
-/**
- * Initiate login by redirecting to the Deriv auth page.
- */
 export async function initiateLogin(config: AuthConfig): Promise<void> {
   const url = await buildAuthorizationUrl(config);
   window.location.href = url;
 }
 
-/**
- * Initiate sign-up by redirecting to the Deriv registration page.
- * Appends prompt=registration and any partner attribution params from config.
- */
 export async function initiateSignUp(config: AuthConfig): Promise<void> {
   const url = await buildSignUpUrl(config);
   window.location.href = url;
 }
 
-/**
- * Parse callback URL parameters from the OAuth redirect.
- */
 export function parseCallbackParams(url: string): CallbackParams {
   const urlObj = new URL(url);
   return {
@@ -112,25 +81,18 @@ export function parseCallbackParams(url: string): CallbackParams {
   };
 }
 
-/**
- * Validate the OAuth callback parameters.
- * Returns the authorization code on success, or throws on failure.
- */
 export function validateCallback(params: CallbackParams, redirectUri: string): string {
-  // Check for error response
   if (params.error) {
     cleanupUrl(redirectUri);
     throw new OAuthError(`OAuth error: ${params.error} - ${params.error_description || ''}`);
   }
 
-  // State must be present
   if (!params.state) {
     clearAllAuthData();
     cleanupUrl(redirectUri);
     throw new OAuthError('Missing state parameter — possible CSRF attack');
   }
 
-  // Validate CSRF token matches
   const storedToken = getCSRFToken();
   if (!storedToken || storedToken !== params.state) {
     clearAllAuthData();
@@ -138,7 +100,6 @@ export function validateCallback(params: CallbackParams, redirectUri: string): s
     throw new OAuthError('CSRF token mismatch — possible CSRF attack');
   }
 
-  // Clear CSRF token after successful validation
   clearCSRFToken();
 
   if (!params.code) {
@@ -148,9 +109,6 @@ export function validateCallback(params: CallbackParams, redirectUri: string): s
   return params.code;
 }
 
-/**
- * Exchange authorization code for access and refresh tokens.
- */
 export async function exchangeCodeForTokens(params: TokenExchangeParams): Promise<AuthInfo> {
   const body = new URLSearchParams({
     grant_type: 'authorization_code',
@@ -183,13 +141,9 @@ export async function exchangeCodeForTokens(params: TokenExchangeParams): Promis
 
   storeAuthInfo(authInfo);
   clearCodeVerifier();
-
   return authInfo;
 }
 
-/**
- * Refresh an expired access token using the refresh token.
- */
 export async function refreshAccessToken(
   refreshToken: string,
   clientId: string
@@ -218,17 +172,15 @@ export async function refreshAccessToken(
     expires_in: tokenData.expires_in,
     expires_at: tokenData.expires_at ?? Math.floor(Date.now() / 1000) + tokenData.expires_in,
     scope: tokenData.scope,
-    refresh_token: tokenData.refresh_token,
+    // Some OAuth servers rotate refresh tokens; when they don't return a new
+    // one, retain the existing token so the next app refresh can renew again.
+    refresh_token: tokenData.refresh_token ?? refreshToken,
   };
 
   storeAuthInfo(authInfo);
   return authInfo;
 }
 
-/**
- * Handle the complete OAuth callback flow:
- * validate → exchange code → return auth info.
- */
 export async function handleOAuthCallback(
   callbackUrl: string,
   config: AuthConfig
@@ -252,22 +204,15 @@ export async function handleOAuthCallback(
   return authInfo;
 }
 
-/**
- * Clean OAuth parameters from the URL using history.replaceState.
- */
 export function cleanupUrl(baseUrl: string): void {
   if (typeof window === 'undefined') return;
 
   const url = new URL(window.location.href);
   const paramsToRemove = ['code', 'state', 'scope', 'error', 'error_description'];
   paramsToRemove.forEach((param) => url.searchParams.delete(param));
-
   window.history.replaceState(window.history.state, '', url.pathname + url.search);
 }
 
-/**
- * Custom error class for OAuth-specific errors.
- */
 export class OAuthError extends Error {
   constructor(message: string) {
     super(message);
