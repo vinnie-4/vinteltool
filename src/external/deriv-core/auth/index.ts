@@ -35,6 +35,7 @@ export {
   clearCodeVerifier,
   storeAuthInfo,
   getAuthInfo,
+  getStoredAuthInfo,
   clearAuthInfo,
   storeDerivAccounts,
   getDerivAccounts,
@@ -42,6 +43,8 @@ export {
   setActiveLoginId,
   getActiveLoginId,
   setAccountType,
-  getAccountType,
+  markOnlineAuth,
+  getLastOnlineAuthAt,
+  clearOnlineAuthTimestamp,
   clearAllAuthData,
 } from './storage';
