@@ -274,6 +274,8 @@
         font-weight: 400;
         margin-inline-end: 1.6rem;
         border-radius: 16px;
+        background-color: #000080 !important;
+        color: #ffffff !important;
 
         // Login / Sign up are disabled until the OAuth app id is configured.
         // Keep them visually unchanged when disabled (no faded/0.32 opacity).
