@@ -12,6 +12,13 @@
     &__clear-button { @include mobile-or-tablet-screen { position: absolute !important; top: 0.5rem; right: 1.6rem; height: 2.6rem !important; min-width: 8rem; } }
 }
 
+/* Visual-only: match Reset and Download backgrounds to the Run button. */
+.run-panel__footer-button,
+.run-panel__clear-button,
+.transactions .download__button {
+    background-color: var(--button-primary-default) !important;
+}
+
 .controls {
     &__section { @include flex-center(space-between); flex-direction: column; position: fixed; bottom: 0; width: 100%; background-color: var(--general-main-1); border-top: solid 2px var(--general-section-1); z-index: 8; @supports (-webkit-touch-callout: none) { bottom: env(safe-area-inset-bottom, 0); padding-bottom: env(safe-area-inset-bottom, 0); } &.ios-device { bottom: env(safe-area-inset-bottom, 0); padding-bottom: env(safe-area-inset-bottom, 0); } }
     &__buttons { padding: 0.8rem 2.4rem; min-height: 6rem; display: flex; width: inherit; @include tablet-screen { max-width: 60rem; padding: 0.8rem 0; } @supports (-webkit-touch-callout: none) { height: auto; min-height: 6rem; } }
