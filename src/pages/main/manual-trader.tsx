@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import { api_base } from '@/external/bot-skeleton';
-import { doUntilDone } from '@/external/bot-skeleton/services/tradeEngine/utils/helpers';
 import AnalysisTool from '../analysis-tool';
 import './main.scss';
 
@@ -27,17 +26,42 @@ const CONTRACT_TYPES: Record<string, string> = {
     Under: 'DIGITUNDER',
 };
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 const waitForTradingApi = async () => {
     const started = Date.now();
-    const timeout = 10000;
-
-    while (Date.now() - started < timeout) {
+    while (Date.now() - started < 10000) {
         const api = api_base.api;
         if (api?.connection?.readyState === WebSocket.OPEN && api_base.is_authorized) return api;
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await sleep(200);
     }
+    throw new Error('Deriv trading connection is not ready. Please log in and select a trading account.');
+};
 
-    throw new Error('Deriv trading connection is not ready. Please log in and try again.');
+const buyContract = async (api: any, contractType: string, amount: number, symbol: string, duration: number, prediction: number) => {
+    const currency = api_base.account_info?.currency || 'USD';
+    const request: Record<string, unknown> = {
+        proposal: 1,
+        amount,
+        basis: 'stake',
+        contract_type: contractType,
+        currency,
+        duration,
+        duration_unit: 't',
+        underlying_symbol: symbol,
+    };
+    if (contractType === 'DIGITOVER' || contractType === 'DIGITUNDER') request.barrier = prediction;
+
+    const proposalResponse = await api.send(request);
+    if (proposalResponse?.error) throw new Error(proposalResponse.error.message || 'Unable to create trade proposal.');
+    const proposal = proposalResponse?.proposal;
+    if (!proposal?.id || proposal.ask_price === undefined) throw new Error('Deriv returned an invalid trade proposal.');
+
+    const buyResponse = await api.send({ buy: proposal.id, price: proposal.ask_price });
+    if (buyResponse?.error) throw new Error(buyResponse.error.message || 'Unable to purchase the contract.');
+    const buy = buyResponse?.buy;
+    if (!buy?.contract_id) throw new Error('Deriv did not confirm the purchased contract.');
+    return buy;
 };
 
 const ManualTraderStructure = () => {
@@ -50,36 +74,28 @@ const ManualTraderStructure = () => {
     const [prediction, setPrediction] = useState(1);
     const [isTrading, setIsTrading] = useState(false);
     const tradeLockRef = useRef(false);
-    const selectedVolatility = Object.keys(VOLATILITY_SYMBOLS).find(name => VOLATILITY_SYMBOLS[name] === symbol) || 'Volatility 100 (1s)';
 
-    const executeOneTrade = async (contractType: string) => {
-        const api = await waitForTradingApi();
-        const currency = api_base.account_info?.currency || 'USD';
-        const proposalRequest: Record<string, unknown> = { proposal: 1, amount: Number(stake), basis: 'stake', contract_type: contractType, currency, duration: Number(duration), duration_unit: 't', underlying_symbol: symbol };
-        if (contractType === 'DIGITOVER' || contractType === 'DIGITUNDER') proposalRequest.barrier = Number(prediction);
-        const proposalResponse = await doUntilDone(() => api.send(proposalRequest), [], api_base);
-        if (proposalResponse?.error) throw new Error(proposalResponse.error.message || 'Unable to create trade proposal.');
-        const proposal = proposalResponse?.proposal;
-        if (!proposal?.id || proposal.ask_price === undefined) throw new Error('Deriv returned an invalid trade proposal.');
-        const buyResponse = await doUntilDone(() => api.send({ buy: proposal.id, price: proposal.ask_price }), [], api_base);
-        if (buyResponse?.error) throw new Error(buyResponse.error.message || 'Unable to purchase the contract.');
-        if (!buyResponse?.buy?.contract_id && !buyResponse?.buy?.transaction_id) throw new Error('Deriv did not confirm the purchased contract.');
-        return buyResponse.buy;
-    };
+    const selectedVolatility = Object.keys(VOLATILITY_SYMBOLS).find(name => VOLATILITY_SYMBOLS[name] === symbol) || 'Volatility 100 (1s)';
 
     const handleTrade = async (selection: 'Even' | 'Odd' | 'Over' | 'Under') => {
         if (tradeLockRef.current) return;
         const count = Math.max(1, Math.floor(Number(bulkTrades) || 1));
         const amount = Number(stake);
         const ticks = Math.max(1, Math.floor(Number(duration) || 1));
+
         if (!Number.isFinite(amount) || amount <= 0) { window.alert('Enter a valid stake greater than 0.'); return; }
-        if (!Number.isFinite(ticks) || ticks < 1) { window.alert('Ticks must be at least 1.'); return; }
         if ((selection === 'Over' || selection === 'Under') && (!Number.isInteger(Number(prediction)) || Number(prediction) < 0 || Number(prediction) > 9)) { window.alert('Prediction must be a digit from 0 to 9.'); return; }
+
         tradeLockRef.current = true;
         setIsTrading(true);
         try {
-            const results = await Promise.all(Array.from({ length: count }, () => executeOneTrade(CONTRACT_TYPES[selection])));
-            console.info(`[Manual Trader] ${results.length} ${selection} transaction(s) purchased.`);
+            const api = await waitForTradingApi();
+            // Sequential execution keeps each requested transaction on the authenticated
+            // Deriv connection and prevents parallel bulk calls from creating duplicates.
+            for (let index = 0; index < count; index += 1) {
+                await buyContract(api, CONTRACT_TYPES[selection], amount, symbol, ticks, Number(prediction));
+            }
+            console.info(`[Manual Trader] ${count} ${selection} transaction(s) purchased.`);
         } catch (error) {
             console.error('[Manual Trader] transaction error:', error);
             window.alert(error instanceof Error ? error.message : 'Trade failed.');
@@ -92,7 +108,7 @@ const ManualTraderStructure = () => {
     return <div className='manual-trader'>
         <div className='manual-trader__top-row'>
             <div className='manual-trader__volatility'><span>Volatility</span><select value={selectedVolatility} onChange={event => setSymbol(VOLATILITY_SYMBOLS[event.target.value])}>{Object.keys(VOLATILITY_SYMBOLS).map(name => <option key={name}>{name}</option>)}</select></div>
-            <div className='manual-trader__analysis-ticks'><span>Ticks</span><select value={analysisTicks} onChange={event => setAnalysisTicks(Number(event.target.value))}><option value='1000'>1000</option><option value='500'>500</option><option value='300'>300</option><option value='100'>100</option><option value='60'>60</option><option value='30'>30</option></select></div>
+            <div className='manual-trader__analysis-ticks'><span>Ticks</span><select value={analysisTicks} onChange={event => setAnalysisTicks(Number(event.target.value))}>{[1000, 500, 300, 100, 60, 30].map(value => <option key={value} value={value}>{value}</option>)}</select></div>
             <div className='manual-trader__trade-type'><span>TRADE TYPE</span><select value={tradeType} onChange={event => setTradeType(event.target.value)}><option>Even/Odd</option><option>Over/Under</option></select></div>
         </div>
         <AnalysisTool showLegend={false} showSubtabs={false} showControls={false} showPrice selectedIndex={selectedVolatility} windowSize={analysisTicks} />
