@@ -45,15 +45,15 @@
     z-index: 2;
 
     &__labels { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; line-height: 1; }
-    &__title { font-size: 1.6rem; font-weight: 700; color: #1b1b1b; line-height: 1.1; }
-    &__mode { margin-top: 0.35rem; font-size: 1rem; font-weight: 700; color: #1b1b1b; line-height: 1; }
+    &__title { font-size: 0.95rem; font-weight: 700; color: #1b1b1b; line-height: 1.1; }
+    &__mode { margin-top: 0.35rem; font-size: 1.35rem; font-weight: 700; color: #1b1b1b; line-height: 1; }
     &__switch { position: relative; flex: 0 0 auto; width: 3.8rem; height: 2rem; margin-left: 0.6rem; padding: 0.2rem; border: 1px solid #d7d7d7; border-radius: 999px; background: #fff; box-shadow: none; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: border-color 160ms ease; &--fast { background: #fff; } &:hover { border-color: var(--button-primary-default); } }
     &__switch-knob { position: absolute; top: 0.3rem; left: 0.3rem; width: 1.4rem; height: 1.4rem; border-radius: 50%; background: var(--button-primary-default); transition: transform 160ms ease; .execution-control__switch--fast & { transform: translateX(1.8rem); } }
 }
 
 @media (max-width: 420px) {
     .controls__buttons { padding-left: 0.8rem; padding-right: 0.8rem; }
-    .execution-control { &__title { font-size: 1.6rem; } &__mode { font-size: 0.95rem; } &__switch { width: 3.6rem; height: 1.9rem; } &__switch-knob { width: 1.3rem; height: 1.3rem; top: 0.3rem; left: 0.3rem; .execution-control__switch--fast & { transform: translateX(1.7rem); } } }
+    .execution-control { &__title { font-size: 0.95rem; } &__mode { font-size: 1.3rem; } &__switch { width: 3.6rem; height: 1.9rem; } &__switch-knob { width: 1.3rem; height: 1.3rem; top: 0.3rem; left: 0.3rem; .execution-control__switch--fast & { transform: translateX(1.7rem); } } }
 }
 
 .list__animation-enter { height: 0; transform: translateX(200%); }
@@ -64,8 +64,6 @@
 .db-self-exclusion { font-size: var(--text-size-xs); font-weight: normal; line-height: 1.43; color: var(--text-general); &__content { margin: 2.4rem; margin-right: 1.4rem; padding-right: 1rem; } & .dc-themed-scrollbars__track--vertical { right: -0.2rem; } &__dialog { max-height: 500px !important; width: 460px; } &__footer { height: 72px; display: block; position: fixed; width: 100%; left: 0; bottom: 0; padding: 1.4rem; border-top: 2px solid var(--general-section-2); @include mobile-or-tablet-screen { position: absolute; width: 100%; bottom: 40px; left: 0; &--relative { position: relative; margin-top: 5rem; } } &-btn-group { display: flex; justify-content: flex-end; } } &__info { margin-bottom: 2rem; } &__limit-status { margin: 1rem 0; &--bold { font-weight: 700; } &--danger { font-weight: 700; color: var(--status-danger); } } &--danger { color: var(--status-danger); } & .dc-btn { margin-left: 0.8rem; } }
 .limits__wrapper { @include mobile-or-tablet-screen { position: fixed; z-index: 5; width: 100%; left: 0; top: 0; background: var(--general-main-1); .db-self-exclusion { height: calc(100vh - 40px); display: flex; justify-content: space-between; flex-direction: column; &__content { margin-top: 56px; } &__form-group { margin-bottom: 1.6rem; display: flex; } } } }
 .dc-modal__container_self-exclusion__modal { display: flex; flex-direction: row; align-content: space-between; width: 440px !important; height: 374px !important; }
-.statistics__modal { height: 28.4rem !important; width: 44rem !important; font-size: 1.6rem; padding: 2.4rem; &--mobile { font-size: 1.6rem !important; } &-body { height: calc(100vh - 40.6rem); min-height: 10rem; max-height: 45rem; &--mobile { padding: 0.6rem 0 1.6rem !important; height: 40.4rem; } &--content { margin-top: 1rem; &-stake { margin-top: unset; font-weight: bold; } } } &-scrollbar { padding-right: 1.2rem; } }
-.dc-modal__container_statistics__modal { @include mobile-or-tablet-screen { width: 31.2rem !important; } .dc-modal-body { padding: 2.4rem 1.2rem 2.4rem 2.4rem; } }
 .dc-dialog__button { @include mobile-or-tablet-screen { flex-basis: 100%; white-space: normal; word-break: break-word; } }
 
 /* Professional Bot Builder / execution chrome: visual-only. No handlers, state, or trade logic are changed. */
