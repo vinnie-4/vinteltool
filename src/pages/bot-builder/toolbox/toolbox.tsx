@@ -34,7 +34,7 @@ const Toolbox = observer(() => {
     const { setVisibility, selected_category } = flyout;
 
     const toolbox_ref = React.useRef(ToolboxItems());
-    const [is_open, setOpen] = React.useState(true);
+    const [is_open, setOpen] = React.useState(false);
     const [pending_selection] = React.useState<string | null>(null);
 
     React.useEffect(() => {
@@ -57,12 +57,21 @@ const Toolbox = observer(() => {
                         <div
                             className='db-toolbox__title'
                             data-testid='db-toolbox__title'
+                            role='button'
+                            tabIndex={0}
                             onClick={() => {
                                 setOpen(!is_open);
                                 setVisibility(false);
                             }}
+                            onKeyDown={event => {
+                                if (event.key === 'Enter' || event.key === ' ') {
+                                    event.preventDefault();
+                                    setOpen(!is_open);
+                                    setVisibility(false);
+                                }
+                            }}
                         >
-                            {localize('Blocks menu')}
+                            <span>{localize('Blocks menu')}</span>
                             <span
                                 className={classNames('db-toolbox__title__chevron', {
                                     'db-toolbox__title__chevron--active': is_open,
