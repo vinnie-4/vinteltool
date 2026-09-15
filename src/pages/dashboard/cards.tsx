@@ -21,10 +21,58 @@ type TCardArray = { id: string; icon: React.ReactElement; content: React.ReactEl
 
 const ModernIcon = ({ type }: { type: 'local' | 'bot' | 'quick' }) => {
     const common = { width: '50', height: '50', viewBox: '0 0 72 72', fill: 'none', xmlns: 'http://www.w3.org/2000/svg' };
-    if (type === 'local') return <svg {...common} aria-hidden='true'><rect x='10' y='13' width='52' height='37' rx='6' stroke='#2563EB' strokeWidth='3.5'/><path d='M25 59H47M30 50V59M42 50V59' stroke='#2563EB' strokeWidth='3.5' strokeLinecap='round'/><path d='M26 32L32 38L46 24' stroke='#16A34A' strokeWidth='4' strokeLinecap='round' strokeLinejoin='round'/></svg>;
-    if (type === 'bot') return <svg {...common} aria-hidden='true'><rect x='13' y='22' width='46' height='37' rx='11' stroke='#2563EB' strokeWidth='3.5'/><path d='M36 12V22M31 12H41' stroke='#7C3AED' strokeWidth='3.5' strokeLinecap='round'/><circle cx='28' cy='38' r='3' fill='#2563EB'/><circle cx='44' cy='38' r='3' fill='#2563EB'/><path d='M27 48H45' stroke='#7C3AED' strokeWidth='3.5' strokeLinecap='round'/><path d='M7 32V49M65 32V49' stroke='#2563EB' strokeWidth='3.5' strokeLinecap='round'/></svg>;
-    return <svg {...common} aria-hidden='true'><path d='M39 8L19 39H34L29 64L53 30H38L39 8Z' fill='#F59E0B' stroke='#D97706' strokeWidth='3.5' strokeLinejoin='round'/><circle cx='39' cy='36' r='25' stroke='#F59E0B' strokeWidth='2'/></svg>;
+    if (type === 'local') return <svg {...common} aria-hidden='true'>
+        <rect x='10' y='13' width='52' height='37' rx='6' stroke='#2563EB' strokeWidth='3.5'>
+            <animate attributeName='opacity' values='1;0.72;1' dur='2s' repeatCount='indefinite' />
+        </rect>
+        <path d='M25 59H47M30 50V59M42 50V59' stroke='#2563EB' strokeWidth='3.5' strokeLinecap='round'/>
+        <path d='M26 32L32 38L46 24' stroke='#16A34A' strokeWidth='4' strokeLinecap='round' strokeLinejoin='round' strokeDasharray='32' strokeDashoffset='32'>
+            <animate attributeName='stroke-dashoffset' values='32;0;0;32' keyTimes='0;0.25;0.8;1' dur='2s' repeatCount='indefinite'/>
+        </path>
+    </svg>;
+    if (type === 'bot') return <svg {...common} aria-hidden='true'>
+        <rect x='13' y='22' width='46' height='37' rx='11' stroke='#2563EB' strokeWidth='3.5'>
+            <animate attributeName='opacity' values='1;0.8;1' dur='2.4s' repeatCount='indefinite'/>
+        </rect>
+        <path d='M36 12V22M31 12H41' stroke='#7C3AED' strokeWidth='3.5' strokeLinecap='round'/>
+        <circle cx='36' cy='10' r='2.5' fill='#7C3AED'>
+            <animate attributeName='r' values='2.5;4;2.5' dur='1.4s' repeatCount='indefinite'/>
+            <animate attributeName='opacity' values='1;0.45;1' dur='1.4s' repeatCount='indefinite'/>
+        </circle>
+        <circle cx='28' cy='38' r='3' fill='#2563EB'>
+            <animate attributeName='opacity' values='1;0.25;1' dur='2.4s' repeatCount='indefinite' begin='0.2s'/>
+        </circle>
+        <circle cx='44' cy='38' r='3' fill='#2563EB'>
+            <animate attributeName='opacity' values='1;0.25;1' dur='2.4s' repeatCount='indefinite' begin='0.35s'/>
+        </circle>
+        <path d='M27 48H45' stroke='#7C3AED' strokeWidth='3.5' strokeLinecap='round'>
+            <animate attributeName='stroke-width' values='3.5;4.5;3.5' dur='2.4s' repeatCount='indefinite'/>
+        </path>
+        <path d='M7 32V49M65 32V49' stroke='#2563EB' strokeWidth='3.5' strokeLinecap='round'/>
+    </svg>;
+    return <svg {...common} aria-hidden='true'>
+        <path d='M39 8L19 39H34L29 64L53 30H38L39 8Z' fill='#F59E0B' stroke='#D97706' strokeWidth='3.5' strokeLinejoin='round'>
+            <animate attributeName='opacity' values='1;0.72;1' dur='1.6s' repeatCount='indefinite'/>
+        </path>
+        <circle cx='39' cy='36' r='25' stroke='#F59E0B' strokeWidth='2'>
+            <animate attributeName='r' values='24;27;24' dur='1.6s' repeatCount='indefinite'/>
+            <animate attributeName='opacity' values='0.9;0.25;0.9' dur='1.6s' repeatCount='indefinite'/>
+        </circle>
+        <circle cx='39' cy='11' r='2.2' fill='#D97706'>
+            <animateMotion dur='1.6s' repeatCount='indefinite' path='M0 25A25 25 0 1 1 0 -25A25 25 0 1 1 0 25'/>
+        </circle>
+    </svg>;
 };
+
+const GoogleDriveIcon = () => <svg width='50' height='50' viewBox='0 0 72 72' fill='none' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'>
+    <path d='M25 12H47L62 39H40L25 12Z' stroke='#4285F4' strokeWidth='3.5' strokeLinejoin='round'>
+        <animate attributeName='opacity' values='1;0.65;1' dur='2.2s' repeatCount='indefinite'/>
+    </path>
+    <path d='M25 12L10 39L21 59H43L62 39' stroke='#34A853' strokeWidth='3.5' strokeLinejoin='round'/>
+    <path d='M21 59L40 39' stroke='#FBBC05' strokeWidth='3.5' strokeLinecap='round'>
+        <animate attributeName='stroke-width' values='3.5;5;3.5' dur='2.2s' repeatCount='indefinite'/>
+    </path>
+</svg>;
 
 const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => {
     const { dashboard, load_modal, quick_strategy, google_drive } = useStore();
@@ -37,7 +85,7 @@ const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => 
     const openGoogleDriveDialog = () => { const google_drive_tab_index = isDesktop ? 2 : 1; toggleLoadModal(); setActiveTabIndex(google_drive_tab_index); setActiveTab(DBOT_TABS.BOT_BUILDER); };
     const actions: TCardArray[] = [
         { id: 'my-computer', icon: <ModernIcon type='local' />, content: is_mobile ? <Localize i18n_default_text='Local' /> : <Localize i18n_default_text='My computer' />, callback: openFileLoader },
-        { id: 'google-drive', icon: <svg width='50' height='50' viewBox='0 0 72 72' fill='none' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'><path d='M25 12H47L62 39H40L25 12Z' stroke='#4285F4' strokeWidth='3.5' strokeLinejoin='round'/><path d='M25 12L10 39L21 59H43L62 39' stroke='#34A853' strokeWidth='3.5' strokeLinejoin='round'/><path d='M21 59L40 39' stroke='#FBBC05' strokeWidth='3.5' strokeLinecap='round'/></svg>, content: <Localize i18n_default_text='Google Drive' />, callback: openGoogleDriveDialog },
+        { id: 'google-drive', icon: <GoogleDriveIcon />, content: <Localize i18n_default_text='Google Drive' />, callback: openGoogleDriveDialog },
         { id: 'bot-builder', icon: <ModernIcon type='bot' />, content: <Localize i18n_default_text='Bot Builder' />, callback: () => setActiveTab(DBOT_TABS.BOT_BUILDER) },
         { id: 'quick-bot-builder', icon: <ModernIcon type='quick' />, content: <Localize i18n_default_text='Quick Bot Builder' />, callback: () => { setActiveTab(DBOT_TABS.BOT_BUILDER); setFormVisibility(true); } },
     ].filter(action => action.id !== 'google-drive' || is_google_drive_configured);
