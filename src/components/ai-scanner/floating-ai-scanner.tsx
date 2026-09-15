@@ -16,6 +16,11 @@ const MARKETS: Market[] = [
     { name: 'Volatility 100 (1s)', symbol: '1HZ100V' },
 ];
 const TICK_WINDOWS = [1000, 500, 300, 100, 60, 30];
+const STRATEGIES = [
+    { label: 'Over1 / Under8', description: 'Scans Over 1 and Under 8 with recovery confirmation.' },
+    { label: 'Over2 / Under7', description: 'Scans Over 2 and Under 7 with recovery confirmation.' },
+    { label: 'Over3 / Under6', description: 'Scans Over 3 and Under 6 with recovery confirmation.' },
+];
 const digitOf = (quote: number, decimals: number) => Number(quote.toFixed(Math.max(0, Math.min(8, decimals))).replace('.', '').slice(-1));
 
 const FloatingAIScanner = () => {
@@ -24,6 +29,7 @@ const FloatingAIScanner = () => {
     const [tickWindow, setTickWindow] = useState(1000);
     const [marketExpanded, setMarketExpanded] = useState(false);
     const [ticksExpanded, setTicksExpanded] = useState(false);
+    const [strategyIndex, setStrategyIndex] = useState(0);
     const [ticks, setTicks] = useState<Tick[]>([]);
     const [connected, setConnected] = useState(false);
     const [error, setError] = useState('');
@@ -57,7 +63,7 @@ const FloatingAIScanner = () => {
             const pipSize = Number(data?.pip_size ?? data?.tick?.pip_size);
             if (Number.isFinite(pipSize) && pipSize >= 0) decimalsRef.current = pipSize;
             if (data?.msg_type === 'history' && data?.echo_req?.req_id === historyReqId && Array.isArray(data.history?.prices)) {
-                const history = data.history.prices.map(Number).filter(Number.isFinite).slice(-tickWindow).map((quote: number) => ({ quote, digit: digitOf(quote, decimalsRef.current) }));
+                const history = data.history.prices.map(Number).filter(Number.isFinite).slice(-1000).map((quote: number) => ({ quote, digit: digitOf(quote, decimalsRef.current) }));
                 setTicks(history); setConnected(true);
             }
             if (data?.msg_type === 'tick' && data.tick?.symbol === market.symbol && data.tick?.quote !== undefined) {
@@ -75,7 +81,7 @@ const FloatingAIScanner = () => {
             if (response?.subscription?.id) subscriptionRef.current = response.subscription.id;
             setConnected(true);
         } catch (e: any) { setConnected(false); setError(e?.error?.message || 'Unable to connect scanner to Deriv'); }
-    }, [disconnect, market.symbol, tickWindow]);
+    }, [disconnect, market.symbol]);
 
     useEffect(() => {
         if (!open) return;
@@ -131,46 +137,52 @@ const FloatingAIScanner = () => {
     }, [ticks, tickWindow]);
 
     useEffect(() => setConfidence(analysis.confidence), [analysis.confidence]);
+    const selectedStrategy = STRATEGIES[strategyIndex];
     const transform = { transform: `translate3d(calc(-50% + ${position.x}px), calc(-50% + ${position.y}px), 0)` };
 
     return <>
         {open && <div className='ai-scanner__backdrop' onClick={() => setOpen(false)} aria-hidden='true' />}
-        {open && <section className='ai-scanner__panel' style={transform} aria-label='AI Scanner'>
-            <header className={`ai-scanner__header ${dragging ? 'is-dragging' : ''}`} onPointerDown={e => { e.stopPropagation(); beginDrag(e.clientX, e.clientY); }}>
-                <div><span className='ai-scanner__spark'>✦</span><strong>AI SCANNER</strong><small>Live market signal scanner</small></div>
-                <button type='button' onPointerDown={e => e.stopPropagation()} onClick={() => setOpen(false)} aria-label='Close scanner'>×</button>
-            </header>
-            <div className='ai-scanner__body' onPointerDown={e => e.stopPropagation()}>
-                <div className='ai-scanner__selectors'>
-                    <div className='ai-scanner__accordion'>
-                        <button type='button' className='ai-scanner__accordion-button' onClick={() => setMarketExpanded(value => !value)} aria-expanded={marketExpanded}>
-                            <span><small>MARKET</small><strong>{market.name}</strong></span><b>{marketExpanded ? '⌃' : '⌄'}</b>
-                        </button>
-                        {marketExpanded && <div className='ai-scanner__accordion-options'>{MARKETS.map(item => <button type='button' key={item.symbol} className={item.symbol === market.symbol ? 'is-selected' : ''} onClick={() => { setMarket(item); setMarketExpanded(false); }}>{item.name}</button>)}</div>}
-                    </div>
-                    <div className='ai-scanner__accordion'>
-                        <button type='button' className='ai-scanner__accordion-button' onClick={() => setTicksExpanded(value => !value)} aria-expanded={ticksExpanded}>
-                            <span><small>TICKS</small><strong>{tickWindow}</strong></span><b>{ticksExpanded ? '⌃' : '⌄'}</b>
-                        </button>
-                        {ticksExpanded && <div className='ai-scanner__accordion-options'>{TICK_WINDOWS.map(size => <button type='button' key={size} className={size === tickWindow ? 'is-selected' : ''} onClick={() => { setTickWindow(size); setTicksExpanded(false); }}>{size}</button>)}</div>}
-                    </div>
-                </div>
-                <div className={`ai-scanner__status ${connected ? 'is-live' : ''}`}><span />{connected ? `LIVE • ${market.name} • LAST ${tickWindow}` : `CONNECTING • ${market.name}`}</div>
-                <div className='ai-scanner__signal'><small>AI SIGNAL</small><strong>{analysis.signal}</strong><div className='ai-scanner__confidence'><span style={{ width: `${confidence}%` }} /></div><b>{confidence}% CONFIDENCE</b><em>{analysis.strength}</em></div>
-                <div className='ai-scanner__stats'><div><small>HOT</small><strong>{analysis.hot ?? '—'}</strong></div><div><small>COLD</small><strong>{analysis.cold ?? '—'}</strong></div><div><small>TICKS</small><strong>{analysis.total}</strong></div></div>
-                <div className='ai-scanner__digits'>{analysis.counts.map((count, digit) => <div key={digit} className={digit === analysis.hot ? 'is-hot' : digit === analysis.cold ? 'is-cold' : ''}><span>{digit}</span><b>{analysis.total ? ((count / analysis.total) * 100).toFixed(0) : 0}%</b></div>)}</div>
-                <p className='ai-scanner__note'>Signal is calculated from recent observed ticks; it is not a guarantee of the next contract result.</p>
-                {error && <p className='ai-scanner__error'>{error}</p>}
+        {open && <section className='ai-scanner__panel' style={transform} aria-label='Entry Scanner'>
+            <div className='entry-scanner__header'>
+                <h2>Entry Scanner</h2>
+                <button type='button' onClick={() => setOpen(false)} aria-label='Close scanner'>×</button>
             </div>
+            <div className='entry-scanner__tabs'>
+                {STRATEGIES.map((strategy, index) => <button key={strategy.label} type='button' className={index === strategyIndex ? 'is-active' : ''} onClick={() => setStrategyIndex(index)}>{strategy.label}</button>)}
+            </div>
+            <div className='entry-scanner__info'>
+                <div><strong>Digits Scanner</strong><span>{selectedStrategy.description}</span></div>
+                <div className='entry-scanner__ticks-badge'><small>TICKS</small><b>{tickWindow}</b></div>
+            </div>
+            <div className='entry-scanner__meta'>
+                <div><small>Selected Market</small><strong>{connected ? market.name : 'Scan to find the best market'}</strong></div>
+                <div><small>Trade Type</small><strong>{connected && analysis.signal !== 'Waiting' ? analysis.signal : 'Waiting for scan'}</strong></div>
+            </div>
+            <div className='entry-scanner__status'>{connected ? `Live ${market.name} scanner ready.` : `Ready to scan ${selectedStrategy.label}.`}</div>
+            <div className='entry-scanner__actions'>
+                <button type='button' className='entry-scanner__scan' onClick={() => void connect()}>Scan Markets</button>
+                <button type='button' className='entry-scanner__load' onClick={() => setOpen(false)}>Load Scanner Bot</button>
+            </div>
+            <div className='entry-scanner__controls'>
+                <div className='ai-scanner__accordion'>
+                    <button type='button' className='ai-scanner__accordion-button' onClick={() => { setMarketExpanded(value => !value); setTicksExpanded(false); }} aria-expanded={marketExpanded}>
+                        <span><small>MARKET</small><strong>{market.name}</strong></span><b>{marketExpanded ? '⌃' : '⌄'}</b>
+                    </button>
+                    {marketExpanded && <div className='ai-scanner__accordion-options'>{MARKETS.map(item => <button type='button' key={item.symbol} className={item.symbol === market.symbol ? 'is-selected' : ''} onClick={() => { setMarket(item); setMarketExpanded(false); }}>{item.name}</button>)}</div>}
+                </div>
+                <div className='ai-scanner__accordion'>
+                    <button type='button' className='ai-scanner__accordion-button' onClick={() => { setTicksExpanded(value => !value); setMarketExpanded(false); }} aria-expanded={ticksExpanded}>
+                        <span><small>TICKS</small><strong>{tickWindow}</strong></span><b>{ticksExpanded ? '⌃' : '⌄'}</b>
+                    </button>
+                    {ticksExpanded && <div className='ai-scanner__accordion-options'>{TICK_WINDOWS.map(size => <button type='button' key={size} className={size === tickWindow ? 'is-selected' : ''} onClick={() => { setTickWindow(size); setTicksExpanded(false); }}>{size}</button>)}</div>}
+                </div>
+            </div>
+            {error && <p className='ai-scanner__error'>{error}</p>}
         </section>}
         {!open && <div className={`floating-ai-container ${dragging ? 'is-dragging' : ''}`} style={{ transform: `translate3d(${position.x}px, ${position.y}px, 0)` }} aria-label='AI Scanner' onPointerDown={e => { if (e.button === 0) beginDrag(e.clientX, e.clientY); }}>
             <div className='glow-halo' aria-hidden='true' />
             <button type='button' className='ai-button' onClick={handleFabClick} aria-label='Open AI Scanner'>
-                <span className='reticle-frame' aria-hidden='true'>
-                    <span className='bracket bracket-top-left' /><span className='bracket bracket-top-right' />
-                    <span className='bracket bracket-bottom-left' /><span className='bracket bracket-bottom-right' />
-                    <span className='ai-text'>AI</span>
-                </span>
+                <span className='reticle-frame' aria-hidden='true'><span className='bracket bracket-top-left' /><span className='bracket bracket-top-right' /><span className='bracket bracket-bottom-left' /><span className='bracket bracket-bottom-right' /><span className='ai-text'>AI</span></span>
                 <span className='status-dot' aria-label='Online' />
             </button>
         </div>}
