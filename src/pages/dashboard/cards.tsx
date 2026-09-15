@@ -92,9 +92,9 @@ const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => 
             },
         },
         {
-            id: 'quick-strategy',
+            id: 'quick-bot-builder',
             icon: <DerivLightQuickStrategyIcon height='48px' width='48px' />,
-            content: <Localize i18n_default_text='Quick strategy' />,
+            content: <Localize i18n_default_text='Quick Bot Builder' />,
             callback: () => {
                 setActiveTab(DBOT_TABS.BOT_BUILDER);
                 setFormVisibility(true);
