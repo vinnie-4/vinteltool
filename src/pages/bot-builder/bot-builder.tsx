@@ -27,9 +27,6 @@ const BotBuilder = observer(() => {
     const { isDesktop } = useDevice();
     const el_ref = React.useRef<HTMLInputElement | null>(null);
 
-    // TODO: fix
-    // const isMounted = useIsMounted();
-    // const { data: remote_config_data } = useRemoteConfig(isMounted());
     let deleted_block_id: null | string = null;
 
     React.useEffect(() => {
@@ -41,14 +38,13 @@ const BotBuilder = observer(() => {
         const workspace = window.Blockly?.derivWorkspace;
         if (!workspace) return;
 
-        // Always reset Blockly's viewport to the workspace origin first.
         workspace.scroll(0, 0);
 
         const top_blocks = workspace.getTopBlocks(false);
         if (!top_blocks?.length) return;
 
-        // Force top-level blocks to X=10, Y=15 and stack them vertically.
-        let y = 15;
+        // Start the draggable blocks at the top edge of the workspace.
+        let y = 0;
         top_blocks.forEach(block => {
             block.moveBy(10 - block.getRelativeToSurfaceXY().x, y - block.getRelativeToSurfaceXY().y);
             y += block.getHeightWidth().height + 30;
@@ -63,16 +59,12 @@ const BotBuilder = observer(() => {
 
         const handleWorkspaceLoaded = (event: any) => {
             if (event?.type === window.Blockly.Events.FINISHED_LOADING) {
-                requestAnimationFrame(() => {
-                    alignWorkspaceBlocks();
-                });
+                requestAnimationFrame(() => alignWorkspaceBlocks());
             }
         };
 
         workspace.addChangeListener(handleWorkspaceLoaded);
         is_workspace_alignment_registered.current = true;
-
-        // Also align the initial workspace after Blockly has completed rendering.
         const timer = window.setTimeout(alignWorkspaceBlocks, 0);
 
         return () => {
@@ -96,7 +88,6 @@ const BotBuilder = observer(() => {
                 removeBlockChangeListener();
             }
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [is_running]);
 
     const handleBlockChangeOnBotRun = (e: Event) => {
@@ -113,14 +104,13 @@ const BotBuilder = observer(() => {
         is_blockly_listener_registered.current = false;
         window.Blockly?.derivWorkspace?.removeChangeListener(handleBlockChangeOnBotRun);
     };
+
     React.useEffect(() => {
         const workspace = window.Blockly?.derivWorkspace;
         if (workspace && !is_blockly_delete_listener_registered.current) {
             is_blockly_delete_listener_registered.current = true;
             workspace.addChangeListener(handleBlockDelete);
         }
-
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [is_loading]);
 
     const handleBlockDelete = (e: TBlocklyEvents) => {
@@ -129,9 +119,7 @@ const BotBuilder = observer(() => {
             deleted_block_id = null;
             return;
         }
-        if (e.type === 'delete' && !is_reset_button_clicked) {
-            deleted_block_id = e.blockId;
-        }
+        if (e.type === 'delete' && !is_reset_button_clicked) deleted_block_id = e.blockId;
         if (e.type === 'selected' && deleted_block_id === e.oldElementId) {
             handleBlockDeleteNotification();
             deleted_block_id = null;
@@ -170,7 +158,6 @@ const BotBuilder = observer(() => {
                 </div>
             </div>
             {active_tab === 1 && <BotBuilderTourHandler is_mobile={!isDesktop} />}
-            {/* removed this outside from toolbar becuase it needs to loaded seperately without dependency */}
             <LoadModal />
             <SaveModal />
             {is_open && <QuickStrategy1 />}
