@@ -311,3 +311,13 @@
         max-height: calc(60vh - 5rem);
     }
 }
+
+/* VintelTool Blockly visual theme */
+.blocklyDraggable .blocklyPath {
+    fill: #1a3fb1 !important;
+    stroke: #122b7a !important;
+}
+
+.blocklyTreeSelected .blocklyTreeIcon {
+    background-color: #1a3fb1 !important;
+}
