@@ -10,13 +10,6 @@ import MobileFullPageModal from '@/components/shared_ui/mobile-full-page-modal';
 import Text from '@/components/shared_ui/text';
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { useStore } from '@/hooks/useStore';
-import {
-    DerivLightBotBuilderIcon,
-    DerivLightGoogleDriveIcon,
-    DerivLightLocalDeviceIcon,
-    DerivLightMyComputerIcon,
-    DerivLightQuickStrategyIcon,
-} from '@deriv/quill-icons/Illustration';
 import { Localize, localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
 /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
@@ -33,6 +26,37 @@ type TCardArray = {
     icon: React.ReactElement;
     content: React.ReactElement;
     callback: () => void;
+};
+
+const ModernIcon = ({ type }: { type: 'local' | 'bot' | 'quick' }) => {
+    const common = { width: '72', height: '72', viewBox: '0 0 72 72', fill: 'none', xmlns: 'http://www.w3.org/2000/svg' };
+    if (type === 'local') {
+        return (
+            <svg {...common} aria-hidden='true'>
+                <rect x='10' y='13' width='52' height='37' rx='6' stroke='currentColor' strokeWidth='3.5' />
+                <path d='M25 59H47M30 50V59M42 50V59' stroke='currentColor' strokeWidth='3.5' strokeLinecap='round' />
+                <path d='M26 32L32 38L46 24' stroke='currentColor' strokeWidth='4' strokeLinecap='round' strokeLinejoin='round' />
+            </svg>
+        );
+    }
+    if (type === 'bot') {
+        return (
+            <svg {...common} aria-hidden='true'>
+                <rect x='13' y='22' width='46' height='37' rx='11' stroke='currentColor' strokeWidth='3.5' />
+                <path d='M36 12V22M31 12H41' stroke='currentColor' strokeWidth='3.5' strokeLinecap='round' />
+                <circle cx='28' cy='38' r='3' fill='currentColor' />
+                <circle cx='44' cy='38' r='3' fill='currentColor' />
+                <path d='M27 48H45' stroke='currentColor' strokeWidth='3.5' strokeLinecap='round' />
+                <path d='M7 32V49M65 32V49' stroke='currentColor' strokeWidth='3.5' strokeLinecap='round' />
+            </svg>
+        );
+    }
+    return (
+        <svg {...common} aria-hidden='true'>
+            <path d='M39 8L19 39H34L29 64L53 30H38L39 8Z' stroke='currentColor' strokeWidth='3.5' strokeLinejoin='round' />
+            <circle cx='39' cy='36' r='25' stroke='currentColor' strokeWidth='2' opacity='.35' />
+        </svg>
+    );
 };
 
 const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => {
@@ -59,11 +83,7 @@ const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => 
     const actions: TCardArray[] = [
         {
             id: 'my-computer',
-            icon: is_mobile ? (
-                <DerivLightLocalDeviceIcon height='72px' width='72px' />
-            ) : (
-                <DerivLightMyComputerIcon height='72px' width='72px' />
-            ),
+            icon: <ModernIcon type='local' />,
             content: is_mobile ? <Localize i18n_default_text='Local' /> : <Localize i18n_default_text='My computer' />,
             callback: () => {
                 openFileLoader();
@@ -73,7 +93,7 @@ const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => 
         },
         {
             id: 'google-drive',
-            icon: <DerivLightGoogleDriveIcon height='48px' width='48px' />,
+            icon: <svg width='72' height='72' viewBox='0 0 72 72' fill='none' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'><path d='M25 12H47L62 39H40L25 12Z' stroke='currentColor' strokeWidth='3.5' strokeLinejoin='round'/><path d='M25 12L10 39L21 59H43L62 39' stroke='currentColor' strokeWidth='3.5' strokeLinejoin='round'/><path d='M21 59L40 39' stroke='currentColor' strokeWidth='3.5' strokeLinecap='round'/></svg>,
             content: <Localize i18n_default_text='Google Drive' />,
             callback: () => {
                 openGoogleDriveDialog();
@@ -83,7 +103,7 @@ const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => 
         },
         {
             id: 'bot-builder',
-            icon: <DerivLightBotBuilderIcon height='72px' width='72px' />,
+            icon: <ModernIcon type='bot' />,
             content: <Localize i18n_default_text='Bot Builder' />,
             callback: () => {
                 setActiveTab(DBOT_TABS.BOT_BUILDER);
@@ -93,7 +113,7 @@ const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => 
         },
         {
             id: 'quick-bot-builder',
-            icon: <DerivLightQuickStrategyIcon height='72px' width='72px' />,
+            icon: <ModernIcon type='quick' />,
             content: <Localize i18n_default_text='Quick Bot Builder' />,
             callback: () => {
                 setActiveTab(DBOT_TABS.BOT_BUILDER);
@@ -103,7 +123,6 @@ const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => 
             },
         },
     ]
-        // Hide the Google Drive tile when the feature isn't configured (no GD_* env vars).
         .filter(action => action.id !== 'google-drive' || is_google_drive_configured);
 
     return React.useMemo(
