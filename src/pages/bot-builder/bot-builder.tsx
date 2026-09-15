@@ -41,12 +41,13 @@ const BotBuilder = observer(() => {
         const workspace = window.Blockly?.derivWorkspace;
         if (!workspace) return;
 
-        // Reset Blockly's viewport first so the workspace origin is visible.
+        // Always reset Blockly's viewport to the workspace origin first.
         workspace.scroll(0, 0);
 
         const top_blocks = workspace.getTopBlocks(false);
         if (!top_blocks?.length) return;
 
+        // Force top-level blocks to X=10, Y=15 and stack them vertically.
         let y = 15;
         top_blocks.forEach(block => {
             block.moveBy(10 - block.getRelativeToSurfaceXY().x, y - block.getRelativeToSurfaceXY().y);
