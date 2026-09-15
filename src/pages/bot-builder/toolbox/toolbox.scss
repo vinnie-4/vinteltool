@@ -3,6 +3,7 @@
     top: 0;
     inset-inline-start: 0;
     width: auto;
+    max-width: 100%;
     height: auto;
     min-height: 0;
     padding: 1.2rem 1.6rem;
@@ -18,7 +19,6 @@
     $toolbox: &;
     $category-text-spacing: 10px;
 
-    /* Keep the requested order: Blocks menu first, Quick Bot Builder second. */
     &__content {
         order: 1;
         display: flex;
@@ -30,9 +30,9 @@
         border: 0;
         background: #ffffff;
         position: relative;
+        min-width: 0;
     }
 
-    /* Blocks menu trigger */
     &__header {
         padding: 0 !important;
         position: relative;
@@ -78,7 +78,6 @@
         }
     }
 
-    /* Quick Bot Builder visual treatment */
     > .toolbar__btn {
         order: 2;
         flex: 0 0 auto;
@@ -124,7 +123,6 @@
         pointer-events: auto;
     }
 
-    /* Search area */
     &__search {
         padding: 1rem;
         height: auto;
@@ -263,11 +261,48 @@
     }
 }
 
-.loader {
-    border: 1px solid var(--general-active);
-    border-top: 1px solid var(--brand-secondary);
-    border-radius: 50%;
-    width: 16px;
-    height: 16px;
-    animation: spin 1s linear infinite;
+@media (max-width: 767px) {
+    .db-toolbox {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.8rem;
+        gap: 0.6rem;
+        overflow: visible;
+
+        &__header {
+            min-width: 0;
+            width: 100%;
+            height: 3.4rem;
+            font-size: 1.2rem;
+        }
+
+        &__content {
+            flex: 1 1 50%;
+            min-width: 0;
+        }
+
+        &__title {
+            padding: 0 1rem;
+        }
+
+        > .toolbar__btn {
+            flex: 1 1 50%;
+            min-width: 0;
+            max-width: none;
+            height: 3.4rem !important;
+            min-height: 3.4rem !important;
+            padding: 0 0.8rem !important;
+            font-size: 1.2rem;
+            white-space: nowrap;
+        }
+
+        &__content-wrapper {
+            width: min(26rem, calc(100vw - 1.6rem));
+            max-height: 60vh;
+        }
+
+        &__category-menu {
+            max-height: calc(60vh - 5rem);
+        }
+    }
 }
