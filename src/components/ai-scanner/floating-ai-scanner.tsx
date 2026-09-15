@@ -164,8 +164,15 @@ const FloatingAIScanner = () => {
             </div>
         </section>}
         {!open && <div className={`floating-ai-container ${dragging ? 'is-dragging' : ''}`} style={{ transform: `translate3d(${position.x}px, ${position.y}px, 0)` }} aria-label='AI Scanner' onPointerDown={e => { if (e.button === 0) beginDrag(e.clientX, e.clientY); }}>
-            <span className='pulse-ring' aria-hidden='true' /><span className='pulse-ring' aria-hidden='true' />
-            <button type='button' className='ai-fab-button' onClick={handleFabClick} aria-label='Open AI Scanner'><span className='ai-text'>AI</span></button>
+            <div className='glow-halo' aria-hidden='true' />
+            <button type='button' className='ai-button' onClick={handleFabClick} aria-label='Open AI Scanner'>
+                <span className='reticle-frame' aria-hidden='true'>
+                    <span className='bracket bracket-top-left' /><span className='bracket bracket-top-right' />
+                    <span className='bracket bracket-bottom-left' /><span className='bracket bracket-bottom-right' />
+                    <span className='ai-text'>AI</span>
+                </span>
+                <span className='status-dot' aria-label='Online' />
+            </button>
         </div>}
     </>;
 };
