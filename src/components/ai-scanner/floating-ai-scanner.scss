@@ -19,7 +19,7 @@
 .ai-text { color:#fff; font-size:18px; line-height:1; font-weight:700; letter-spacing:.5px; text-shadow:0 1px 3px rgba(0,0,0,.35); }
 .floating-ai-container.is-dragging .ai-fab-button, .ai-scanner__header.is-dragging { cursor:grabbing; }
 .ai-scanner__backdrop { position:fixed; inset:0; z-index:1190; background:rgba(0,0,0,.28); }
-.ai-scanner__panel { position:fixed; left:75%; top:50%; z-index:1210; width:min(390px,calc(100vw - 24px)); max-height:min(720px,calc(100vh - 100px)); overflow:auto; border-radius:18px; background:var(--general-main-1,#fff); color:var(--text-general,#202733); box-shadow:0 18px 55px rgba(0,0,0,.3); border:1px solid rgba(0,0,0,.08); touch-action:none; }
+.ai-scanner__panel { position:fixed; left:75%; top:42%; z-index:1210; width:min(390px,calc(100vw - 24px)); max-height:min(720px,calc(100vh - 100px)); overflow:auto; border-radius:18px; background:var(--general-main-1,#fff); color:var(--text-general,#202733); box-shadow:0 18px 55px rgba(0,0,0,.3); border:1px solid rgba(0,0,0,.08); touch-action:none; }
 .ai-scanner__header { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:#111c36; color:#fff; border-radius:18px 18px 0 0; cursor:grab; touch-action:none; }
 .ai-scanner__header div { display:grid; grid-template-columns:auto 1fr; column-gap:8px; align-items:center; }
 .ai-scanner__header strong { font-size:14px; letter-spacing:.8px; }
