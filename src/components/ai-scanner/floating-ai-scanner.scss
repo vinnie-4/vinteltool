@@ -1,4 +1,6 @@
-.floating-ai-container { position:fixed; top:50%; right:20px; width:60px; height:60px; z-index:9999; display:flex; align-items:center; justify-content:center; touch-action:none; user-select:none; margin-top:-30px; }
+.floating-ai-container { position:fixed; top:50%; right:20px; width:60px; height:60px; z-index:9999; display:flex; align-items:center; justify-content:center; touch-action:none; user-select:none; margin-top:-30px; animation:ai-float-sideways 1.8s ease-in-out infinite; }
+@keyframes ai-float-sideways { 0%,100%{transform:translate3d(var(--drag-x,0px),0,0)} 50%{transform:translate3d(calc(var(--drag-x,0px) - 7px),0,0)} }
+.floating-ai-container.is-dragging { animation:none; }
 .glow-halo { position:absolute; width:100%; height:100%; border-radius:50%; background:rgba(168,85,247,.3); filter:blur(6px); animation:pulse-halo 2s infinite ease-in-out; pointer-events:none; }
 @keyframes pulse-halo { 0%,100%{transform:scale(.9);opacity:.3} 50%{transform:scale(1.25);opacity:.7} }
 .ai-button { position:relative; width:52px; height:52px; padding:0; border-radius:50%; background:radial-gradient(circle at 30% 30%,#a855f7,#6b21a8); border:1px solid rgba(216,180,254,.4); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,.4); cursor:pointer; transition:transform .15s ease,box-shadow .15s ease; }
