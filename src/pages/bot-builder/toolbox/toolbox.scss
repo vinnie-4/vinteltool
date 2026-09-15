@@ -24,9 +24,9 @@
         width: 100%;
         max-width: 100%;
         padding: 1.2rem 1.6rem;
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
+        background: transparent;
+        border: 0;
+        border-radius: 0;
     }
 
     &__content {
@@ -38,27 +38,31 @@
         z-index: 51;
         visibility: visible;
         border: 0;
-        background: #ffffff;
+        background: transparent;
         position: relative;
         min-width: 0;
         width: auto;
     }
 
+    /* Blocks menu uses the same primary-button treatment as Quick Bot Builder. */
     &__header {
         padding: 0 !important;
         position: relative;
         font-weight: 700;
-        font-size: 1.4rem;
-        text-align: left;
-        color: #0f172a;
-        background: #f1f3f5;
-        border: 1px solid #dcdfe4;
-        border-radius: 8px;
-        height: 3.6rem;
+        font-size: 1.3rem;
+        text-align: center;
+        color: #ffffff;
+        background-color: var(--button-primary-default) !important;
+        border: 0;
+        border-radius: 0.4rem;
+        height: 4rem;
         min-width: 0;
-        width: 12rem;
+        width: 22rem;
         display: flex;
         align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+        box-sizing: border-box;
     }
 
     &__title {
@@ -68,11 +72,11 @@
         cursor: pointer;
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: center;
         gap: 0.5rem;
         width: 100%;
-        padding: 0 1rem;
-        color: #0f172a;
+        padding: 0 1.2rem;
+        color: #ffffff;
         outline: none;
         white-space: nowrap;
     }
@@ -87,6 +91,10 @@
         svg {
             width: 1.2rem;
             height: 1.2rem;
+
+            path {
+                fill: #ffffff;
+            }
         }
 
         &--active {
@@ -96,19 +104,18 @@
 
     &__controls > .toolbar__btn {
         flex: 0 0 auto;
-        width: auto !important;
+        width: 22rem !important;
         min-width: 0;
-        height: 3.6rem !important;
-        min-height: 3.6rem !important;
-        margin: 0 !important;
+        height: 4rem !important;
+        min-height: 4rem !important;
+        margin: 0 0 1rem !important;
         padding: 0 1.2rem !important;
         border: 0 !important;
-        border-radius: 6px !important;
-        background: #1a3fb1 !important;
+        border-radius: 0.4rem !important;
+        background-color: var(--button-primary-default) !important;
         color: #ffffff !important;
         font-size: 1.3rem;
         font-weight: 700;
-        box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
         white-space: nowrap;
     }
 
@@ -281,23 +288,18 @@
         width: auto;
     }
 
-    .db-toolbox__controls > .toolbar__btn {
+    .db-toolbox__controls > .toolbar__btn,
+    .db-toolbox__header {
         flex: 0 0 auto;
-        width: auto !important;
-        max-width: none;
+        width: 11rem !important;
         min-width: 0;
+        max-width: none;
         height: 3.4rem !important;
         min-height: 3.4rem !important;
+        margin-bottom: 0 !important;
         padding: 0 0.8rem !important;
         font-size: 1.2rem;
         white-space: nowrap;
-    }
-
-    .db-toolbox__header {
-        min-width: 0;
-        width: 11rem;
-        height: 3.4rem;
-        font-size: 1.2rem;
     }
 
     .db-toolbox__title {
