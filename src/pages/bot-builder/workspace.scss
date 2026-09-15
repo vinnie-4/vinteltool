@@ -31,21 +31,16 @@
     position: relative;
     touch-action: none;
     overflow: hidden;
-    margin: 0;
-    padding: 10px 0 0 10px;
+    margin-left: 0;
+    padding-left: 0;
 }
 
-/* Keep the Blockly workspace anchored to the top-left margin. */
+/* Keep draggable Bot Builder blocks flush with the workspace left margin. */
 .blocklyWorkspace {
-    margin: 0 !important;
-    padding: 0 !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
 }
 
 .blocklyBlockCanvas {
-    margin: 0 !important;
-}
-
-/* Preserve a 20px vertical gap between stacked workspace blocks. */
-.blocklyBlockCanvas > g {
-    margin-bottom: 20px;
+    margin-left: 0 !important;
 }
