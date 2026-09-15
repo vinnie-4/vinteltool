@@ -5,6 +5,7 @@ import './floating-ai-scanner.scss';
 type Tick = { quote: number; digit: number };
 type Signal = 'Even' | 'Odd' | 'Over 4' | 'Under 5' | 'Waiting';
 type Market = { name: string; symbol: string };
+type Strategy = { label: string; description: string; over: number; under: number };
 
 const MARKETS: Market[] = [
     { name: 'Volatility 10', symbol: 'R_10' }, { name: 'Volatility 10 (1s)', symbol: '1HZ10V' },
@@ -16,10 +17,10 @@ const MARKETS: Market[] = [
     { name: 'Volatility 100 (1s)', symbol: '1HZ100V' },
 ];
 const TICK_WINDOWS = [1000, 500, 300, 100, 60, 30];
-const STRATEGIES = [
-    { label: 'Over1 / Under8', description: 'Scans Over 1 and Under 8 with recovery confirmation.' },
-    { label: 'Over2 / Under7', description: 'Scans Over 2 and Under 7 with recovery confirmation.' },
-    { label: 'Over3 / Under6', description: 'Scans Over 3 and Under 6 with recovery confirmation.' },
+const STRATEGIES: Strategy[] = [
+    { label: 'Over1 / Under8', description: 'Scans Over 1 and Under 8 with recovery confirmation.', over: 1, under: 8 },
+    { label: 'Over2 / Under7', description: 'Scans Over 2 and Under 7 with recovery confirmation.', over: 2, under: 7 },
+    { label: 'Over3 / Under6', description: 'Scans Over 3 and Under 6 with recovery confirmation.', over: 3, under: 6 },
 ];
 const digitOf = (quote: number, decimals: number) => Number(quote.toFixed(Math.max(0, Math.min(8, decimals))).replace('.', '').slice(-1));
 
@@ -33,6 +34,8 @@ const FloatingAIScanner = () => {
     const [ticks, setTicks] = useState<Tick[]>([]);
     const [connected, setConnected] = useState(false);
     const [error, setError] = useState('');
+    const [scanning, setScanning] = useState(false);
+    const [scanMessage, setScanMessage] = useState('');
     const [confidence, setConfidence] = useState(0);
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [dragging, setDragging] = useState(false);
@@ -82,6 +85,67 @@ const FloatingAIScanner = () => {
             setConnected(true);
         } catch (e: any) { setConnected(false); setError(e?.error?.message || 'Unable to connect scanner to Deriv'); }
     }, [disconnect, market.symbol]);
+
+    const scanMarkets = useCallback(async () => {
+        if (!api_base.api) { setError('Deriv connection is not ready'); return; }
+        setScanning(true); setConnected(false); setError(''); setScanMessage('Scanning 13 volatility markets…');
+        await disconnect();
+        const strategy = STRATEGIES[strategyIndex];
+        const results: { market: Market; overPct: number; underPct: number; score: number; side: string; ticks: Tick[] }[] = [];
+        try {
+            for (let index = 0; index < MARKETS.length; index += 1) {
+                const item = MARKETS[index];
+                setScanMessage(`Scanning ${index + 1}/13 • ${item.name}`);
+                const response: any = await api_base.api.send({ ticks_history: item.symbol, count: tickWindow, end: 'latest', style: 'ticks', req_id: ++requestIdRef.current });
+                if (response?.error || !Array.isArray(response?.history?.prices)) continue;
+                const pipSize = Number(response?.pip_size);
+                const decimals = Number.isFinite(pipSize) && pipSize >= 0 ? pipSize : 2;
+                const history = response.history.prices.map(Number).filter(Number.isFinite).slice(-tickWindow).map((quote: number) => ({ quote, digit: digitOf(quote, decimals) }));
+                if (!history.length) continue;
+                const overCount = history.filter(tick => tick.digit > strategy.over).length;
+                const underCount = history.filter(tick => tick.digit < strategy.under).length;
+                const overPct = overCount / history.length * 100;
+                const underPct = underCount / history.length * 100;
+                const side = overPct >= underPct ? `Over ${strategy.over}` : `Under ${strategy.under}`;
+                const score = Math.max(overPct, underPct);
+                results.push({ market: item, overPct, underPct, score, side, ticks: history });
+            }
+            if (!results.length) throw new Error('No market history was returned by Deriv.');
+            results.sort((a, b) => b.score - a.score || Math.abs(b.overPct - b.underPct) - Math.abs(a.overPct - a.underPct));
+            const winner = results[0];
+            setMarket(winner.market);
+            setTicks(winner.ticks);
+            setConnected(true);
+            setScanMessage(`Best market: ${winner.market.name} • ${winner.side} • ${winner.score.toFixed(1)}%`);
+            await connectMarket(winner.market.symbol);
+        } catch (e: any) {
+            setConnected(false);
+            setError(e?.message || 'Unable to scan the volatility markets');
+            setScanMessage('Scan failed');
+        } finally { setScanning(false); }
+    }, [api_base.api, connect, disconnect, strategyIndex, tickWindow]);
+
+    const connectMarket = useCallback(async (symbol: string) => {
+        if (!api_base.api) return;
+        const historyReqId = ++requestIdRef.current;
+        const tickReqId = ++requestIdRef.current;
+        const listener = api_base.api.onMessage().subscribe(({ data }: any) => {
+            if (data?.error) return;
+            const pipSize = Number(data?.pip_size ?? data?.tick?.pip_size);
+            if (Number.isFinite(pipSize) && pipSize >= 0) decimalsRef.current = pipSize;
+            if (data?.msg_type === 'tick' && data.tick?.symbol === symbol && data.tick?.quote !== undefined) {
+                const quote = Number(data.tick.quote); if (!Number.isFinite(quote)) return;
+                setTicks(previous => [...previous, { quote, digit: digitOf(quote, decimalsRef.current) }].slice(-1000));
+                setConnected(true);
+                if (data.tick.id) subscriptionRef.current = data.tick.id;
+            }
+            if (data?.subscription?.id && data?.echo_req?.req_id === tickReqId) subscriptionRef.current = data.subscription.id;
+            if (data?.msg_type === 'history' && data?.echo_req?.req_id === historyReqId && Array.isArray(data.history?.prices)) setConnected(true);
+        });
+        listenerRef.current = listener;
+        const response: any = await api_base.api.send({ ticks: symbol, subscribe: 1, req_id: tickReqId });
+        if (response?.subscription?.id) subscriptionRef.current = response.subscription.id;
+    }, []);
 
     useEffect(() => {
         if (!open) return;
@@ -138,11 +202,10 @@ const FloatingAIScanner = () => {
 
     useEffect(() => setConfidence(analysis.confidence), [analysis.confidence]);
     const selectedStrategy = STRATEGIES[strategyIndex];
-    const transform = { transform: `translate3d(calc(-50% + ${position.x}px), calc(-50% + ${position.y}px), 0)` };
 
     return <>
         {open && <div className='ai-scanner__backdrop' onClick={() => setOpen(false)} aria-hidden='true' />}
-        {open && <section className='ai-scanner__panel' style={transform} aria-label='Entry Scanner'>
+        {open && <section className='ai-scanner__panel' aria-label='Entry Scanner'>
             <div className='entry-scanner__header'>
                 <h2>Entry Scanner</h2>
                 <button type='button' onClick={() => setOpen(false)} aria-label='Close scanner'>×</button>
@@ -155,13 +218,13 @@ const FloatingAIScanner = () => {
                 <div className='entry-scanner__ticks-badge'><small>TICKS</small><b>{tickWindow}</b></div>
             </div>
             <div className='entry-scanner__meta'>
-                <div><small>Selected Market</small><strong>{connected ? market.name : 'Scan to find the best market'}</strong></div>
-                <div><small>Trade Type</small><strong>{connected && analysis.signal !== 'Waiting' ? analysis.signal : 'Waiting for scan'}</strong></div>
+                <div><small>Selected Market</small><strong>{scanMessage || (connected ? market.name : 'Scan to find the best market')}</strong></div>
+                <div><small>Trade Type</small><strong>{scanMessage.includes('•') ? scanMessage.split('•')[1]?.trim() : 'Waiting for scan'}</strong></div>
             </div>
-            <div className='entry-scanner__status'>{connected ? `Live ${market.name} scanner ready.` : `Ready to scan ${selectedStrategy.label}.`}</div>
+            <div className='entry-scanner__status'>{scanning ? scanMessage : connected ? `Live ${market.name} scanner ready.` : `Ready to scan ${selectedStrategy.label}.`}</div>
             <div className='entry-scanner__actions'>
-                <button type='button' className='entry-scanner__scan' onClick={() => void connect()}>Scan Markets</button>
-                <button type='button' className='entry-scanner__load' onClick={() => setOpen(false)}>Load Scanner Bot</button>
+                <button type='button' className='entry-scanner__scan' disabled={scanning} onClick={() => void scanMarkets()}>{scanning ? 'Scanning…' : 'Scan Markets'}</button>
+                <button type='button' className='entry-scanner__load'>Load Scanner Bot</button>
             </div>
             <div className='entry-scanner__controls'>
                 <div className='ai-scanner__accordion'>
