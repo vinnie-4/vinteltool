@@ -33,7 +33,7 @@ const WorkspaceWrapper = observer(() => {
 
             workspace.scroll(0, 0);
 
-            const targetX = 13;
+            const targetX = 16;
             let currentY = 15;
 
             topBlocks.forEach((block: any) => {
