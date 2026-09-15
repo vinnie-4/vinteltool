@@ -47,8 +47,7 @@ const FloatingAIScanner = () => {
     const connect = useCallback(async () => {
         await disconnect();
         if (!api_base.api) { setConnected(false); setError('Deriv connection is not ready'); return; }
-        setError('');
-        setConnected(false);
+        setError(''); setConnected(false);
         const historyReqId = ++requestIdRef.current;
         const tickReqId = ++requestIdRef.current;
         const listener = api_base.api.onMessage().subscribe(({ data }: any) => {
@@ -89,8 +88,7 @@ const FloatingAIScanner = () => {
 
     const beginDrag = useCallback((clientX: number, clientY: number) => {
         dragRef.current = { startX: clientX, startY: clientY, originX: position.x, originY: position.y };
-        movedRef.current = false;
-        setDragging(true);
+        movedRef.current = false; setDragging(true);
     }, [position]);
 
     const handlePointerMove = useCallback((event: PointerEvent) => {
@@ -104,9 +102,7 @@ const FloatingAIScanner = () => {
     useEffect(() => {
         if (!dragging) return;
         const stop = () => setDragging(false);
-        window.addEventListener('pointermove', handlePointerMove);
-        window.addEventListener('pointerup', stop);
-        window.addEventListener('pointercancel', stop);
+        window.addEventListener('pointermove', handlePointerMove); window.addEventListener('pointerup', stop); window.addEventListener('pointercancel', stop);
         return () => { window.removeEventListener('pointermove', handlePointerMove); window.removeEventListener('pointerup', stop); window.removeEventListener('pointercancel', stop); };
     }, [dragging, handlePointerMove]);
 
@@ -116,15 +112,11 @@ const FloatingAIScanner = () => {
     }, []);
 
     const analysis = useMemo(() => {
-        const visibleTicks = ticks.slice(-tickWindow);
-        const counts = Array(10).fill(0) as number[];
+        const visibleTicks = ticks.slice(-tickWindow); const counts = Array(10).fill(0) as number[];
         visibleTicks.forEach(tick => { counts[tick.digit] += 1; });
         const ranked = counts.map((count, digit) => ({ digit, count })).sort((a, b) => b.count - a.count || a.digit - b.digit);
-        const total = visibleTicks.length;
-        const even = counts.filter((_, digit) => digit % 2 === 0).reduce((a, b) => a + b, 0);
-        const over4 = counts.slice(5).reduce((a, b) => a + b, 0);
-        const evenPct = total ? even / total * 100 : 0;
-        const overPct = total ? over4 / total * 100 : 0;
+        const total = visibleTicks.length; const even = counts.filter((_, digit) => digit % 2 === 0).reduce((a, b) => a + b, 0); const over4 = counts.slice(5).reduce((a, b) => a + b, 0);
+        const evenPct = total ? even / total * 100 : 0; const overPct = total ? over4 / total * 100 : 0;
         let signal: Signal = 'Waiting'; let strength = 'WAITING'; let score = 0;
         if (total >= 20) {
             if (evenPct >= 58) { signal = 'Even'; score = evenPct; } else if (evenPct <= 42) { signal = 'Odd'; score = 100 - evenPct; }
@@ -137,7 +129,7 @@ const FloatingAIScanner = () => {
     }, [ticks, tickWindow]);
 
     useEffect(() => setConfidence(analysis.confidence), [analysis.confidence]);
-    const transform = { transform: `translate3d(${position.x}px, ${position.y}px, 0)` };
+    const transform = { transform: `translate3d(calc(-50% + ${position.x}px), calc(-50% + ${position.y}px), 0)` };
 
     return <>
         {open && <div className='ai-scanner__backdrop' onClick={() => setOpen(false)} aria-hidden='true' />}
@@ -159,7 +151,7 @@ const FloatingAIScanner = () => {
                 {error && <p className='ai-scanner__error'>{error}</p>}
             </div>
         </section>}
-        {!open && <div className={`floating-ai-container ${dragging ? 'is-dragging' : ''}`} style={transform} aria-label='AI Scanner' onPointerDown={e => { if (e.button === 0) beginDrag(e.clientX, e.clientY); }}>
+        {!open && <div className={`floating-ai-container ${dragging ? 'is-dragging' : ''}`} style={{ transform: `translate3d(${position.x}px, ${position.y}px, 0)` }} aria-label='AI Scanner' onPointerDown={e => { if (e.button === 0) beginDrag(e.clientX, e.clientY); }}>
             <span className='pulse-ring' aria-hidden='true' /><span className='pulse-ring' aria-hidden='true' />
             <button type='button' className='ai-fab-button' onClick={handleFabClick} aria-label='Open AI Scanner'><span className='ai-text'>AI</span></button>
         </div>}
