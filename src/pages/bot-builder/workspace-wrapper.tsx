@@ -31,9 +31,11 @@ const WorkspaceWrapper = observer(() => {
             const topBlocks = workspace.getTopBlocks(false);
             if (!topBlocks?.length) return;
 
+            // Keep Blockly at the workspace origin before positioning blocks.
             workspace.scroll(0, 0);
 
-            const targetX = 16;
+            // Required Blockly block coordinates: X=10, first Y=15.
+            const targetX = 10;
             let currentY = 15;
 
             topBlocks.forEach((block: any) => {
@@ -45,12 +47,13 @@ const WorkspaceWrapper = observer(() => {
                 currentY += block.getHeightWidth().height + 30;
             });
 
+            // Reconfirm the workspace origin after Blockly positioning.
             workspace.scroll(0, 0);
         };
 
         const applyAlignment = () => {
             alignBlocksToLeftMargin();
-            // Blockly may finish XML/layout work one frame after its load event.
+            // Blockly can finish XML/layout/rendering one frame after its load event.
             requestAnimationFrame(() => {
                 alignBlocksToLeftMargin();
                 retryTimer = window.setTimeout(alignBlocksToLeftMargin, 100);
