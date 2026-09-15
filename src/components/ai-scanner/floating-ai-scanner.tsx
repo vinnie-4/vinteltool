@@ -8,17 +8,20 @@ type Market = { name: string; symbol: string };
 
 const MARKETS: Market[] = [
     { name: 'Volatility 10', symbol: 'R_10' }, { name: 'Volatility 10 (1s)', symbol: '1HZ10V' },
-    { name: 'Volatility 25', symbol: 'R_25' }, { name: 'Volatility 25 (1s)', symbol: '1HZ25V' },
+    { name: 'Volatility 15 (1s)', symbol: '1HZ15V' }, { name: 'Volatility 25', symbol: 'R_25' },
+    { name: 'Volatility 25 (1s)', symbol: '1HZ25V' }, { name: 'Volatility 30 (1s)', symbol: '1HZ30V' },
     { name: 'Volatility 50', symbol: 'R_50' }, { name: 'Volatility 50 (1s)', symbol: '1HZ50V' },
     { name: 'Volatility 75', symbol: 'R_75' }, { name: 'Volatility 75 (1s)', symbol: '1HZ75V' },
-    { name: 'Volatility 100', symbol: 'R_100' }, { name: 'Volatility 100 (1s)', symbol: '1HZ100V' },
+    { name: 'Volatility 90 (1s)', symbol: '1HZ90V' }, { name: 'Volatility 100', symbol: 'R_100' },
+    { name: 'Volatility 100 (1s)', symbol: '1HZ100V' },
 ];
-const MAX_TICKS = 100;
+const TICK_WINDOWS = [1000, 500, 300, 100, 60, 30];
 const digitOf = (quote: number, decimals: number) => Number(quote.toFixed(Math.max(0, Math.min(8, decimals))).replace('.', '').slice(-1));
 
 const FloatingAIScanner = () => {
     const [open, setOpen] = useState(false);
-    const [market, setMarket] = useState(MARKETS[8]);
+    const [market, setMarket] = useState(MARKETS[11]);
+    const [tickWindow, setTickWindow] = useState(100);
     const [ticks, setTicks] = useState<Tick[]>([]);
     const [connected, setConnected] = useState(false);
     const [error, setError] = useState('');
@@ -45,6 +48,7 @@ const FloatingAIScanner = () => {
         await disconnect();
         if (!api_base.api) { setConnected(false); setError('Deriv connection is not ready'); return; }
         setError('');
+        setConnected(false);
         const historyReqId = ++requestIdRef.current;
         const tickReqId = ++requestIdRef.current;
         const listener = api_base.api.onMessage().subscribe(({ data }: any) => {
@@ -52,25 +56,25 @@ const FloatingAIScanner = () => {
             const pipSize = Number(data?.pip_size ?? data?.tick?.pip_size);
             if (Number.isFinite(pipSize) && pipSize >= 0) decimalsRef.current = pipSize;
             if (data?.msg_type === 'history' && data?.echo_req?.req_id === historyReqId && Array.isArray(data.history?.prices)) {
-                const history = data.history.prices.map(Number).filter(Number.isFinite).slice(-MAX_TICKS).map((quote: number) => ({ quote, digit: digitOf(quote, decimalsRef.current) }));
+                const history = data.history.prices.map(Number).filter(Number.isFinite).slice(-tickWindow).map((quote: number) => ({ quote, digit: digitOf(quote, decimalsRef.current) }));
                 setTicks(history); setConnected(true);
             }
             if (data?.msg_type === 'tick' && data.tick?.symbol === market.symbol && data.tick?.quote !== undefined) {
                 const quote = Number(data.tick.quote); if (!Number.isFinite(quote)) return;
                 const digit = digitOf(quote, decimalsRef.current);
-                setTicks(previous => [...previous, { quote, digit }].slice(-MAX_TICKS)); setConnected(true);
+                setTicks(previous => [...previous, { quote, digit }].slice(-1000)); setConnected(true);
                 if (data.tick.id) subscriptionRef.current = data.tick.id;
             }
             if (data?.subscription?.id && data?.echo_req?.req_id === tickReqId) subscriptionRef.current = data.subscription.id;
         });
         listenerRef.current = listener;
         try {
-            await api_base.api.send({ ticks_history: market.symbol, count: MAX_TICKS, end: 'latest', style: 'ticks', req_id: historyReqId });
+            await api_base.api.send({ ticks_history: market.symbol, count: 1000, end: 'latest', style: 'ticks', req_id: historyReqId });
             const response: any = await api_base.api.send({ ticks: market.symbol, subscribe: 1, req_id: tickReqId });
             if (response?.subscription?.id) subscriptionRef.current = response.subscription.id;
             setConnected(true);
         } catch (e: any) { setConnected(false); setError(e?.error?.message || 'Unable to connect scanner to Deriv'); }
-    }, [disconnect, market.symbol]);
+    }, [disconnect, market.symbol, tickWindow]);
 
     useEffect(() => {
         if (!open) return;
@@ -112,10 +116,11 @@ const FloatingAIScanner = () => {
     }, []);
 
     const analysis = useMemo(() => {
+        const visibleTicks = ticks.slice(-tickWindow);
         const counts = Array(10).fill(0) as number[];
-        ticks.forEach(tick => { counts[tick.digit] += 1; });
+        visibleTicks.forEach(tick => { counts[tick.digit] += 1; });
         const ranked = counts.map((count, digit) => ({ digit, count })).sort((a, b) => b.count - a.count || a.digit - b.digit);
-        const total = ticks.length;
+        const total = visibleTicks.length;
         const even = counts.filter((_, digit) => digit % 2 === 0).reduce((a, b) => a + b, 0);
         const over4 = counts.slice(5).reduce((a, b) => a + b, 0);
         const evenPct = total ? even / total * 100 : 0;
@@ -129,11 +134,10 @@ const FloatingAIScanner = () => {
         }
         const confidenceValue = total >= 20 ? Math.round(Math.min(92, Math.max(50, 50 + Math.abs(score - 50) * 1.7))) : 0;
         return { counts, ranked, total, signal, strength, confidence: confidenceValue, hot: ranked[0]?.digit, cold: ranked.at(-1)?.digit };
-    }, [ticks]);
+    }, [ticks, tickWindow]);
 
     useEffect(() => setConfidence(analysis.confidence), [analysis.confidence]);
-
-    const transform = { transform: `translate3d(calc(-50% + ${position.x}px), calc(-50% + ${position.y}px), 0)` };
+    const transform = { transform: `translate3d(${position.x}px, ${position.y}px, 0)` };
 
     return <>
         {open && <div className='ai-scanner__backdrop' onClick={() => setOpen(false)} aria-hidden='true' />}
@@ -143,8 +147,11 @@ const FloatingAIScanner = () => {
                 <button type='button' onPointerDown={e => e.stopPropagation()} onClick={() => setOpen(false)} aria-label='Close scanner'>×</button>
             </header>
             <div className='ai-scanner__body' onPointerDown={e => e.stopPropagation()}>
-                <label className='ai-scanner__market'>MARKET<select value={market.symbol} onChange={e => setMarket(MARKETS.find(item => item.symbol === e.target.value) || MARKETS[8])}>{MARKETS.map(item => <option key={item.symbol} value={item.symbol}>{item.name}</option>)}</select></label>
-                <div className={`ai-scanner__status ${connected ? 'is-live' : ''}`}><span />{connected ? 'LIVE SCANNING' : 'CONNECTING TO DERIV'}</div>
+                <div className='ai-scanner__selectors'>
+                    <label className='ai-scanner__market'>MARKET<select value={market.symbol} onChange={e => setMarket(MARKETS.find(item => item.symbol === e.target.value) || MARKETS[11])}>{MARKETS.map(item => <option key={item.symbol} value={item.symbol}>{item.name}</option>)}</select></label>
+                    <label className='ai-scanner__ticks-control'>TICKS<select value={tickWindow} onChange={e => setTickWindow(Number(e.target.value))}>{TICK_WINDOWS.map(size => <option key={size} value={size}>Last {size}</option>)}</select></label>
+                </div>
+                <div className={`ai-scanner__status ${connected ? 'is-live' : ''}`}><span />{connected ? `LIVE • ${market.name} • LAST ${tickWindow}` : `CONNECTING • ${market.name}`}</div>
                 <div className='ai-scanner__signal'><small>AI SIGNAL</small><strong>{analysis.signal}</strong><div className='ai-scanner__confidence'><span style={{ width: `${confidence}%` }} /></div><b>{confidence}% CONFIDENCE</b><em>{analysis.strength}</em></div>
                 <div className='ai-scanner__stats'><div><small>HOT</small><strong>{analysis.hot ?? '—'}</strong></div><div><small>COLD</small><strong>{analysis.cold ?? '—'}</strong></div><div><small>TICKS</small><strong>{analysis.total}</strong></div></div>
                 <div className='ai-scanner__digits'>{analysis.counts.map((count, digit) => <div key={digit} className={digit === analysis.hot ? 'is-hot' : digit === analysis.cold ? 'is-cold' : ''}><span>{digit}</span><b>{analysis.total ? ((count / analysis.total) * 100).toFixed(0) : 0}%</b></div>)}</div>
