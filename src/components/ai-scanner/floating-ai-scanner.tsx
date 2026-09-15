@@ -21,7 +21,9 @@ const digitOf = (quote: number, decimals: number) => Number(quote.toFixed(Math.m
 const FloatingAIScanner = () => {
     const [open, setOpen] = useState(false);
     const [market, setMarket] = useState(MARKETS[11]);
-    const [tickWindow, setTickWindow] = useState(100);
+    const [tickWindow, setTickWindow] = useState(1000);
+    const [marketExpanded, setMarketExpanded] = useState(false);
+    const [ticksExpanded, setTicksExpanded] = useState(false);
     const [ticks, setTicks] = useState<Tick[]>([]);
     const [connected, setConnected] = useState(false);
     const [error, setError] = useState('');
@@ -140,8 +142,18 @@ const FloatingAIScanner = () => {
             </header>
             <div className='ai-scanner__body' onPointerDown={e => e.stopPropagation()}>
                 <div className='ai-scanner__selectors'>
-                    <label className='ai-scanner__market'>MARKET<select value={market.symbol} onChange={e => setMarket(MARKETS.find(item => item.symbol === e.target.value) || MARKETS[11])}>{MARKETS.map(item => <option key={item.symbol} value={item.symbol}>{item.name}</option>)}</select></label>
-                    <label className='ai-scanner__ticks-control'>TICKS<select value={tickWindow} onChange={e => setTickWindow(Number(e.target.value))}>{TICK_WINDOWS.map(size => <option key={size} value={size}>Last {size}</option>)}</select></label>
+                    <div className='ai-scanner__accordion'>
+                        <button type='button' className='ai-scanner__accordion-button' onClick={() => setMarketExpanded(value => !value)} aria-expanded={marketExpanded}>
+                            <span><small>MARKET</small><strong>{market.name}</strong></span><b>{marketExpanded ? '⌃' : '⌄'}</b>
+                        </button>
+                        {marketExpanded && <div className='ai-scanner__accordion-options'>{MARKETS.map(item => <button type='button' key={item.symbol} className={item.symbol === market.symbol ? 'is-selected' : ''} onClick={() => { setMarket(item); setMarketExpanded(false); }}>{item.name}</button>)}</div>}
+                    </div>
+                    <div className='ai-scanner__accordion'>
+                        <button type='button' className='ai-scanner__accordion-button' onClick={() => setTicksExpanded(value => !value)} aria-expanded={ticksExpanded}>
+                            <span><small>TICKS</small><strong>{tickWindow}</strong></span><b>{ticksExpanded ? '⌃' : '⌄'}</b>
+                        </button>
+                        {ticksExpanded && <div className='ai-scanner__accordion-options'>{TICK_WINDOWS.map(size => <button type='button' key={size} className={size === tickWindow ? 'is-selected' : ''} onClick={() => { setTickWindow(size); setTicksExpanded(false); }}>{size}</button>)}</div>}
+                    </div>
                 </div>
                 <div className={`ai-scanner__status ${connected ? 'is-live' : ''}`}><span />{connected ? `LIVE • ${market.name} • LAST ${tickWindow}` : `CONNECTING • ${market.name}`}</div>
                 <div className='ai-scanner__signal'><small>AI SIGNAL</small><strong>{analysis.signal}</strong><div className='ai-scanner__confidence'><span style={{ width: `${confidence}%` }} /></div><b>{confidence}% CONFIDENCE</b><em>{analysis.strength}</em></div>
