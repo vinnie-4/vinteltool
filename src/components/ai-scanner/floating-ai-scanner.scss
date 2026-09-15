@@ -28,9 +28,16 @@
 .ai-scanner__spark { color:#69b7ff; font-size:20px; }
 .ai-scanner__header button { border:0; background:transparent; color:#fff; font-size:25px; line-height:1; cursor:pointer; }
 .ai-scanner__body { padding:14px; touch-action:auto; }
-.ai-scanner__selectors { display:grid; grid-template-columns:minmax(0,1fr) minmax(110px,.55fr); gap:8px; }
-.ai-scanner__market, .ai-scanner__ticks-control { display:grid; gap:6px; font-size:10px; font-weight:700; letter-spacing:.7px; }
-.ai-scanner__market select, .ai-scanner__ticks-control select { width:100%; border:1px solid #d7dce5; border-radius:10px; padding:11px 12px; background:var(--general-main-1,#fff); color:inherit; font-size:13px; }
+.ai-scanner__selectors { display:grid; grid-template-columns:minmax(0,1fr) minmax(110px,.55fr); gap:8px; align-items:start; }
+.ai-scanner__accordion { position:relative; min-width:0; }
+.ai-scanner__accordion-button { width:100%; min-height:52px; display:flex; align-items:center; justify-content:space-between; gap:8px; border:1px solid #d7dce5; border-radius:10px; padding:8px 11px; background:var(--general-main-1,#fff); color:inherit; cursor:pointer; text-align:left; }
+.ai-scanner__accordion-button span { min-width:0; display:grid; gap:3px; }
+.ai-scanner__accordion-button small { font-size:9px; font-weight:800; letter-spacing:.7px; opacity:.65; }
+.ai-scanner__accordion-button strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; font-weight:700; }
+.ai-scanner__accordion-button b { flex:0 0 auto; font-size:17px; line-height:1; }
+.ai-scanner__accordion-options { position:absolute; left:0; right:0; top:calc(100% + 5px); z-index:20; display:grid; gap:3px; max-height:230px; overflow:auto; padding:5px; border:1px solid #d7dce5; border-radius:10px; background:var(--general-main-1,#fff); box-shadow:0 10px 24px rgba(0,0,0,.16); }
+.ai-scanner__accordion-options button { border:0; border-radius:7px; padding:9px 8px; background:transparent; color:inherit; cursor:pointer; text-align:left; font-size:11px; }
+.ai-scanner__accordion-options button:hover, .ai-scanner__accordion-options button.is-selected { background:#eaf3ff; color:#1769aa; font-weight:800; }
 .ai-scanner__status { display:flex; align-items:center; gap:7px; margin:12px 0; font-size:10px; font-weight:800; color:#7a808a; letter-spacing:.7px; }
 .ai-scanner__status span { width:7px; height:7px; border-radius:50%; background:#8a8f98; }
 .ai-scanner__status.is-live { color:#16884b; }
