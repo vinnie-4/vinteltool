@@ -133,7 +133,7 @@ const FloatingAIScanner = () => {
 
     useEffect(() => setConfidence(analysis.confidence), [analysis.confidence]);
 
-    const transform = { transform: `translate3d(${position.x}px, ${position.y}px, 0)` };
+    const transform = { transform: `translate3d(calc(-50% + ${position.x}px), calc(-50% + ${position.y}px), 0)` };
 
     return <>
         {open && <div className='ai-scanner__backdrop' onClick={() => setOpen(false)} aria-hidden='true' />}
