@@ -265,24 +265,6 @@
     }
 }
 
-/* Restored VintelTool blue Blockly block-card treatment. */
-.blocklyDraggable .blocklyPath {
-    fill: #1a3fb1 !important;
-    stroke: #122b7a !important;
-}
-
-.blocklyDraggable .blocklyText {
-    fill: #ffffff !important;
-}
-
-.blocklyDraggable {
-    stroke-linejoin: round;
-}
-
-.blocklyTreeSelected .blocklyTreeIcon {
-    background-color: #1a3fb1 !important;
-}
-
 @media (max-width: 767px) {
     .db-toolbox {
         padding: 0.8rem;
