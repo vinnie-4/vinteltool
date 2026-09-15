@@ -20,7 +20,7 @@
     $category-text-spacing: 10px;
 
     &__content {
-        order: 1;
+        order: 2;
         display: flex;
         flex-direction: column;
         overflow: visible;
@@ -79,7 +79,7 @@
     }
 
     > .toolbar__btn {
-        order: 2;
+        order: 1;
         flex: 0 0 auto;
         width: auto !important;
         min-width: 15rem;
@@ -268,41 +268,48 @@
         padding: 0.8rem;
         gap: 0.6rem;
         overflow: visible;
+        flex-direction: row;
+    }
 
-        &__header {
-            min-width: 0;
-            width: 100%;
-            height: 3.4rem;
-            font-size: 1.2rem;
-        }
+    .db-toolbox > .toolbar__btn {
+        order: 1 !important;
+        flex: 1 1 50%;
+        min-width: 0;
+        width: 50% !important;
+        max-width: 50%;
+        height: 3.4rem !important;
+        min-height: 3.4rem !important;
+        padding: 0 0.8rem !important;
+        font-size: 1.2rem;
+        white-space: nowrap;
+    }
 
-        &__content {
-            flex: 1 1 50%;
-            min-width: 0;
-        }
+    .db-toolbox > .db-toolbox__content {
+        order: 2 !important;
+        flex: 1 1 50%;
+        min-width: 0;
+        width: 50%;
+    }
 
-        &__title {
-            padding: 0 1rem;
-        }
+    .db-toolbox__header {
+        min-width: 0;
+        width: 100%;
+        height: 3.4rem;
+        font-size: 1.2rem;
+    }
 
-        > .toolbar__btn {
-            flex: 1 1 50%;
-            min-width: 0;
-            max-width: none;
-            height: 3.4rem !important;
-            min-height: 3.4rem !important;
-            padding: 0 0.8rem !important;
-            font-size: 1.2rem;
-            white-space: nowrap;
-        }
+    .db-toolbox__title {
+        padding: 0 1rem;
+    }
 
-        &__content-wrapper {
-            width: min(26rem, calc(100vw - 1.6rem));
-            max-height: 60vh;
-        }
+    .db-toolbox__content-wrapper {
+        width: min(26rem, calc(100vw - 1.6rem));
+        max-height: 60vh;
+        inset-inline-start: auto;
+        inset-inline-end: 0;
+    }
 
-        &__category-menu {
-            max-height: calc(60vh - 5rem);
-        }
+    .db-toolbox__category-menu {
+        max-height: calc(60vh - 5rem);
     }
 }
