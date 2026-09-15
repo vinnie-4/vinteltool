@@ -29,32 +29,32 @@ type TCardArray = {
 };
 
 const ModernIcon = ({ type }: { type: 'local' | 'bot' | 'quick' }) => {
-    const common = { width: '72', height: '72', viewBox: '0 0 72 72', fill: 'none', xmlns: 'http://www.w3.org/2000/svg' };
+    const common = { width: '50', height: '50', viewBox: '0 0 72 72', fill: 'none', xmlns: 'http://www.w3.org/2000/svg' };
     if (type === 'local') {
         return (
             <svg {...common} aria-hidden='true'>
-                <rect x='10' y='13' width='52' height='37' rx='6' stroke='currentColor' strokeWidth='3.5' />
-                <path d='M25 59H47M30 50V59M42 50V59' stroke='currentColor' strokeWidth='3.5' strokeLinecap='round' />
-                <path d='M26 32L32 38L46 24' stroke='currentColor' strokeWidth='4' strokeLinecap='round' strokeLinejoin='round' />
+                <rect x='10' y='13' width='52' height='37' rx='6' stroke='#2563EB' strokeWidth='3.5' />
+                <path d='M25 59H47M30 50V59M42 50V59' stroke='#2563EB' strokeWidth='3.5' strokeLinecap='round' />
+                <path d='M26 32L32 38L46 24' stroke='#16A34A' strokeWidth='4' strokeLinecap='round' strokeLinejoin='round' />
             </svg>
         );
     }
     if (type === 'bot') {
         return (
             <svg {...common} aria-hidden='true'>
-                <rect x='13' y='22' width='46' height='37' rx='11' stroke='currentColor' strokeWidth='3.5' />
-                <path d='M36 12V22M31 12H41' stroke='currentColor' strokeWidth='3.5' strokeLinecap='round' />
-                <circle cx='28' cy='38' r='3' fill='currentColor' />
-                <circle cx='44' cy='38' r='3' fill='currentColor' />
-                <path d='M27 48H45' stroke='currentColor' strokeWidth='3.5' strokeLinecap='round' />
-                <path d='M7 32V49M65 32V49' stroke='currentColor' strokeWidth='3.5' strokeLinecap='round' />
+                <rect x='13' y='22' width='46' height='37' rx='11' stroke='#2563EB' strokeWidth='3.5' />
+                <path d='M36 12V22M31 12H41' stroke='#7C3AED' strokeWidth='3.5' strokeLinecap='round' />
+                <circle cx='28' cy='38' r='3' fill='#2563EB' />
+                <circle cx='44' cy='38' r='3' fill='#2563EB' />
+                <path d='M27 48H45' stroke='#7C3AED' strokeWidth='3.5' strokeLinecap='round' />
+                <path d='M7 32V49M65 32V49' stroke='#2563EB' strokeWidth='3.5' strokeLinecap='round' />
             </svg>
         );
     }
     return (
         <svg {...common} aria-hidden='true'>
-            <path d='M39 8L19 39H34L29 64L53 30H38L39 8Z' stroke='currentColor' strokeWidth='3.5' strokeLinejoin='round' />
-            <circle cx='39' cy='36' r='25' stroke='currentColor' strokeWidth='2' opacity='.35' />
+            <path d='M39 8L19 39H34L29 64L53 30H38L39 8Z' fill='#F59E0B' stroke='#D97706' strokeWidth='3.5' strokeLinejoin='round' />
+            <circle cx='39' cy='36' r='25' stroke='#F59E0B' strokeWidth='2' opacity='.45' />
         </svg>
     );
 };
@@ -93,7 +93,7 @@ const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => 
         },
         {
             id: 'google-drive',
-            icon: <svg width='72' height='72' viewBox='0 0 72 72' fill='none' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'><path d='M25 12H47L62 39H40L25 12Z' stroke='currentColor' strokeWidth='3.5' strokeLinejoin='round'/><path d='M25 12L10 39L21 59H43L62 39' stroke='currentColor' strokeWidth='3.5' strokeLinejoin='round'/><path d='M21 59L40 39' stroke='currentColor' strokeWidth='3.5' strokeLinecap='round'/></svg>,
+            icon: <svg width='50' height='50' viewBox='0 0 72 72' fill='none' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'><path d='M25 12H47L62 39H40L25 12Z' stroke='#4285F4' strokeWidth='3.5' strokeLinejoin='round'/><path d='M25 12L10 39L21 59H43L62 39' stroke='#34A853' strokeWidth='3.5' strokeLinejoin='round'/><path d='M21 59L40 39' stroke='#FBBC05' strokeWidth='3.5' strokeLinecap='round'/></svg>,
             content: <Localize i18n_default_text='Google Drive' />,
             callback: () => {
                 openGoogleDriveDialog();
