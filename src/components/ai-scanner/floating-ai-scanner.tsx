@@ -160,23 +160,31 @@ const FloatingAIScanner = () => {
 
     const beginDrag = useCallback((clientX: number, clientY: number) => {
         dragRef.current = { startX: clientX, startY: clientY, originX: position.x, originY: position.y };
-        movedRef.current = false; setDragging(true);
+        movedRef.current = false;
+        setDragging(true);
     }, [position]);
 
-    const handlePointerMove = useCallback((event: PointerEvent) => {
+    const handlePointerMove = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
         if (!dragging) return;
         const dx = event.clientX - dragRef.current.startX;
         const dy = event.clientY - dragRef.current.startY;
         if (Math.abs(dx) > 4 || Math.abs(dy) > 4) movedRef.current = true;
-        setPosition({ x: dragRef.current.originX + dx, y: dragRef.current.originY + dy });
+        const maxX = Math.max(0, window.innerWidth / 2 - 38);
+        const maxY = Math.max(0, window.innerHeight / 2 - 38);
+        setPosition({ x: Math.max(-maxX, Math.min(maxX, dragRef.current.originX + dx)), y: Math.max(-maxY, Math.min(maxY, dragRef.current.originY + dy)) });
     }, [dragging]);
 
-    useEffect(() => {
-        if (!dragging) return;
-        const stop = () => setDragging(false);
-        window.addEventListener('pointermove', handlePointerMove); window.addEventListener('pointerup', stop); window.addEventListener('pointercancel', stop);
-        return () => { window.removeEventListener('pointermove', handlePointerMove); window.removeEventListener('pointerup', stop); window.removeEventListener('pointercancel', stop); };
-    }, [dragging, handlePointerMove]);
+    const finishDrag = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+        setDragging(false);
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    }, []);
+
+    const handleFabPointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        event.preventDefault();
+        event.currentTarget.setPointerCapture(event.pointerId);
+        beginDrag(event.clientX, event.clientY);
+    }, [beginDrag]);
 
     const handleFabClick = useCallback(() => {
         if (movedRef.current) { movedRef.current = false; return; }
@@ -206,48 +214,20 @@ const FloatingAIScanner = () => {
     return <>
         {open && <div className='ai-scanner__backdrop' onClick={() => setOpen(false)} aria-hidden='true' />}
         {open && <section className='ai-scanner__panel' aria-label='Entry Scanner'>
-            <div className='entry-scanner__header'>
-                <h2>Entry Scanner</h2>
-                <button type='button' onClick={() => setOpen(false)} aria-label='Close scanner'>×</button>
-            </div>
-            <div className='entry-scanner__tabs'>
-                {STRATEGIES.map((strategy, index) => <button key={strategy.label} type='button' className={index === strategyIndex ? 'is-active' : ''} onClick={() => setStrategyIndex(index)}>{strategy.label}</button>)}
-            </div>
-            <div className='entry-scanner__info'>
-                <div><strong>Digits Scanner</strong><span>{selectedStrategy.description}</span></div>
-                <div className='entry-scanner__ticks-badge'><small>TICKS</small><b>{tickWindow}</b></div>
-            </div>
-            <div className='entry-scanner__meta'>
-                <div><small>Selected Market</small><strong>{scanMessage || (connected ? market.name : 'Scan to find the best market')}</strong></div>
-                <div><small>Trade Type</small><strong>{scanMessage.includes('•') ? scanMessage.split('•')[1]?.trim() : 'Waiting for scan'}</strong></div>
-            </div>
+            <div className='entry-scanner__header'><h2>Entry Scanner</h2><button type='button' onClick={() => setOpen(false)} aria-label='Close scanner'>×</button></div>
+            <div className='entry-scanner__tabs'>{STRATEGIES.map((strategy, index) => <button key={strategy.label} type='button' className={index === strategyIndex ? 'is-active' : ''} onClick={() => setStrategyIndex(index)}>{strategy.label}</button>)}</div>
+            <div className='entry-scanner__info'><div><strong>Digits Scanner</strong><span>{selectedStrategy.description}</span></div><div className='entry-scanner__ticks-badge'><small>TICKS</small><b>{tickWindow}</b></div></div>
+            <div className='entry-scanner__meta'><div><small>Selected Market</small><strong>{scanMessage || (connected ? market.name : 'Scan to find the best market')}</strong></div><div><small>Trade Type</small><strong>{scanMessage.includes('•') ? scanMessage.split('•')[1]?.trim() : 'Waiting for scan'}</strong></div></div>
             <div className='entry-scanner__status'>{scanning ? scanMessage : connected ? `Live ${market.name} scanner ready.` : `Ready to scan ${selectedStrategy.label}.`}</div>
-            <div className='entry-scanner__actions'>
-                <button type='button' className='entry-scanner__scan' disabled={scanning} onClick={() => void scanMarkets()}>{scanning ? 'Scanning…' : 'Scan Markets'}</button>
-                <button type='button' className='entry-scanner__load'>Load Scanner Bot</button>
-            </div>
+            <div className='entry-scanner__actions'><button type='button' className='entry-scanner__scan' disabled={scanning} onClick={() => void scanMarkets()}>{scanning ? 'Scanning…' : 'Scan Markets'}</button><button type='button' className='entry-scanner__load'>Load Scanner Bot</button></div>
             <div className='entry-scanner__controls'>
-                <div className='ai-scanner__accordion'>
-                    <button type='button' className='ai-scanner__accordion-button' onClick={() => { setMarketExpanded(value => !value); setTicksExpanded(false); }} aria-expanded={marketExpanded}>
-                        <span><small>MARKET</small><strong>{market.name}</strong></span><b>{marketExpanded ? '⌃' : '⌄'}</b>
-                    </button>
-                    {marketExpanded && <div className='ai-scanner__accordion-options'>{MARKETS.map(item => <button type='button' key={item.symbol} className={item.symbol === market.symbol ? 'is-selected' : ''} onClick={() => { setMarket(item); setMarketExpanded(false); }}>{item.name}</button>)}</div>}
-                </div>
-                <div className='ai-scanner__accordion'>
-                    <button type='button' className='ai-scanner__accordion-button' onClick={() => { setTicksExpanded(value => !value); setMarketExpanded(false); }} aria-expanded={ticksExpanded}>
-                        <span><small>TICKS</small><strong>{tickWindow}</strong></span><b>{ticksExpanded ? '⌃' : '⌄'}</b>
-                    </button>
-                    {ticksExpanded && <div className='ai-scanner__accordion-options'>{TICK_WINDOWS.map(size => <button type='button' key={size} className={size === tickWindow ? 'is-selected' : ''} onClick={() => { setTickWindow(size); setTicksExpanded(false); }}>{size}</button>)}</div>}
-                </div>
+                <div className='ai-scanner__accordion'><button type='button' className='ai-scanner__accordion-button' onClick={() => { setMarketExpanded(value => !value); setTicksExpanded(false); }} aria-expanded={marketExpanded}><span><small>MARKET</small><strong>{market.name}</strong></span><b>{marketExpanded ? '⌃' : '⌄'}</b></button>{marketExpanded && <div className='ai-scanner__accordion-options'>{MARKETS.map(item => <button type='button' key={item.symbol} className={item.symbol === market.symbol ? 'is-selected' : ''} onClick={() => { setMarket(item); setMarketExpanded(false); }}>{item.name}</button>)}</div>}</div>
+                <div className='ai-scanner__accordion'><button type='button' className='ai-scanner__accordion-button' onClick={() => { setTicksExpanded(value => !value); setMarketExpanded(false); }} aria-expanded={ticksExpanded}><span><small>TICKS</small><strong>{tickWindow}</strong></span><b>{ticksExpanded ? '⌃' : '⌄'}</b></button>{ticksExpanded && <div className='ai-scanner__accordion-options'>{TICK_WINDOWS.map(size => <button type='button' key={size} className={size === tickWindow ? 'is-selected' : ''} onClick={() => { setTickWindow(size); setTicksExpanded(false); }}>{size}</button>)}</div>}</div>
             </div>
             {error && <p className='ai-scanner__error'>{error}</p>}
         </section>}
-        {!open && <div className={`floating-ai-container ${dragging ? 'is-dragging' : ''}`} style={{ transform: `translate3d(${position.x}px, ${position.y}px, 0)` }} aria-label='AI Scanner' onPointerDown={e => { if (e.button === 0) beginDrag(e.clientX, e.clientY); }}>
-            <div className='glow-halo' aria-hidden='true' />
-            <button type='button' className='ai-button' onClick={handleFabClick} aria-label='Open AI Scanner'>
-                <span className='reticle-frame' aria-hidden='true'><span className='bracket bracket-top-left' /><span className='bracket bracket-top-right' /><span className='bracket bracket-bottom-left' /><span className='bracket bracket-bottom-right' /><span className='ai-text'>AI</span></span>
-                <span className='status-dot' aria-label='Online' />
-            </button>
+        {!open && <div className={`floating-ai-container ${dragging ? 'is-dragging' : ''}`} style={{ transform: `translate3d(${position.x}px, ${position.y}px, 0)` }} aria-label='AI Scanner' onPointerDown={handleFabPointerDown} onPointerMove={handlePointerMove} onPointerUp={finishDrag} onPointerCancel={finishDrag}>
+            <div className='glow-halo' aria-hidden='true' /><button type='button' className='ai-button' onClick={handleFabClick} aria-label='Open AI Scanner'><span className='reticle-frame' aria-hidden='true'><span className='bracket bracket-top-left' /><span className='bracket bracket-top-right' /><span className='bracket bracket-bottom-left' /><span className='bracket bracket-bottom-right' /><span className='ai-text'>AI</span></span><span className='status-dot' aria-label='Online' /></button>
         </div>}
     </>;
 };
