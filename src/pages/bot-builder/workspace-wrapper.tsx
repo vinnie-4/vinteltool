@@ -13,9 +13,7 @@ const WorkspaceWrapper = observer(() => {
 
     React.useEffect(() => {
         onMount();
-        return () => {
-            onUnmount();
-        };
+        return () => onUnmount();
     }, []);
 
     React.useEffect(() => {
@@ -27,33 +25,28 @@ const WorkspaceWrapper = observer(() => {
 
         const alignBlocksToLeftMargin = () => {
             if (!workspace) return;
-
             const topBlocks = workspace.getTopBlocks(false);
             if (!topBlocks?.length) return;
 
-            // Keep Blockly at the workspace origin before positioning blocks.
             workspace.scroll(0, 0);
 
-            // Required Blockly block coordinates: X=10, first Y=15.
+            // Keep the requested horizontal margin and move the first block to Y=0.
             const targetX = 10;
-            let currentY = 15;
+            let currentY = 0;
 
             topBlocks.forEach((block: any) => {
                 const blockXY = block.getRelativeToSurfaceXY();
                 const dx = targetX - blockXY.x;
                 const dy = currentY - blockXY.y;
-
                 if (dx !== 0 || dy !== 0) block.moveBy(dx, dy);
                 currentY += block.getHeightWidth().height + 30;
             });
 
-            // Reconfirm the workspace origin after Blockly positioning.
             workspace.scroll(0, 0);
         };
 
         const applyAlignment = () => {
             alignBlocksToLeftMargin();
-            // Blockly can finish XML/layout/rendering one frame after its load event.
             requestAnimationFrame(() => {
                 alignBlocksToLeftMargin();
                 retryTimer = window.setTimeout(alignBlocksToLeftMargin, 100);
@@ -68,14 +61,11 @@ const WorkspaceWrapper = observer(() => {
             }
 
             const handleChange = (event: { type?: string }) => {
-                if (event.type === window.Blockly?.Events?.FINISHED_LOADING) {
-                    applyAlignment();
-                }
+                if (event.type === window.Blockly?.Events?.FINISHED_LOADING) applyAlignment();
             };
 
             workspace.addChangeListener(handleChange);
             applyAlignment();
-
             return () => workspace?.removeChangeListener(handleChange);
         };
 
