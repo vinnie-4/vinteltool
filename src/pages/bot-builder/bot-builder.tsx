@@ -20,6 +20,7 @@ const BotBuilder = observer(() => {
     const { is_open } = quick_strategy;
     const { is_running } = run_panel;
     const { is_loading } = blockly_store;
+    const { onMount, onUnmount } = app;
     const is_blockly_listener_registered = React.useRef(false);
     const is_blockly_delete_listener_registered = React.useRef(false);
     const is_workspace_alignment_registered = React.useRef(false);
