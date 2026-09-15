@@ -60,9 +60,9 @@ const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => 
         {
             id: 'my-computer',
             icon: is_mobile ? (
-                <DerivLightLocalDeviceIcon height='48px' width='48px' />
+                <DerivLightLocalDeviceIcon height='72px' width='72px' />
             ) : (
-                <DerivLightMyComputerIcon height='48px' width='48px' />
+                <DerivLightMyComputerIcon height='72px' width='72px' />
             ),
             content: is_mobile ? <Localize i18n_default_text='Local' /> : <Localize i18n_default_text='My computer' />,
             callback: () => {
@@ -83,7 +83,7 @@ const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => 
         },
         {
             id: 'bot-builder',
-            icon: <DerivLightBotBuilderIcon height='48px' width='48px' />,
+            icon: <DerivLightBotBuilderIcon height='72px' width='72px' />,
             content: <Localize i18n_default_text='Bot Builder' />,
             callback: () => {
                 setActiveTab(DBOT_TABS.BOT_BUILDER);
@@ -93,7 +93,7 @@ const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => 
         },
         {
             id: 'quick-bot-builder',
-            icon: <DerivLightQuickStrategyIcon height='48px' width='48px' />,
+            icon: <DerivLightQuickStrategyIcon height='72px' width='72px' />,
             content: <Localize i18n_default_text='Quick Bot Builder' />,
             callback: () => {
                 setActiveTab(DBOT_TABS.BOT_BUILDER);
