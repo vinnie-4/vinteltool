@@ -6,7 +6,6 @@ import { useStore } from '@/hooks/useStore';
 import { localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
 import OnboardTourHandler from '../tutorials/dbot-tours/onboarding-tour';
-import Announcements from './announcements';
 import Cards from './cards';
 import InfoPanel from './info-panel';
 
@@ -15,12 +14,12 @@ type TMobileIconGuide = {
 };
 
 const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
-    const { load_modal, dashboard, client, google_drive } = useStore();
+    const { load_modal, dashboard, google_drive } = useStore();
     const { dashboard_strategies } = load_modal;
     const { is_google_drive_configured } = google_drive;
     const { active_tab, active_tour } = dashboard;
     const has_dashboard_strategies = !!dashboard_strategies?.length;
-    const { isDesktop, isTablet } = useDevice();
+    const { isDesktop } = useDevice();
 
     return (
         <React.Fragment>
@@ -30,9 +29,6 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                 })}
             >
                 <div className='tab__dashboard__content'>
-                    {client.is_logged_in && (
-                        <Announcements is_mobile={!isDesktop} is_tablet={isTablet} handleTabChange={handleTabChange} />
-                    )}
                     <div className='quick-panel'>
                         <div
                             className={classNames('tab__dashboard__header', {
