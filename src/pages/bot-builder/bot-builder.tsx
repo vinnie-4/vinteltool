@@ -22,8 +22,8 @@ const BotBuilder = observer(() => {
     const { is_loading } = blockly_store;
     const is_blockly_listener_registered = React.useRef(false);
     const is_blockly_delete_listener_registered = React.useRef(false);
+    const is_workspace_alignment_registered = React.useRef(false);
     const { isDesktop } = useDevice();
-    const { onMount, onUnmount } = app;
     const el_ref = React.useRef<HTMLInputElement | null>(null);
 
     // TODO: fix
@@ -35,6 +35,50 @@ const BotBuilder = observer(() => {
         onMount();
         return () => onUnmount();
     }, [onMount, onUnmount]);
+
+    const alignWorkspaceBlocks = React.useCallback(() => {
+        const workspace = window.Blockly?.derivWorkspace;
+        if (!workspace) return;
+
+        // Reset Blockly's viewport first so the workspace origin is visible.
+        workspace.scroll(0, 0);
+
+        const top_blocks = workspace.getTopBlocks(false);
+        if (!top_blocks?.length) return;
+
+        let y = 15;
+        top_blocks.forEach(block => {
+            block.moveBy(10 - block.getRelativeToSurfaceXY().x, y - block.getRelativeToSurfaceXY().y);
+            y += block.getHeightWidth().height + 30;
+        });
+
+        workspace.scroll(0, 0);
+    }, []);
+
+    React.useEffect(() => {
+        const workspace = window.Blockly?.derivWorkspace;
+        if (!workspace || is_workspace_alignment_registered.current) return;
+
+        const handleWorkspaceLoaded = (event: any) => {
+            if (event?.type === window.Blockly.Events.FINISHED_LOADING) {
+                requestAnimationFrame(() => {
+                    alignWorkspaceBlocks();
+                });
+            }
+        };
+
+        workspace.addChangeListener(handleWorkspaceLoaded);
+        is_workspace_alignment_registered.current = true;
+
+        // Also align the initial workspace after Blockly has completed rendering.
+        const timer = window.setTimeout(alignWorkspaceBlocks, 0);
+
+        return () => {
+            window.clearTimeout(timer);
+            workspace.removeChangeListener(handleWorkspaceLoaded);
+            is_workspace_alignment_registered.current = false;
+        };
+    }, [is_loading, alignWorkspaceBlocks]);
 
     React.useEffect(() => {
         const workspace = window.Blockly?.derivWorkspace;
