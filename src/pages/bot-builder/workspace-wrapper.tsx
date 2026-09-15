@@ -30,9 +30,9 @@ const WorkspaceWrapper = observer(() => {
 
             workspace.scroll(0, 0);
 
-            // Keep the requested horizontal margin and move the first block to Y=0.
+            // Keep the requested horizontal margin and start blocks 15px below the workspace top.
             const targetX = 10;
-            let currentY = 0;
+            let currentY = 15;
 
             topBlocks.forEach((block: any) => {
                 const blockXY = block.getRelativeToSurfaceXY();
