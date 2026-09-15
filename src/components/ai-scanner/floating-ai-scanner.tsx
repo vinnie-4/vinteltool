@@ -26,6 +26,7 @@ const FloatingAIScanner = () => {
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [dragging, setDragging] = useState(false);
     const dragRef = useRef({ startX: 0, startY: 0, originX: 0, originY: 0 });
+    const movedRef = useRef(false);
     const subscriptionRef = useRef<string | null>(null);
     const listenerRef = useRef<any>(null);
     const decimalsRef = useRef(2);
@@ -84,12 +85,16 @@ const FloatingAIScanner = () => {
 
     const beginDrag = useCallback((clientX: number, clientY: number) => {
         dragRef.current = { startX: clientX, startY: clientY, originX: position.x, originY: position.y };
+        movedRef.current = false;
         setDragging(true);
     }, [position]);
 
     const handlePointerMove = useCallback((event: PointerEvent) => {
         if (!dragging) return;
-        setPosition({ x: dragRef.current.originX + event.clientX - dragRef.current.startX, y: dragRef.current.originY + event.clientY - dragRef.current.startY });
+        const dx = event.clientX - dragRef.current.startX;
+        const dy = event.clientY - dragRef.current.startY;
+        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) movedRef.current = true;
+        setPosition({ x: dragRef.current.originX + dx, y: dragRef.current.originY + dy });
     }, [dragging]);
 
     useEffect(() => {
@@ -100,6 +105,11 @@ const FloatingAIScanner = () => {
         window.addEventListener('pointercancel', stop);
         return () => { window.removeEventListener('pointermove', handlePointerMove); window.removeEventListener('pointerup', stop); window.removeEventListener('pointercancel', stop); };
     }, [dragging, handlePointerMove]);
+
+    const handleFabClick = useCallback(() => {
+        if (movedRef.current) { movedRef.current = false; return; }
+        setOpen(true);
+    }, []);
 
     const analysis = useMemo(() => {
         const counts = Array(10).fill(0) as number[];
@@ -142,9 +152,9 @@ const FloatingAIScanner = () => {
                 {error && <p className='ai-scanner__error'>{error}</p>}
             </div>
         </section>}
-        {!open && <div className={`floating-ai-container ${dragging ? 'is-dragging' : ''}`} style={transform} onPointerDown={e => { if (e.button === 0) beginDrag(e.clientX, e.clientY); }}>
+        {!open && <div className={`floating-ai-container ${dragging ? 'is-dragging' : ''}`} style={transform} aria-label='AI Scanner' onPointerDown={e => { if (e.button === 0) beginDrag(e.clientX, e.clientY); }}>
             <span className='pulse-ring' aria-hidden='true' /><span className='pulse-ring' aria-hidden='true' />
-            <button type='button' className='ai-fab-button' onPointerDown={e => e.stopPropagation()} onClick={() => setOpen(true)} aria-label='Open AI Scanner'><span className='ai-text'>AI</span></button>
+            <button type='button' className='ai-fab-button' onClick={handleFabClick} aria-label='Open AI Scanner'><span className='ai-text'>AI</span></button>
         </div>}
     </>;
 };
