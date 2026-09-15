@@ -14,7 +14,6 @@ import { Localize, localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
 /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
 /* [/AI] */
-import DashboardBotList from './bot-list/dashboard-bot-list';
 
 type TCardProps = { has_dashboard_strategies: boolean; is_mobile: boolean; };
 type TCardArray = { id: string; icon: React.ReactElement; content: React.ReactElement; callback: () => void; };
@@ -108,7 +107,6 @@ const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => 
                 ))}
                 {!isDesktop ? <Dialog title={dialog_options.title} is_visible={is_dialog_open} onCancel={onCloseDialog} is_mobile_full_width className='dc-dialog__wrapper--google-drive' has_close_icon><GoogleDrive /></Dialog> : <MobileFullPageModal is_modal_open={is_dialog_open} className='load-strategy__wrapper' header={localize('Load strategy')} onClickClose={() => { setPreviewOnPopup(false); onCloseDialog(); }} height_offset='80px'><div label='Google Drive' className='google-drive-label'><GoogleDrive /></div></MobileFullPageModal>}
             </div>
-            <DashboardBotList />
         </div>
     ), [is_dialog_open, has_dashboard_strategies, is_google_drive_configured]);
 });
