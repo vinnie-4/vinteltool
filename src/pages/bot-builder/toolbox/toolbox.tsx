@@ -43,7 +43,6 @@ const Toolbox = observer(() => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Keep the existing Quick Strategy engine; only the visible button label changes.
     const handleQuickStrategyOpen = () => {
         setFormVisibility(true);
         /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
@@ -52,6 +51,14 @@ const Toolbox = observer(() => {
 
     return (
         <div className='db-toolbox' data-testid='dashboard__toolbox'>
+            <ToolbarButton
+                popover_message={localize('Click here to start building your Deriv Bot.')}
+                button_id='db-toolbar__get-started-button'
+                button_classname='toolbar__btn toolbar__btn--icon toolbar__btn--start'
+                buttonOnClick={handleQuickStrategyOpen}
+                button_text={localize('Quick Bot Builder')}
+            />
+
             <div id='gtm-toolbox' className='db-toolbox__content'>
                 <div className='db-toolbox__header'>
                     <div
@@ -148,14 +155,6 @@ const Toolbox = observer(() => {
                     </div>
                 </div>
             </div>
-
-            <ToolbarButton
-                popover_message={localize('Click here to start building your Deriv Bot.')}
-                button_id='db-toolbar__get-started-button'
-                button_classname='toolbar__btn toolbar__btn--icon toolbar__btn--start'
-                buttonOnClick={handleQuickStrategyOpen}
-                button_text={localize('Quick Bot Builder')}
-            />
         </div>
     );
 });
