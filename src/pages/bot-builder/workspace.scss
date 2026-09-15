@@ -35,7 +35,7 @@
     padding: 10px 0 0 10px;
 }
 
-/* Keep the Blockly workspace anchored to the top-left margin. */
+/* Top-left aligned Blockly workspace with the requested blue block-card treatment. */
 .blocklyWorkspace {
     margin: 0 !important;
     padding: 0 !important;
@@ -45,7 +45,26 @@
     margin: 0 !important;
 }
 
-/* Preserve a 20px vertical gap between stacked workspace blocks. */
+/* Keep the Blockly blocks visually grouped from the workspace top-left. */
 .blocklyBlockCanvas > g {
     margin-bottom: 20px;
+}
+
+/* Blue outer frame around Blockly block groups. */
+.blocklyBlockCanvas > g.blocklyDraggable {
+    stroke: #1a3fb1;
+    stroke-width: 2px;
+    rx: 4px;
+}
+
+/* Blue Blockly root/header areas. */
+.blocklyBlockCanvas > g.blocklyDraggable .blocklyPath,
+.blocklyBlockCanvas > g.blocklyDraggable .blocklyPathDark,
+.blocklyBlockCanvas > g.blocklyDraggable .blocklyPathLight {
+    stroke: #1a3fb1;
+}
+
+/* Keep the workspace background/body light while preserving Blockly internals. */
+.blocklyBlockCanvas > g.blocklyDraggable .blocklyEditableText {
+    fill: #f8fafc;
 }
