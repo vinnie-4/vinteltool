@@ -21,17 +21,22 @@ const WorkspaceWrapper = observer(() => {
     React.useEffect(() => {
         if (is_loading) return;
 
+        let workspace: any = null;
+        let pollTimer: number | null = null;
+        let retryTimer: number | null = null;
+
         const alignBlocksToLeftMargin = () => {
-            const workspace = window.Blockly?.derivWorkspace;
             if (!workspace) return;
+
+            const topBlocks = workspace.getTopBlocks(false);
+            if (!topBlocks?.length) return;
 
             workspace.scroll(0, 0);
 
-            const topBlocks = workspace.getTopBlocks(false);
-            let currentY = 15;
             const targetX = 10;
+            let currentY = 15;
 
-            topBlocks.forEach(block => {
+            topBlocks.forEach((block: any) => {
                 const blockXY = block.getRelativeToSurfaceXY();
                 const dx = targetX - blockXY.x;
                 const dy = currentY - blockXY.y;
@@ -39,23 +44,45 @@ const WorkspaceWrapper = observer(() => {
                 if (dx !== 0 || dy !== 0) block.moveBy(dx, dy);
                 currentY += block.getHeightWidth().height + 30;
             });
+
+            workspace.scroll(0, 0);
         };
 
-        const workspace = window.Blockly?.derivWorkspace;
-        if (!workspace) return;
-
-        const handleChange = (event: { type?: string }) => {
-            if (event.type === window.Blockly?.Events?.FINISHED_LOADING) {
+        const applyAlignment = () => {
+            alignBlocksToLeftMargin();
+            // Blockly may finish XML/layout work one frame after its load event.
+            requestAnimationFrame(() => {
                 alignBlocksToLeftMargin();
-            }
+                retryTimer = window.setTimeout(alignBlocksToLeftMargin, 100);
+            });
         };
 
-        workspace.addChangeListener(handleChange);
-        const timer = window.setTimeout(alignBlocksToLeftMargin, 0);
+        const attachToWorkspace = () => {
+            workspace = window.Blockly?.derivWorkspace;
+            if (!workspace) {
+                pollTimer = window.setTimeout(attachToWorkspace, 50);
+                return;
+            }
+
+            const handleChange = (event: { type?: string }) => {
+                if (event.type === window.Blockly?.Events?.FINISHED_LOADING) {
+                    applyAlignment();
+                }
+            };
+
+            workspace.addChangeListener(handleChange);
+            applyAlignment();
+
+            return () => workspace?.removeChangeListener(handleChange);
+        };
+
+        let detach: (() => void) | undefined;
+        detach = attachToWorkspace();
 
         return () => {
-            window.clearTimeout(timer);
-            workspace.removeChangeListener(handleChange);
+            if (pollTimer !== null) window.clearTimeout(pollTimer);
+            if (retryTimer !== null) window.clearTimeout(retryTimer);
+            detach?.();
         };
     }, [is_loading]);
 
