@@ -18,6 +18,47 @@ const WorkspaceWrapper = observer(() => {
         };
     }, []);
 
+    React.useEffect(() => {
+        if (is_loading) return;
+
+        const alignBlocksToLeftMargin = () => {
+            const workspace = window.Blockly?.derivWorkspace;
+            if (!workspace) return;
+
+            workspace.scroll(0, 0);
+
+            const topBlocks = workspace.getTopBlocks(false);
+            let currentY = 15;
+            const targetX = 10;
+
+            topBlocks.forEach(block => {
+                const blockXY = block.getRelativeToSurfaceXY();
+                const dx = targetX - blockXY.x;
+                const dy = currentY - blockXY.y;
+
+                if (dx !== 0 || dy !== 0) block.moveBy(dx, dy);
+                currentY += block.getHeightWidth().height + 30;
+            });
+        };
+
+        const workspace = window.Blockly?.derivWorkspace;
+        if (!workspace) return;
+
+        const handleChange = (event: { type?: string }) => {
+            if (event.type === window.Blockly?.Events?.FINISHED_LOADING) {
+                alignBlocksToLeftMargin();
+            }
+        };
+
+        workspace.addChangeListener(handleChange);
+        const timer = window.setTimeout(alignBlocksToLeftMargin, 0);
+
+        return () => {
+            window.clearTimeout(timer);
+            workspace.removeChangeListener(handleChange);
+        };
+    }, [is_loading]);
+
     if (is_loading) return null;
 
     if (window.Blockly?.derivWorkspace)
