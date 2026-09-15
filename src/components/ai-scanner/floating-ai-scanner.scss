@@ -1,0 +1,68 @@
+.ai-scanner__fab {
+    position: fixed;
+    right: 16px;
+    bottom: 78px;
+    z-index: 1200;
+    width: 58px;
+    height: 58px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--brand-red, #e53935);
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(0,0,0,.24);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.ai-scanner__fab span { font-size: 17px; line-height: 16px; }
+.ai-scanner__fab b { font-size: 11px; letter-spacing: .8px; }
+.ai-scanner__backdrop { position: fixed; inset: 0; z-index: 1190; background: rgba(0,0,0,.28); }
+.ai-scanner__panel {
+    position: fixed;
+    right: 12px;
+    bottom: 76px;
+    z-index: 1210;
+    width: min(390px, calc(100vw - 24px));
+    max-height: min(720px, calc(100vh - 100px));
+    overflow: auto;
+    border-radius: 18px;
+    background: var(--general-main-1, #fff);
+    color: var(--text-general, #202733);
+    box-shadow: 0 18px 55px rgba(0,0,0,.3);
+    border: 1px solid rgba(0,0,0,.08);
+}
+.ai-scanner__header { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:#111c36; color:#fff; border-radius:18px 18px 0 0; }
+.ai-scanner__header div { display:grid; grid-template-columns:auto 1fr; column-gap:8px; align-items:center; }
+.ai-scanner__header strong { font-size:14px; letter-spacing:.8px; }
+.ai-scanner__header small { grid-column:2; opacity:.7; font-size:10px; }
+.ai-scanner__spark { color:#69b7ff; font-size:20px; }
+.ai-scanner__header button { border:0; background:transparent; color:#fff; font-size:25px; line-height:1; cursor:pointer; }
+.ai-scanner__body { padding:14px; }
+.ai-scanner__market { display:grid; gap:6px; font-size:10px; font-weight:700; letter-spacing:.7px; }
+.ai-scanner__market select { width:100%; border:1px solid #d7dce5; border-radius:10px; padding:11px 12px; background:var(--general-main-1,#fff); color:inherit; font-size:13px; }
+.ai-scanner__status { display:flex; align-items:center; gap:7px; margin:12px 0; font-size:10px; font-weight:800; color:#7a808a; letter-spacing:.7px; }
+.ai-scanner__status span { width:7px; height:7px; border-radius:50%; background:#8a8f98; }
+.ai-scanner__status.is-live { color:#16884b; }
+.ai-scanner__status.is-live span { background:#20a95b; box-shadow:0 0 0 4px rgba(32,169,91,.12); }
+.ai-scanner__signal { text-align:center; border-radius:15px; padding:16px 14px; background:#f2f6fb; }
+.ai-scanner__signal small { display:block; font-size:9px; font-weight:800; letter-spacing:1px; opacity:.65; }
+.ai-scanner__signal strong { display:block; margin:4px 0 8px; font-size:25px; }
+.ai-scanner__confidence { height:7px; overflow:hidden; border-radius:99px; background:#dce2eb; }
+.ai-scanner__confidence span { display:block; height:100%; border-radius:inherit; background:#25a85a; transition:width .3s ease; }
+.ai-scanner__signal b { display:block; margin-top:8px; font-size:11px; }
+.ai-scanner__signal em { display:inline-block; margin-top:5px; font-style:normal; font-size:9px; font-weight:800; letter-spacing:.8px; opacity:.7; }
+.ai-scanner__stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:10px 0; }
+.ai-scanner__stats div { text-align:center; padding:9px 5px; border:1px solid #e1e5eb; border-radius:10px; }
+.ai-scanner__stats small { display:block; font-size:8px; opacity:.6; font-weight:800; }
+.ai-scanner__stats strong { font-size:17px; }
+.ai-scanner__digits { display:grid; grid-template-columns:repeat(10,1fr); gap:4px; }
+.ai-scanner__digits div { text-align:center; padding:7px 2px; border-radius:8px; background:#f4f5f7; }
+.ai-scanner__digits div.is-hot { background:#dff5e7; }
+.ai-scanner__digits div.is-cold { background:#ffe2e2; }
+.ai-scanner__digits span { display:block; font-size:12px; font-weight:800; }
+.ai-scanner__digits b { display:block; margin-top:2px; font-size:8px; opacity:.7; }
+.ai-scanner__note { margin:12px 0 0; font-size:9px; line-height:1.45; opacity:.6; }
+.ai-scanner__error { margin:8px 0 0; color:#c62828; font-size:10px; }
+@media (min-width: 768px) { .ai-scanner__fab { right:24px; bottom:28px; } .ai-scanner__panel { right:24px; bottom:28px; } }
