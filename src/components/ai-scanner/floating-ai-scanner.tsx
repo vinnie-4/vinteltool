@@ -4,7 +4,6 @@ import './floating-ai-scanner.scss';
 
 type Tick = { quote: number; digit: number };
 type Signal = 'Even' | 'Odd' | 'Over 4' | 'Under 5' | 'Waiting';
-
 type Market = { name: string; symbol: string };
 
 const MARKETS: Market[] = [
@@ -153,7 +152,13 @@ const FloatingAIScanner = () => {
                 {error && <p className='ai-scanner__error'>{error}</p>}
             </div>
         </section>}
-        {!open && <button type='button' className='ai-scanner__fab' onClick={() => setOpen(true)} aria-label='Open AI Scanner'><span>✦</span><b>AI</b></button>}
+        {!open && <div className='floating-ai-container' aria-label='AI Scanner'>
+            <span className='pulse-ring' aria-hidden='true' />
+            <span className='pulse-ring' aria-hidden='true' />
+            <button type='button' className='ai-fab-button' onClick={() => setOpen(true)} aria-label='Open AI Scanner'>
+                <span className='ai-text'>AI</span>
+            </button>
+        </div>}
     </>;
 };
 
