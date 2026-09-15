@@ -22,41 +22,35 @@ import BlocklyLoading from '../components/blockly-loading';
 import BotStopped from '../components/bot-stopped';
 import BotBuilder from '../pages/bot-builder';
 import Main from '../pages/main';
+import FreeBots from '../pages/main/free-bots';
+import RunStrategy from '../pages/dashboard/run-strategy';
+import DerivCourse from '../pages/deriv-course';
+import AnalysisTool from '../pages/analysis-tool';
+import ManualTraderStructure from '../pages/main/manual-trader';
+import UltimateBot2026 from '../pages/main/ultimate-bot-2026';
+import FloatingAIScanner from '@/components/ai-scanner/floating-ai-scanner';
+import RunPanel from '../components/run-panel';
 import './app.scss';
 import 'react-toastify/dist/ReactToastify.css';
 import '../components/bot-notification/bot-notification.scss';
 
-// App Builder live-preview branding listener. Mounted only in the preview deployment
-// (NEXT_PUBLIC_APP_BUILD === 'true'); the inline check is constant-folded by rsbuild so
-// the import — and all of src/preview/ — is dead-code-eliminated from standalone partner
-// builds (where the BFF strips src/preview/ entirely).
-const PreviewBranding =
-    process.env.NEXT_PUBLIC_APP_BUILD === 'true' ? lazy(() => import('../preview/preview-branding')) : null;
+const PreviewBranding = process.env.NEXT_PUBLIC_APP_BUILD === 'true' ? lazy(() => import('../preview/preview-branding')) : null;
 
 const AppContent = observer(() => {
     const [is_api_initialized, setIsApiInitialized] = React.useState(false);
     const [is_loading, setIsLoading] = React.useState(true);
-
     const store = useStore();
     const { app, transactions, common, client } = store;
     const { is_dark_mode_on } = useThemeSwitcher();
-
     const { recovered_transactions, recoverPendingContracts } = transactions;
     const is_subscribed_to_msg_listener = React.useRef(false);
     const msg_listener = React.useRef(null);
     const { connectionStatus } = useApiBase();
-
-    // Initialize dev mode keyboard shortcuts
     useDevMode();
 
-    // Warn (once) when the OAuth app id isn't configured, so a developer running
-    // locally understands why Log in / Sign up are disabled. Skipped inside the
-    // App Builder static preview, which intentionally runs without env vars.
     useEffect(() => {
         if (isPreviewMode()) return;
-        if (!process.env.NEXT_PUBLIC_DERIV_APP_ID) {
-            botNotification(localize('Waiting for environment variables to be set…'), undefined, { type: 'warning' });
-        }
+        if (!process.env.NEXT_PUBLIC_DERIV_APP_ID) botNotification(localize('Waiting for environment variables to be set…'), undefined, { type: 'warning' });
     }, []);
 
     const livechat_client_information = {
@@ -69,20 +63,13 @@ const AppContent = observer(() => {
         first_name: '',
         last_name: '',
     };
-
     useLiveChat(livechat_client_information);
-
-    // NOTE: Disabled Intercom until further notice
-    // const token = V2GetActiveToken() ?? null;
-    // useIntercom(token);
 
     useEffect(() => {
         if (connectionStatus === CONNECTION_STATUS.OPENED) {
             setIsApiInitialized(true);
             common.setSocketOpened(true);
-        } else if (connectionStatus !== CONNECTION_STATUS.OPENED) {
-            common.setSocketOpened(false);
-        }
+        } else common.setSocketOpened(false);
     }, [common, connectionStatus]);
 
     const { current_language } = common;
@@ -92,29 +79,16 @@ const AppContent = observer(() => {
         html?.setAttribute('dir', current_language.toLowerCase() === 'ar' ? 'rtl' : 'ltr');
     }, [current_language, html]);
 
-    const handleMessage = React.useCallback(
-        ({ data }) => {
-            if (data?.msg_type === 'proposal_open_contract' && !data?.error) {
-                const { proposal_open_contract } = data;
-                if (
-                    proposal_open_contract?.status !== 'open' &&
-                    !recovered_transactions?.includes(proposal_open_contract?.contract_id)
-                ) {
-                    recoverPendingContracts(proposal_open_contract);
-                }
-            }
-        },
-        [recovered_transactions, recoverPendingContracts]
-    );
+    const handleMessage = React.useCallback(({ data }) => {
+        if (data?.msg_type === 'proposal_open_contract' && !data?.error) {
+            const { proposal_open_contract } = data;
+            if (proposal_open_contract?.status !== 'open' && !recovered_transactions?.includes(proposal_open_contract?.contract_id)) recoverPendingContracts(proposal_open_contract);
+        }
+    }, [recovered_transactions, recoverPendingContracts]);
+
+    React.useEffect(() => { setSmartChartsPublicPath(getUrlBase('/js/smartcharts/')); }, []);
 
     React.useEffect(() => {
-        setSmartChartsPublicPath(getUrlBase('/js/smartcharts/'));
-    }, []);
-
-    React.useEffect(() => {
-        // Check if api is initialized and then subscribe to the api messages
-        // Also we should only subscribe to the messages once user is logged in
-        // And is not already subscribed to the messages
         if (!is_subscribed_to_msg_listener.current && client.is_logged_in && is_api_initialized && api_base?.api) {
             is_subscribed_to_msg_listener.current = true;
             msg_listener.current = api_base.api.onMessage()?.subscribe(handleMessage);
@@ -131,32 +105,19 @@ const AppContent = observer(() => {
         ServerTime.init(common);
         app.setDBotEngineStores();
         ApiHelpers.setInstance(app.api_helpers_store);
-        import('@/utils/gtm').then(({ default: GTM }) => {
-            GTM.init(store);
-        });
+        import('@/utils/gtm').then(({ default: GTM }) => GTM.init(store));
     };
 
     const changeActiveSymbolLoadingState = () => {
         init();
-
         const retrieveActiveSymbols = () => {
             const { active_symbols } = ApiHelpers.instance;
-
-            active_symbols.retrieveActiveSymbols(true).then(() => {
-                setIsLoading(false);
-            });
+            active_symbols.retrieveActiveSymbols(true).then(() => setIsLoading(false));
         };
-
-        if (ApiHelpers?.instance?.active_symbols) {
-            retrieveActiveSymbols();
-        } else {
-            // This is a workaround to fix the issue where the active symbols are not loaded immediately
-            // when the API is initialized. Should be replaced with RxJS pubsub
+        if (ApiHelpers?.instance?.active_symbols) retrieveActiveSymbols();
+        else {
             const intervalId = setInterval(() => {
-                if (ApiHelpers?.instance?.active_symbols) {
-                    clearInterval(intervalId);
-                    retrieveActiveSymbols();
-                }
+                if (ApiHelpers?.instance?.active_symbols) { clearInterval(intervalId); retrieveActiveSymbols(); }
             }, 1000);
         }
     };
@@ -165,17 +126,13 @@ const AppContent = observer(() => {
         if (is_api_initialized) {
             init();
             setIsLoading(true);
-            if (!client.is_logged_in) {
-                changeActiveSymbolLoadingState();
-            }
+            if (!client.is_logged_in) changeActiveSymbolLoadingState();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [is_api_initialized]);
 
     React.useEffect(() => {
-        if (client.is_logged_in && is_api_initialized) {
-            changeActiveSymbolLoadingState();
-        }
+        if (client.is_logged_in && is_api_initialized) changeActiveSymbolLoadingState();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [is_api_initialized, client.loginid]);
 
@@ -183,14 +140,8 @@ const AppContent = observer(() => {
 
     return (
         <React.Fragment>
-            {PreviewBranding && (
-                <Suspense fallback={null}>
-                    <PreviewBranding uiReady={!is_loading} />
-                </Suspense>
-            )}
-            {is_loading ? (
-                <ChunkLoader message={localize('Initializing Deriv Bot account...')} />
-            ) : (
+            {PreviewBranding && <Suspense fallback={null}><PreviewBranding uiReady={!is_loading} /></Suspense>}
+            {is_loading ? <ChunkLoader message={localize('Initializing Deriv Bot account...')} /> : (
                 <AuthLoadingWrapper>
                     <ThemeProvider theme={is_dark_mode_on ? 'dark' : 'light'}>
                         <BlocklyLoading />
@@ -201,6 +152,7 @@ const AppContent = observer(() => {
                             <BotStopped />
                             <TransactionDetailsModal />
                             <ToastContainer limit={3} draggable={false} />
+                            <FloatingAIScanner />
                         </div>
                     </ThemeProvider>
                 </AuthLoadingWrapper>
