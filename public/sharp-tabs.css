@@ -1,0 +1,8 @@
+.main__container .dc-tabs__item.dc-tabs__active,
+.main__container .dc-tabs__active {
+    border-radius: 0 !important;
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
