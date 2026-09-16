@@ -48,15 +48,15 @@
         padding: 0 !important;
         position: relative;
         font-weight: 700;
-        font-size: 1.3rem;
+        font-size: 1.4rem;
         text-align: left;
         color: #0f172a;
         background: #f1f3f5;
         border: 1px solid #dcdfe4;
-        border-radius: 6px;
+        border-radius: 8px;
         height: 3.6rem;
-        min-width: 22rem;
-        width: 22rem;
+        min-width: 0;
+        width: auto;
         display: flex;
         align-items: center;
     }
@@ -71,12 +71,10 @@
         justify-content: space-between;
         gap: 0.5rem;
         width: 100%;
-        padding: 0 1.2rem;
+        padding: 0 1rem;
         color: #0f172a;
         outline: none;
         white-space: nowrap;
-        font-size: 1.3rem;
-        font-weight: 700;
     }
 
     &__title__chevron {
@@ -98,8 +96,8 @@
 
     &__controls > .toolbar__btn {
         flex: 0 0 auto;
-        width: 22rem !important;
-        min-width: 22rem;
+        width: auto !important;
+        min-width: 0;
         height: 3.6rem !important;
         min-height: 3.6rem !important;
         margin: 0 !important;
@@ -287,22 +285,19 @@
 
     .db-toolbox__controls > .toolbar__btn,
     .db-toolbox__header {
-        flex: 0 0 14rem;
-        width: 14rem !important;
-        max-width: 14rem;
-        min-width: 14rem;
+        flex: 0 0 auto;
+        width: auto !important;
+        max-width: none;
+        min-width: 0;
         height: 3.4rem !important;
         min-height: 3.4rem !important;
         padding: 0 0.8rem !important;
         font-size: 1.2rem;
-        font-weight: 700;
         white-space: nowrap;
     }
 
     .db-toolbox__title {
         padding: 0 0.8rem;
-        font-size: 1.2rem;
-        font-weight: 700;
     }
 
     .db-toolbox__content-wrapper {
