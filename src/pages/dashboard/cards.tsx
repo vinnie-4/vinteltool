@@ -30,24 +30,18 @@ const ModernIcon = ({ type }: { type: 'local' | 'bot' | 'quick' }) => {
         </path>
     </svg>;
     if (type === 'bot') return <svg {...common} aria-hidden='true'>
-        <rect x='13' y='22' width='46' height='37' rx='11' stroke='#2563EB' strokeWidth='3.5'>
-            <animate attributeName='opacity' values='1;0.8;1' dur='2.4s' repeatCount='indefinite'/>
-        </rect>
-        <path d='M36 12V22M31 12H41' stroke='#7C3AED' strokeWidth='3.5' strokeLinecap='round'/>
-        <circle cx='36' cy='10' r='2.5' fill='#7C3AED'>
-            <animate attributeName='r' values='2.5;4;2.5' dur='1.4s' repeatCount='indefinite'/>
-            <animate attributeName='opacity' values='1;0.45;1' dur='1.4s' repeatCount='indefinite'/>
-        </circle>
-        <circle cx='28' cy='38' r='3' fill='#2563EB'>
-            <animate attributeName='opacity' values='1;0.25;1' dur='2.4s' repeatCount='indefinite' begin='0.2s'/>
-        </circle>
-        <circle cx='44' cy='38' r='3' fill='#2563EB'>
-            <animate attributeName='opacity' values='1;0.25;1' dur='2.4s' repeatCount='indefinite' begin='0.35s'/>
-        </circle>
-        <path d='M27 48H45' stroke='#7C3AED' strokeWidth='3.5' strokeLinecap='round'>
-            <animate attributeName='stroke-width' values='3.5;4.5;3.5' dur='2.4s' repeatCount='indefinite'/>
-        </path>
-        <path d='M7 32V49M65 32V49' stroke='#2563EB' strokeWidth='3.5' strokeLinecap='round'/>
+        <g transform='translate(36 36)'>
+            <path d='M0-21L5.5-12.5L15.5-15.5L12.5-5.5L21 0L12.5 5.5L15.5 15.5L5.5 12.5L0 21L-5.5 12.5L-15.5 15.5L-12.5 5.5L-21 0L-12.5-5.5L-15.5-15.5L-5.5-12.5Z' fill='#7C3AED' opacity='0.12'/>
+            <path d='M0-21L5.5-12.5L15.5-15.5L12.5-5.5L21 0L12.5 5.5L15.5 15.5L5.5 12.5L0 21L-5.5 12.5L-15.5 15.5L-12.5 5.5L-21 0L-12.5-5.5L-15.5-15.5L-5.5-12.5Z' stroke='#7C3AED' strokeWidth='3.5' strokeLinejoin='round'>
+                <animateTransform attributeName='transform' type='rotate' from='0' to='360' dur='4s' repeatCount='indefinite'/>
+            </path>
+            <circle cx='0' cy='0' r='8' stroke='#7C3AED' strokeWidth='3.5'>
+                <animate attributeName='r' values='8;9.5;8' dur='1.8s' repeatCount='indefinite'/>
+            </circle>
+            <circle cx='0' cy='0' r='2.5' fill='#7C3AED'>
+                <animate attributeName='opacity' values='1;0.45;1' dur='1.8s' repeatCount='indefinite'/>
+            </circle>
+        </g>
     </svg>;
     return <svg {...common} aria-hidden='true'>
         <path d='M39 8L19 39H34L29 64L53 30H38L39 8Z' fill='#F59E0B' stroke='#D97706' strokeWidth='3.5' strokeLinejoin='round'>
