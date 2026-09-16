@@ -19,8 +19,6 @@ import { useApiBase } from '@/hooks/useApiBase';
 import { useStore } from '@/hooks/useStore';
 import { disableUrlParameterApplication, enableUrlParameterApplication, setupTradeTypeChangeListener } from '@/utils/blockly-url-param-handler';
 import { checkAndShowTradeTypeModal, getModalState, handleTradeTypeCancel, handleTradeTypeConfirm, resetUrlParamProcessing, setModalStateChangeCallback } from '@/utils/trade-type-modal-handler';
-import { LabelPairedObjectsColumnCaptionRegularIcon, LabelPairedPuzzlePieceTwoCaptionBoldIcon } from '@deriv/quill-icons/LabelPaired';
-import { LegacyGuide1pxIcon } from '@deriv/quill-icons/Legacy';
 import { Localize, localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
 import RunPanel from '../../components/run-panel';
@@ -36,6 +34,21 @@ import './main.scss';
 
 const ChartWrapper = lazy(() => import('../chart/chart-wrapper'));
 const Tutorial = lazy(() => import('../tutorials'));
+
+const ModernTabIcon = ({ icon }: { icon: string }) => {
+    const paths: Record<string, string> = {
+        house: 'M3 10.5 12 3l9 7.5v9a1.5 1.5 0 0 1-1.5 1.5h-5v-6h-5v6h-5A1.5 1.5 0 0 1 3 19.5v-9Z',
+        gear: 'M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm8 3.5-2-.7a6.4 6.4 0 0 0-.6-1.5l.9-1.9-1.7-1.7-1.9.9a6.4 6.4 0 0 0-1.5-.6l-.7-2h-2.4l-.7 2a6.4 6.4 0 0 0-1.5.6L6 6.2 4.3 7.9l.9 1.9a6.4 6.4 0 0 0-.6 1.5l-2 .7v2.4l2 .7c.1.5.3 1 .6 1.5l-.9 1.9L6 20.2l1.9-.9c.5.3 1 .5 1.5.6l.7 2h2.4l.7-2c.5-.1 1-.3 1.5-.6l1.9.9 1.7-1.7-.9-1.9c.3-.5.5-1 .6-1.5l2-.7v-2.4Z',
+        robot: 'M8 7V5h8v2h2a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3h2Zm-2 3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1H6Zm3 2h2v2H9v-2Zm4 0h2v2h-2v-2ZM10 3h4v2h-4V3Z',
+        chartUp: 'M4 19V9h3v10H4Zm6 0V5h3v14h-3Zm6 0V2h3v17h-3ZM3 21h18v-2H3v2Z',
+        tv: 'M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-6v2h3v2H7v-2h3v-2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Zm0 2v10h16V7H4Z',
+        sparkles: 'm12 2 1.4 5.1L18 9l-4.6 1.9L12 16l-1.4-5.1L6 9l4.6-1.9L12 2Zm7 12 .8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8L19 14ZM5 14l.8 2.2L8 17l-2.2.8L5 20l-.8-2.2L2 17l2.2-.8L5 14Z',
+        chart: 'M4 19V9h3v10H4Zm6 0V4h3v15h-3Zm6 0v-7h3v7h-3ZM3 21h18v-2H3v2Z',
+        users: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7-1a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM2 20a7 7 0 0 1 14 0v1H2v-1Zm14.5-5a5.5 5.5 0 0 1 5.5 5.5V21h-4v-.9a8.9 8.9 0 0 0-1.5-5.1Z',
+        graduation: 'M12 3 2 8l10 5 8-4v6h2V8L12 3Zm-6 8v5c0 2.2 2.7 4 6 4s6-1.8 6-4v-5l-6 3-6-3Z',
+    };
+    return <svg aria-hidden='true' viewBox='0 0 24 24' width='22' height='22' fill='none' stroke='currentColor' strokeWidth='1.8' strokeLinecap='round' strokeLinejoin='round'><path d={paths[icon]} /></svg>;
+};
 
 const AppWrapper = observer(() => {
     const { connectionStatus } = useApiBase();
@@ -134,15 +147,15 @@ const AppWrapper = observer(() => {
     return <React.Fragment><div className='main'><div className={classNames('main__container', { 'main__container--active': active_tour && active_tab === DASHBOARD && !isDesktop })}><div>
         {!isDesktop && left_tab_shadow && <span className='tabs-shadow tabs-shadow--left' />}
         <Tabs active_index={active_tab} className='main__tabs' onTabItemClick={handleTabChange} top>
-            <div label={<><LabelPairedObjectsColumnCaptionRegularIcon height='24px' width='24px' fill='var(--text-general)' /><Localize i18n_default_text='Dashboard' /></>} id='id-dbot-dashboard'><Dashboard handleTabChange={handleTabChange} /></div>
-            <div label={<><LabelPairedPuzzlePieceTwoCaptionBoldIcon height='24px' width='24px' fill='var(--text-general)' /><Localize i18n_default_text='Bot Builder' /></>} id='id-bot-builder' />
-            <div label={<>🤖 <Localize i18n_default_text='Free Bots' /></>} id='id-free-bots'><FreeBots onLoadBot={handleFreeBotLoad} /></div>
-            <div label={<>📊 <Localize i18n_default_text='Analysis Tool' /></>} id='id-analysis-tool'><AnalysisTool /></div>
-            <div label={<>⚙️ <Localize i18n_default_text='Manual Trader' /></>} id='id-manual-trader'><ManualTraderStructure /></div>
-            <div label={<>🎯 <Localize i18n_default_text='Ultimate Bot 2026' /></>} id='id-ultimate-bot-2026'><UltimateBot2026 /></div>
-            <div label={<>📉 <Localize i18n_default_text='Charts' /></>} id='id-charts'><Suspense fallback={<ChunkLoader message={localize('Please wait, loading chart...')} />}><ChartWrapper show_digits_stats={false} /></Suspense></div>
-            <div label={<><LegacyGuide1pxIcon height='16px' width='16px' fill='var(--text-general)' className='icon-general-fill-g-path' /><Localize i18n_default_text='Tutorials' /></>} id='id-tutorials'><div className='tutorials-wrapper'><Suspense fallback={<ChunkLoader message={localize('Please wait, loading tutorials...')} />}><Tutorial handleTabChange={handleTabChange} /></Suspense></div></div>
-            <div label={<>🎓 <Localize i18n_default_text='Deriv Course' /></>} id='id-deriv-course'><DerivCourse /></div>
+            <div label={<><ModernTabIcon icon='house' /><Localize i18n_default_text='Dashboard' /></>} id='id-dbot-dashboard'><Dashboard handleTabChange={handleTabChange} /></div>
+            <div label={<><ModernTabIcon icon='gear' /><Localize i18n_default_text='Bot Builder' /></>} id='id-bot-builder' />
+            <div label={<><ModernTabIcon icon='robot' /><Localize i18n_default_text='Free Bots' /></>} id='id-free-bots'><FreeBots onLoadBot={handleFreeBotLoad} /></div>
+            <div label={<><ModernTabIcon icon='chartUp' /><Localize i18n_default_text='Analysis Tool' /></>} id='id-analysis-tool'><AnalysisTool /></div>
+            <div label={<><ModernTabIcon icon='tv' /><Localize i18n_default_text='Manual Trader' /></>} id='id-manual-trader'><ManualTraderStructure /></div>
+            <div label={<><ModernTabIcon icon='sparkles' /><Localize i18n_default_text='Ultimate Bot 2026' /></>} id='id-ultimate-bot-2026'><UltimateBot2026 /></div>
+            <div label={<><ModernTabIcon icon='chart' /><Localize i18n_default_text='Charts' /></>} id='id-charts'><Suspense fallback={<ChunkLoader message={localize('Please wait, loading chart...')} />}><ChartWrapper show_digits_stats={false} /></Suspense></div>
+            <div label={<><ModernTabIcon icon='users' /><Localize i18n_default_text='Tutorials' /></>} id='id-tutorials'><div className='tutorials-wrapper'><Suspense fallback={<ChunkLoader message={localize('Please wait, loading tutorials...')} />}><Tutorial handleTabChange={handleTabChange} /></Suspense></div></div>
+            <div label={<><ModernTabIcon icon='graduation' /><Localize i18n_default_text='Deriv Course' /></>} id='id-deriv-course'><DerivCourse /></div>
         </Tabs>
         {!isDesktop && right_tab_shadow && <span className='tabs-shadow tabs-shadow--right' />}
     </div></div></div><DesktopWrapper><div className='main__run-strategy-wrapper'><RunStrategy /><RunPanel /></div><ChartModal /><TradingViewModal /></DesktopWrapper><MobileWrapper>{!is_open && <RunPanel />}</MobileWrapper><Dialog cancel_button_text={cancel_button_text || localize('Cancel')} className='dc-dialog__wrapper--fixed' confirm_button_text={ok_button_text || localize('Ok')} has_close_icon is_mobile_full_width={false} is_visible={is_dialog_open} onCancel={onCancelButtonClick} onClose={onCloseDialog} onConfirm={onOkButtonClick || onCloseDialog} portal_element_id='modal_root' title={title} login={handleLoginGeneration} dismissable={dismissable} is_closed_on_cancel={is_closed_on_cancel}>{message}</Dialog>{(() => { const modalProps = getTradeTypeModalProps(); return <TradeTypeConfirmationModal is_visible={modalProps.is_visible} trade_type_display_name={modalProps.trade_type_display_name} current_trade_type={modalProps.current_trade_type} current_trade_type_display_name={modalProps.current_trade_type_display_name} onConfirm={modalProps.onConfirm} onCancel={modalProps.onCancel} />; })()}</React.Fragment>;
