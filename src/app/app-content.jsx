@@ -136,6 +136,12 @@ const AppContent = observer(() => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [is_api_initialized, client.loginid]);
 
+    React.useEffect(() => {
+        if (!is_loading) {
+            window.dispatchEvent(new Event('vinteltool:initialized'));
+        }
+    }, [is_loading]);
+
     if (common?.error) return null;
 
     return (
