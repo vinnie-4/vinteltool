@@ -34,10 +34,11 @@ const BotBuilder = observer(() => {
         workspace.scroll(0, 0);
         const top_blocks = workspace.getTopBlocks(false);
         if (!top_blocks?.length) return;
-        let y = 15;
+        let y = 10;
         top_blocks.forEach(block => {
-            block.moveBy(10 - block.getRelativeToSurfaceXY().x, y - block.getRelativeToSurfaceXY().y);
-            y += block.getHeightWidth().height + 30;
+            const current_pos = block.getRelativeToSurfaceXY();
+            block.moveBy(0 - current_pos.x, y - current_pos.y);
+            y += block.getHeightWidth().height + 15;
         });
         workspace.scroll(0, 0);
     }, []);
