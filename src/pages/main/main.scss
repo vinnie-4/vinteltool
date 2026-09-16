@@ -74,12 +74,34 @@
                 color: #ffffff;
                 @include flex-center;
                 svg {
+                    width: 22px;
+                    height: 22px;
+                    flex: 0 0 22px;
                     padding-inline-end: 0;
                     margin-inline-end: 0.8rem;
-                    color: #ff0000 !important;
-                    fill: #ff0000 !important;
+                    fill: none !important;
+                    stroke: currentColor !important;
+                    stroke-width: 2 !important;
+                    filter: drop-shadow(0 0 5px currentColor);
+                    transition: transform 0.25s ease, filter 0.25s ease;
                     @include mobile-or-tablet-screen { margin-inline-end: 0.4rem; }
                 }
+
+                &:nth-child(1) svg { color: #38bdf8 !important; animation: vintel-icon-float 2.8s ease-in-out infinite; }
+                &:nth-child(2) svg { color: #a78bfa !important; animation: vintel-icon-gear 3.6s linear infinite; }
+                &:nth-child(3) svg { color: #60a5fa !important; animation: vintel-icon-pulse 2.2s ease-in-out infinite; }
+                &:nth-child(4) svg { color: #34d399 !important; animation: vintel-icon-rise 2.5s ease-in-out infinite; }
+                &:nth-child(5) svg { color: #fbbf24 !important; animation: vintel-icon-float 2.6s ease-in-out infinite; }
+                &:nth-child(6) svg { color: #c084fc !important; animation: vintel-icon-sparkle 2.1s ease-in-out infinite; }
+                &:nth-child(7) svg { color: #2dd4bf !important; animation: vintel-icon-rise 2.4s ease-in-out infinite; }
+                &:nth-child(8) svg { color: #fb923c !important; animation: vintel-icon-pulse 2.7s ease-in-out infinite; }
+                &:nth-child(9) svg { color: #facc15 !important; animation: vintel-icon-float 2.9s ease-in-out infinite; }
+
+                &:hover svg {
+                    transform: translateY(-2px) scale(1.12);
+                    filter: drop-shadow(0 0 9px currentColor);
+                }
+
                 &__icon { @include mobile-or-tablet-screen { padding-top: 0.5rem; } }
             }
         }
@@ -98,6 +120,36 @@
             &__container { background-color: var(--general-main-1); }
         }
     }
+}
+
+@keyframes vintel-icon-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
+}
+
+@keyframes vintel-icon-pulse {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 4px currentColor); }
+    50% { transform: scale(1.08); filter: drop-shadow(0 0 9px currentColor); }
+}
+
+@keyframes vintel-icon-gear {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes vintel-icon-rise {
+    0%, 100% { transform: translateY(1px); }
+    50% { transform: translateY(-3px); }
+}
+
+@keyframes vintel-icon-sparkle {
+    0%, 100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 4px currentColor); }
+    35% { transform: scale(1.1) rotate(-4deg); filter: drop-shadow(0 0 10px currentColor); }
+    70% { transform: scale(1.04) rotate(4deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .main__container .dc-tabs__item svg { animation: none !important; transition: none !important; }
 }
 
 .manual-trader {
