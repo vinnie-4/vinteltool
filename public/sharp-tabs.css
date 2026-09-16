@@ -6,3 +6,10 @@
     border-bottom-left-radius: 0 !important;
     border-bottom-right-radius: 0 !important;
 }
+
+/* Disable the tab-edge fade overlays without changing tab scrolling or behavior. */
+.tabs-shadow,
+.tabs-shadow--left,
+.tabs-shadow--right {
+    display: none !important;
+}
