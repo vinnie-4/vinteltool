@@ -1,6 +1,22 @@
 (function () {
+    var gateStyle = document.createElement('style');
+    gateStyle.id = 'vintel-risk-disclaimer-init-gate';
+    gateStyle.textContent = '#vintel-risk-disclaimer-button{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}';
+    document.head.appendChild(gateStyle);
+
     function initRiskDisclaimer() {
-        if (document.getElementById('vintel-risk-disclaimer-button')) return;
+        if (gateStyle.parentNode) gateStyle.parentNode.removeChild(gateStyle);
+
+        var existingButton = document.getElementById('vintel-risk-disclaimer-button');
+        if (existingButton) {
+            existingButton.textContent = '⚠️Risk..';
+            existingButton.setAttribute('aria-label', 'Risk Disclaimer');
+            existingButton.style.removeProperty('display');
+            existingButton.style.removeProperty('visibility');
+            existingButton.style.removeProperty('opacity');
+            existingButton.style.removeProperty('pointer-events');
+            return;
+        }
 
         var referenceStyle = document.createElement('style');
         referenceStyle.id = 'vintel-main-tab-reference-colors';
@@ -11,7 +27,7 @@
         button.id = 'vintel-risk-disclaimer-button';
         button.type = 'button';
         button.setAttribute('aria-label', 'Risk Disclaimer');
-        button.textContent = '⚠️ Risk Disclaimer';
+        button.textContent = '⚠️Risk..';
         button.style.cssText = [
             'position:fixed',
             'left:14px',
@@ -81,9 +97,5 @@
         });
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initRiskDisclaimer);
-    } else {
-        initRiskDisclaimer();
-    }
+    window.addEventListener('vinteltool:initialized', initRiskDisclaimer, { once: true });
 })();
