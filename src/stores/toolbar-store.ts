@@ -76,19 +76,34 @@ export default class ToolbarStore implements IToolbarStore {
     };
 
     resetDefaultStrategy = async () => {
-        const workspace = window.Blockly.derivWorkspace;
-        workspace.current_strategy_id = window?.Blockly?.utils?.idGenerator?.genUid();
-        await load({
-            block_string: workspace.cached_xml.main,
-            file_name: config().default_file_name,
-            workspace,
-            drop_event: null,
-            strategy_id: null,
-            from: null,
-            showIncompatibleStrategyDialog: null,
-        });
-        workspace.strategy_to_load = workspace.cached_xml.main;
-        this.setResetButtonState(false);
+        const workspace = window.Blockly?.derivWorkspace;
+        const default_xml = workspace?.cached_xml?.main;
+
+        if (!workspace || !default_xml) {
+            this.setResetButtonState(false);
+            return;
+        }
+
+        // Reset the existing Blockly workspace in-place. Do not call the full `load()`
+        // pipeline here: that pipeline toggles the global loading state and can cause
+        // Bot Builder to fall into the interruption/error screen when resetting an
+        // already-imported strategy.
+        window.Blockly.Events.setGroup('reset');
+        workspace.clear();
+
+        try {
+            const xml = window.Blockly.utils.xml.textToDom(default_xml);
+            window.Blockly.Xml.domToWorkspace(xml, workspace);
+            workspace.current_strategy_id = window?.Blockly?.utils?.idGenerator?.genUid();
+            workspace.strategy_to_load = default_xml;
+            workspace.clearUndo();
+            workspace.scroll(0, 0);
+        } catch (error) {
+            console.error('Unable to restore Bot Builder default workspace', error); // eslint-disable-line
+        } finally {
+            window.Blockly.Events.setGroup(false);
+            this.setResetButtonState(false);
+        }
     };
 
     onSortClick = () => {
