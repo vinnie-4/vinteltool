@@ -36,7 +36,8 @@
         <div id="popup_root" class="popup-root"></div>
         <div id="root"></div>
 
-        <!-- Risk Disclaimer is intentionally not mounted here, so it cannot appear during the startup loader. -->
+        <!-- Risk Disclaimer is released only after app initialization completes. -->
+        <script src="<%= assetPrefix %>/risk-disclaimer.js"></script>
 
         <!-- LiveChat script -->
         <script type="text/javascript" defer>
