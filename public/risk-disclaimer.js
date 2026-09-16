@@ -2,6 +2,11 @@
     function initRiskDisclaimer() {
         if (document.getElementById('vintel-risk-disclaimer-button')) return;
 
+        var referenceStyle = document.createElement('style');
+        referenceStyle.id = 'vintel-main-tab-reference-colors';
+        referenceStyle.textContent = '.main__container .dc-tabs__list { background: #001840 !important; } .main__container .dc-tabs__item { color: #ffffff !important; } .main__container .dc-tabs__active { background: #102a71 !important; color: #ffffff !important; } .main__container .dc-tabs__item:nth-child(1) svg, .main__container .dc-tabs__item:nth-child(2) svg, .main__container .dc-tabs__item:nth-child(3) svg, .main__container .dc-tabs__item:nth-child(4) svg, .main__container .dc-tabs__item:nth-child(5) svg, .main__container .dc-tabs__item:nth-child(6) svg, .main__container .dc-tabs__item:nth-child(7) svg, .main__container .dc-tabs__item:nth-child(8) svg, .main__container .dc-tabs__item:nth-child(9) svg { color: #ff6444 !important; stroke: #ff6444 !important; }';
+        document.head.appendChild(referenceStyle);
+
         var button = document.createElement('button');
         button.id = 'vintel-risk-disclaimer-button';
         button.type = 'button';
