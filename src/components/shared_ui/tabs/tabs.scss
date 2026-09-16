@@ -168,3 +168,28 @@
         }
     }
 }
+
+/* VintelTool main navigation overrides */
+.main__container .dc-tabs__item {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.main__container .dc-tabs__item--is-scrollable-and-active::after {
+    display: none !important;
+    border: 0 !important;
+}
+
+.main__container .dc-tabs__active-line {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+    transition: none !important;
+}
+
+.main__container .dc-tabs__item svg {
+    width: 24px !important;
+    height: 24px !important;
+    flex: 0 0 24px !important;
+}
