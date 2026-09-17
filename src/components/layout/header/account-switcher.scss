@@ -282,31 +282,32 @@
 
 .acc-modal {
     width: min(648px, calc(100vw - 32px));
-    max-height: min(620px, calc(100vh - 48px));
+    max-height: calc(100vh - 48px);
     overflow: hidden;
     border-radius: 16px;
-    background: var(--general-main-2, #fff);
+    background: #fff;
     box-shadow: 0 20px 55px rgba(0, 0, 0, 0.28);
-    color: var(--text-general);
+    color: #333;
 
     &__tabs {
         display: grid;
         grid-template-columns: 1fr 1fr;
         height: 54px;
-        border-bottom: 1px solid var(--general-section-1);
+        border-bottom: 1px solid #e8e8e8;
     }
 
     &__tab {
         position: relative;
         border: 0;
-        background: transparent;
-        color: var(--text-general);
+        background: #fff;
+        color: #444;
         font-size: 16px;
-        font-weight: 500;
+        font-weight: 400;
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
 
         &--active {
+            color: #333;
             font-weight: 700;
             &::after {
                 content: '';
@@ -324,14 +325,16 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 18px 32px 12px;
+        height: 62px;
+        padding: 0 32px;
+        background: #fff;
     }
 
     &__section-title {
         margin: 0;
         font-size: 16px !important;
         font-weight: 700 !important;
-        color: var(--text-prominent) !important;
+        color: #333 !important;
     }
 
     &__collapse {
@@ -343,12 +346,12 @@
         padding: 0;
         border: 0;
         background: transparent;
-        color: var(--text-general);
+        color: #555;
         cursor: pointer;
     }
 
     &__accounts {
-        padding: 0 12px 10px;
+        padding: 0 12px 8px;
         max-height: 360px;
         overflow-y: auto;
     }
@@ -366,10 +369,10 @@
         background: transparent;
         text-align: left;
         cursor: pointer;
-        color: var(--text-general);
+        color: #333;
 
-        &:hover { background: var(--state-hover); }
-        &--selected { background: rgba(31, 40, 42, 0.14); }
+        &:hover { background: #e7eaeb; }
+        &--selected { background: #d9ddde; }
     }
 
     &__icon {
@@ -387,7 +390,7 @@
     }
 
     &__account-name {
-        color: var(--text-prominent);
+        color: #333;
         font-size: 16px;
         font-weight: 700;
         line-height: 1.2;
@@ -395,14 +398,14 @@
 
     &__loginid {
         margin-top: 3px;
-        color: var(--text-less-prominent);
+        color: #777;
         font-size: 12px;
         line-height: 1.2;
     }
 
     &__balance {
         padding-left: 12px;
-        color: var(--text-prominent);
+        color: #333;
         font-size: 16px;
         font-weight: 700;
         white-space: nowrap;
@@ -410,7 +413,7 @@
     }
 
     &__check {
-        color: var(--status-success);
+        color: #42bfc0;
         font-size: 20px;
         font-weight: 800;
         text-align: center;
@@ -422,18 +425,19 @@
         align-items: center;
         justify-content: center;
         padding: 12px 20px;
-        border-top: 1px solid var(--general-section-1);
+        border-top: 4px solid #f4f4f4;
         color: #ff444f;
         font-size: 15px;
         text-align: center;
+        background: #fff;
     }
 
     @include mobile-screen {
-        width: calc(100vw - 32px);
-        max-height: calc(100vh - 48px);
-        border-radius: 16px;
+        width: calc(100vw - 72px);
+        max-width: 648px;
+        border-radius: 14px;
 
-        &__section-header { padding: 16px 32px 10px; }
+        &__section-header { padding: 0 32px; }
         &__accounts { padding-inline: 10px; }
         &__account { grid-template-columns: 40px minmax(0, 1fr) auto 20px; padding-inline: 12px; }
         &__account-name { font-size: 15px; }
