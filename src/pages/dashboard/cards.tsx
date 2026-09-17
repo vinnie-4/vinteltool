@@ -1,107 +1,166 @@
 // @ts-nocheck — vendored bot code with known upstream type gaps; see AGENTS.md
-// TODO: Complete MobX integration for popup functionality
-// Some code is kept commented out pending popup integration
 import React from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
 import GoogleDrive from '@/components/load-modal/google-drive';
 import Dialog from '@/components/shared_ui/dialog';
 import MobileFullPageModal from '@/components/shared_ui/mobile-full-page-modal';
-import Text from '@/components/shared_ui/text';
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { useStore } from '@/hooks/useStore';
 import { Localize, localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
-/* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
-/* [/AI] */
 
-type TCardProps = { has_dashboard_strategies: boolean; is_mobile: boolean; };
-type TCardArray = { id: string; icon: React.ReactElement; content: React.ReactElement; callback: () => void; };
+type TCardProps = { has_dashboard_strategies: boolean; is_mobile: boolean };
+
+type TQuickCard = {
+    id: 'local' | 'free-bots' | 'bot-builder' | 'quick-bot-builder';
+    icon: React.ReactElement;
+    title: React.ReactElement;
+    description: React.ReactElement;
+    tone: 'blue' | 'green' | 'purple' | 'amber';
+    callback: () => void;
+};
 
 const ModernIcon = ({ type }: { type: 'local' | 'bot' | 'quick' }) => {
     const common = { width: '50', height: '50', viewBox: '0 0 72 72', fill: 'none', xmlns: 'http://www.w3.org/2000/svg' };
-    if (type === 'local') return <svg {...common} aria-hidden='true'>
-        <rect x='10' y='13' width='52' height='37' rx='6' stroke='#2563EB' strokeWidth='3.5'>
-            <animate attributeName='opacity' values='1;0.72;1' dur='2s' repeatCount='indefinite' />
-        </rect>
-        <path d='M25 59H47M30 50V59M42 50V59' stroke='#2563EB' strokeWidth='3.5' strokeLinecap='round'/>
-        <path d='M26 32L32 38L46 24' stroke='#16A34A' strokeWidth='4' strokeLinecap='round' strokeLinejoin='round' strokeDasharray='32' strokeDashoffset='32'>
-            <animate attributeName='stroke-dashoffset' values='32;0;0;32' keyTimes='0;0.25;0.8;1' dur='2s' repeatCount='indefinite'/>
-        </path>
-    </svg>;
-    if (type === 'bot') return <svg {...common} aria-hidden='true'>
-        <g transform='translate(36 36)'>
-            <path d='M0-21L5.5-12.5L15.5-15.5L12.5-5.5L21 0L12.5 5.5L15.5 15.5L5.5 12.5L0 21L-5.5 12.5L-15.5 15.5L-12.5 5.5L-21 0L-12.5-5.5L-15.5-15.5L-5.5-12.5Z' fill='#7C3AED' opacity='0.12'/>
-            <path d='M0-21L5.5-12.5L15.5-15.5L12.5-5.5L21 0L12.5 5.5L15.5 15.5L5.5 12.5L0 21L-5.5 12.5L-15.5 15.5L-12.5 5.5L-21 0L-12.5-5.5L-15.5-15.5L-5.5-12.5Z' stroke='#7C3AED' strokeWidth='3.5' strokeLinejoin='round'>
-                <animateTransform attributeName='transform' type='rotate' from='0' to='360' dur='4s' repeatCount='indefinite'/>
-            </path>
-            <circle cx='0' cy='0' r='8' stroke='#7C3AED' strokeWidth='3.5'>
-                <animate attributeName='r' values='8;9.5;8' dur='1.8s' repeatCount='indefinite'/>
-            </circle>
-            <circle cx='0' cy='0' r='2.5' fill='#7C3AED'>
-                <animate attributeName='opacity' values='1;0.45;1' dur='1.8s' repeatCount='indefinite'/>
-            </circle>
-        </g>
-    </svg>;
-    return <svg {...common} aria-hidden='true'>
-        <path d='M39 8L19 39H34L29 64L53 30H38L39 8Z' fill='#F59E0B' stroke='#D97706' strokeWidth='3.5' strokeLinejoin='round'>
-            <animate attributeName='opacity' values='1;0.72;1' dur='1.6s' repeatCount='indefinite'/>
-        </path>
-        <circle cx='39' cy='36' r='25' stroke='#F59E0B' strokeWidth='2'>
-            <animate attributeName='r' values='24;27;24' dur='1.6s' repeatCount='indefinite'/>
-            <animate attributeName='opacity' values='0.9;0.25;0.9' dur='1.6s' repeatCount='indefinite'/>
-        </circle>
-        <circle cx='39' cy='11' r='2.2' fill='#D97706'>
-            <animateMotion dur='1.6s' repeatCount='indefinite' path='M0 25A25 25 0 1 1 0 -25A25 25 0 1 1 0 25'/>
-        </circle>
-    </svg>;
+
+    if (type === 'local') return (
+        <svg {...common} aria-hidden='true'>
+            <path d='M12 22C12 18.7 14.7 16 18 16H31L36 21H54C57.3 21 60 23.7 60 27V52C60 55.3 57.3 58 54 58H18C14.7 58 12 55.3 12 52V22Z' fill='#F7C843' stroke='#F59E0B' strokeWidth='3' strokeLinejoin='round' />
+            <path d='M12 27H60' stroke='#F59E0B' strokeWidth='3' />
+        </svg>
+    );
+
+    if (type === 'bot') return (
+        <svg {...common} aria-hidden='true'>
+            <rect x='17' y='20' width='38' height='33' rx='8' fill='#34D399' fillOpacity='0.16' stroke='#34D399' strokeWidth='3' />
+            <rect x='23' y='28' width='26' height='20' rx='5' fill='#94A3B8' />
+            <circle cx='31' cy='37' r='3' fill='#0F172A' />
+            <circle cx='41' cy='37' r='3' fill='#0F172A' />
+            <path d='M30 44C33 46 39 46 42 44' stroke='#0F172A' strokeWidth='2.5' strokeLinecap='round' />
+            <path d='M36 28V21' stroke='#34D399' strokeWidth='3' strokeLinecap='round' />
+            <circle cx='36' cy='18' r='3' fill='#34D399' />
+            <path d='M14 33H10M58 33H62' stroke='#34D399' strokeWidth='3' strokeLinecap='round' />
+        </svg>
+    );
+
+    return (
+        <svg {...common} aria-hidden='true'>
+            <path d='M40 7L18 39H33L28 65L54 29H39L40 7Z' fill='#FBBF24' stroke='#F59E0B' strokeWidth='3' strokeLinejoin='round' />
+        </svg>
+    );
 };
 
-const GoogleDriveIcon = () => <svg width='50' height='50' viewBox='0 0 72 72' fill='none' xmlns='http://www.w3.org/2000/svg' aria-hidden='true'>
-    <path d='M25 12H47L62 39H40L25 12Z' stroke='#4285F4' strokeWidth='3.5' strokeLinejoin='round'>
-        <animate attributeName='opacity' values='1;0.65;1' dur='2.2s' repeatCount='indefinite'/>
-    </path>
-    <path d='M25 12L10 39L21 59H43L62 39' stroke='#34A853' strokeWidth='3.5' strokeLinejoin='round'/>
-    <path d='M21 59L40 39' stroke='#FBBC05' strokeWidth='3.5' strokeLinecap='round'>
-        <animate attributeName='stroke-width' values='3.5;5;3.5' dur='2.2s' repeatCount='indefinite'/>
-    </path>
-</svg>;
-
-const Cards = observer(({ is_mobile, has_dashboard_strategies }: TCardProps) => {
+const Cards = observer(({ is_mobile, has_dashboard_strategies: _has_dashboard_strategies }: TCardProps) => {
     const { dashboard, load_modal, quick_strategy, google_drive } = useStore();
     const { toggleLoadModal, setActiveTabIndex } = load_modal;
     const { is_google_drive_configured } = google_drive;
     const { isDesktop } = useDevice();
     const { onCloseDialog, dialog_options, is_dialog_open, setActiveTab, setPreviewOnPopup } = dashboard;
     const { setFormVisibility } = quick_strategy;
-    const openFileLoader = () => { toggleLoadModal(); setActiveTabIndex(is_mobile ? 0 : 1); setActiveTab(DBOT_TABS.BOT_BUILDER); };
-    const openGoogleDriveDialog = () => { const google_drive_tab_index = isDesktop ? 2 : 1; toggleLoadModal(); setActiveTabIndex(google_drive_tab_index); setActiveTab(DBOT_TABS.BOT_BUILDER); };
-    const actions: TCardArray[] = [
-        { id: 'my-computer', icon: <ModernIcon type='local' />, content: is_mobile ? <Localize i18n_default_text='Local' /> : <Localize i18n_default_text='My computer' />, callback: openFileLoader },
-        { id: 'google-drive', icon: <GoogleDriveIcon />, content: <Localize i18n_default_text='Google Drive' />, callback: openGoogleDriveDialog },
-        { id: 'bot-builder', icon: <ModernIcon type='bot' />, content: <Localize i18n_default_text='Bot Builder' />, callback: () => setActiveTab(DBOT_TABS.BOT_BUILDER) },
-        { id: 'quick-bot-builder', icon: <ModernIcon type='quick' />, content: <Localize i18n_default_text='Quick Bot Builder' />, callback: () => { setActiveTab(DBOT_TABS.BOT_BUILDER); setFormVisibility(true); } },
-    ].filter(action => action.id !== 'google-drive' || is_google_drive_configured);
-    const cardFrameStyles: Record<string, React.CSSProperties> = {
-        'my-computer': { border: '2px solid #2563EB', background: '#EFF6FF' },
-        'google-drive': { border: '2px solid #34A853', background: '#F0FDF4' },
-        'bot-builder': { border: '2px solid #7C3AED', background: '#F5F3FF' },
-        'quick-bot-builder': { border: '2px solid #F97316', background: '#FFF7ED' },
+
+    const openFileLoader = () => {
+        toggleLoadModal();
+        setActiveTabIndex(is_mobile ? 0 : 1);
+        setActiveTab(DBOT_TABS.BOT_BUILDER);
     };
-    return React.useMemo(() => (
-        <div className={classNames('tab__dashboard__table', { 'tab__dashboard__table--minimized': has_dashboard_strategies && is_mobile })}>
-            <div className={classNames('tab__dashboard__table__tiles', { 'tab__dashboard__table__tiles--minimized': has_dashboard_strategies && is_mobile })} id='tab__dashboard__table__tiles'>
-                {actions.map(({ icon, content, callback, id }) => (
-                    <div key={id} className={classNames('tab__dashboard__table__block', { 'tab__dashboard__table__block--minimized': has_dashboard_strategies && is_mobile })}>
-                        <div className={classNames('tab__dashboard__table__images', { 'tab__dashboard__table__images--minimized': has_dashboard_strategies })} id={id} onClick={callback} style={{ ...cardFrameStyles[id], borderRadius: '14px', minHeight: '108px', minWidth: '108px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '5px', boxSizing: 'border-box', cursor: 'pointer' }}>
-                            {icon}
-                            <span style={{ fontWeight: 700, fontSize: '13px', lineHeight: 1.1, color: '#111827', textAlign: 'center' }}>{content}</span>
+
+    const cards: TQuickCard[] = [
+        {
+            id: 'local',
+            icon: <ModernIcon type='local' />,
+            title: <Localize i18n_default_text='Local' />,
+            description: <Localize i18n_default_text='Access and manage your local trading environment' />,
+            tone: 'blue',
+            callback: openFileLoader,
+        },
+        {
+            id: 'free-bots',
+            icon: <ModernIcon type='bot' />,
+            title: <Localize i18n_default_text='Free Bots' />,
+            description: <Localize i18n_default_text='Browse ready-made trading strategies' />,
+            tone: 'green',
+            callback: () => setActiveTab(DBOT_TABS.FREE_BOTS),
+        },
+        {
+            id: 'bot-builder',
+            icon: <ModernIcon type='bot' />,
+            title: <Localize i18n_default_text='Bot Builder' />,
+            description: <Localize i18n_default_text='Build a custom bot with the visual editor' />,
+            tone: 'purple',
+            callback: () => setActiveTab(DBOT_TABS.BOT_BUILDER),
+        },
+        {
+            id: 'quick-bot-builder',
+            icon: <ModernIcon type='quick' />,
+            title: <Localize i18n_default_text='Quick Bot Builder' />,
+            description: <Localize i18n_default_text='Create a bot with custom trade and risk settings' />,
+            tone: 'amber',
+            callback: () => {
+                setActiveTab(DBOT_TABS.BOT_BUILDER);
+                setFormVisibility(true);
+            },
+        },
+    ];
+
+    return (
+        <div className='tab__dashboard__table'>
+            <div className='tab__dashboard__quick-actions'>
+                <div className='tab__dashboard__quick-actions__line' />
+                <span><Localize i18n_default_text='QUICK ACTIONS' /></span>
+                <div className='tab__dashboard__quick-actions__line' />
+            </div>
+
+            <div className='tab__dashboard__table__tiles' id='tab__dashboard__table__tiles'>
+                {cards.map(({ icon, title, description, callback, id, tone }) => (
+                    <button
+                        key={id}
+                        type='button'
+                        className={classNames('tab__dashboard__quick-card', `tab__dashboard__quick-card--${tone}`)}
+                        onClick={callback}
+                    >
+                        <div className='tab__dashboard__quick-card__icon'>{icon}</div>
+                        <div className='tab__dashboard__quick-card__arrow'>→</div>
+                        <div className='tab__dashboard__quick-card__body'>
+                            <div className='tab__dashboard__quick-card__title'>{title}</div>
+                            <div className='tab__dashboard__quick-card__description'>{description}</div>
                         </div>
-                    </div>
+                        <div className='tab__dashboard__quick-card__footer'>
+                            <span><Localize i18n_default_text='Open' /> →</span>
+                        </div>
+                    </button>
                 ))}
-                {!isDesktop ? <Dialog title={dialog_options.title} is_visible={is_dialog_open} onCancel={onCloseDialog} is_mobile_full_width className='dc-dialog__wrapper--google-drive' has_close_icon><GoogleDrive /></Dialog> : <MobileFullPageModal is_modal_open={is_dialog_open} className='load-strategy__wrapper' header={localize('Load strategy')} onClickClose={() => { setPreviewOnPopup(false); onCloseDialog(); }} height_offset='80px'><div label='Google Drive' className='google-drive-label'><GoogleDrive /></div></MobileFullPageModal>}
+
+                {!isDesktop ? (
+                    <Dialog
+                        title={dialog_options.title}
+                        is_visible={is_dialog_open}
+                        onCancel={onCloseDialog}
+                        is_mobile_full_width
+                        className='dc-dialog__wrapper--google-drive'
+                        has_close_icon
+                    >
+                        <GoogleDrive />
+                    </Dialog>
+                ) : (
+                    <MobileFullPageModal
+                        is_modal_open={is_dialog_open}
+                        className='load-strategy__wrapper'
+                        header={localize('Load strategy')}
+                        onClickClose={() => {
+                            setPreviewOnPopup(false);
+                            onCloseDialog();
+                        }}
+                        height_offset='80px'
+                    >
+                        <div label='Google Drive' className='google-drive-label'>
+                            <GoogleDrive />
+                        </div>
+                    </MobileFullPageModal>
+                )}
             </div>
         </div>
-    ), [is_dialog_open, has_dashboard_strategies, is_google_drive_configured]);
+    );
 });
+
 export default Cards;
