@@ -57,17 +57,19 @@ export default function ChunkLoader({ message }: { message: string }) {
                     justify-content: center;
                     overflow: hidden;
                     box-sizing: border-box;
-                    background: url('vinteltool-bg.jpg') center center / cover no-repeat;
+                    background: #020817 url('/vinteltool-bg.jpg') center center / cover no-repeat;
                     color: #fff;
                     font-family: Arial, Helvetica, sans-serif;
                     isolation: isolate;
                     z-index: 9999;
                 }
 
+                /* Keep the supplied artwork sharp and visible. */
                 .vinteltool-loader__tint {
                     position: absolute;
                     inset: 0;
-                    background: rgba(5, 10, 20, .78);
+                    background: rgba(2, 8, 23, .12);
+                    pointer-events: none;
                 }
 
                 .vinteltool-loader__card {
@@ -77,11 +79,9 @@ export default function ChunkLoader({ message }: { message: string }) {
                     box-sizing: border-box;
                     padding: 32px 24px 20px;
                     border-radius: 16px;
-                    background: rgba(18, 26, 43, .65);
-                    backdrop-filter: blur(16px);
-                    -webkit-backdrop-filter: blur(16px);
-                    border: 1px solid rgba(255, 255, 255, .08);
-                    box-shadow: 0 20px 50px rgba(0, 0, 0, .6);
+                    background: rgba(2, 8, 23, .42);
+                    border: 1px solid rgba(255, 255, 255, .10);
+                    box-shadow: 0 20px 50px rgba(0, 0, 0, .35);
                     text-align: center;
                 }
 
@@ -91,8 +91,8 @@ export default function ChunkLoader({ message }: { message: string }) {
                     height: 52px;
                     margin: 0 auto 16px;
                     border-radius: 12px;
-                    background: rgba(255, 255, 255, .05);
-                    border: 1px solid rgba(255, 255, 255, .12);
+                    background: rgba(2, 8, 23, .28);
+                    border: 1px solid rgba(255, 255, 255, .18);
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -100,7 +100,7 @@ export default function ChunkLoader({ message }: { message: string }) {
                     font-size: 16px;
                     font-weight: 700;
                     letter-spacing: 1px;
-                    color: #94a3b8;
+                    color: #fff;
                     isolation: isolate;
                 }
 
@@ -121,13 +121,15 @@ export default function ChunkLoader({ message }: { message: string }) {
                     line-height: 1.2;
                     font-weight: 800;
                     letter-spacing: 1.5px;
+                    text-shadow: 0 2px 10px rgba(0, 0, 0, .7);
                 }
 
                 .vinteltool-loader__subtitle {
                     margin-top: 7px;
-                    color: #94a3b8;
+                    color: #e2e8f0;
                     font-size: 12px;
                     line-height: 1.4;
+                    text-shadow: 0 2px 8px rgba(0, 0, 0, .7);
                 }
 
                 .vinteltool-loader__dots {
@@ -143,7 +145,7 @@ export default function ChunkLoader({ message }: { message: string }) {
                     width: 8px;
                     height: 8px;
                     border-radius: 50%;
-                    background: rgba(96, 165, 250, .28);
+                    background: rgba(255, 255, 255, .45);
                     transition: transform .2s ease, opacity .2s ease, background .2s ease;
                     animation: vinteltool-loader-pulse 1.2s ease-in-out infinite;
                 }
@@ -159,12 +161,13 @@ export default function ChunkLoader({ message }: { message: string }) {
                 .vinteltool-loader__status {
                     margin-top: 15px;
                     min-height: 18px;
-                    color: #e2e8f0;
+                    color: #fff;
                     font-size: 12px;
                     line-height: 18px;
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
+                    text-shadow: 0 2px 8px rgba(0, 0, 0, .8);
                 }
 
                 .vinteltool-loader__progress {
@@ -173,7 +176,7 @@ export default function ChunkLoader({ message }: { message: string }) {
                     margin-top: 16px;
                     overflow: hidden;
                     border-radius: 999px;
-                    background: rgba(255, 255, 255, .08);
+                    background: rgba(255, 255, 255, .18);
                 }
 
                 .vinteltool-loader__progress span {
@@ -190,14 +193,15 @@ export default function ChunkLoader({ message }: { message: string }) {
                     justify-content: space-between;
                     gap: 12px;
                     margin-top: 10px;
-                    color: #64748b;
+                    color: #e2e8f0;
                     font-size: 10px;
                     letter-spacing: .4px;
                     text-transform: uppercase;
+                    text-shadow: 0 2px 8px rgba(0, 0, 0, .8);
                 }
 
                 .vinteltool-loader__ready {
-                    color: #60a5fa;
+                    color: #93c5fd;
                     min-width: 30px;
                     text-align: right;
                 }
