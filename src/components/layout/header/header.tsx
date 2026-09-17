@@ -102,7 +102,7 @@ const AppHeader = observer(() => {
                     return (
                         <div className='auth-actions'>
                             <div className='account-info'>
-                                <AccountSwitcher activeAccount={activeAccount} />
+                                <AccountSwitcher activeAccount={activeAccount} onLogout={handleLogout} />
                             </div>
                         </div>
                     );
@@ -144,6 +144,7 @@ const AppHeader = observer(() => {
             isOAuthPending,
             handleLogin,
             handleSignup,
+            handleLogout,
         ]
     );
 
