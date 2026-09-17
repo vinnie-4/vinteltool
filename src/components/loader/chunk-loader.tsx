@@ -2,11 +2,20 @@ import { useEffect, useState } from 'react';
 
 export default function ChunkLoader({ message }: { message: string }) {
     const [activeDot, setActiveDot] = useState(0);
+    const [bootPercent, setBootPercent] = useState(1);
 
     useEffect(() => {
         const interval = window.setInterval(() => {
             setActiveDot(current => (current + 1) % 3);
         }, 450);
+
+        return () => window.clearInterval(interval);
+    }, []);
+
+    useEffect(() => {
+        const interval = window.setInterval(() => {
+            setBootPercent(current => current >= 100 ? 1 : Math.min(100, current + 1));
+        }, 120);
 
         return () => window.clearInterval(interval);
     }, []);
@@ -29,11 +38,11 @@ export default function ChunkLoader({ message }: { message: string }) {
 
                 <div className='vinteltool-loader__status'>{statusMessage}</div>
                 <div className='vinteltool-loader__progress' aria-hidden='true'>
-                    <span />
+                    <span style={{ width: `${bootPercent}%` }} />
                 </div>
                 <div className='vinteltool-loader__footer'>
                     <span>Boot sequence</span>
-                    <span className='vinteltool-loader__ready'>LIVE</span>
+                    <span className='vinteltool-loader__ready'>{bootPercent}%</span>
                 </div>
             </div>
 
@@ -77,6 +86,7 @@ export default function ChunkLoader({ message }: { message: string }) {
                 }
 
                 .vinteltool-loader__badge {
+                    position: relative;
                     width: 52px;
                     height: 52px;
                     margin: 0 auto 16px;
@@ -91,6 +101,19 @@ export default function ChunkLoader({ message }: { message: string }) {
                     font-weight: 700;
                     letter-spacing: 1px;
                     color: #94a3b8;
+                    isolation: isolate;
+                }
+
+                .vinteltool-loader__badge::before {
+                    content: '';
+                    position: absolute;
+                    inset: -3px;
+                    border-radius: 15px;
+                    border: 2px solid transparent;
+                    border-top-color: #60a5fa;
+                    border-right-color: rgba(96, 165, 250, .45);
+                    animation: vinteltool-loader-badge-rotate 1.7s linear infinite;
+                    pointer-events: none;
                 }
 
                 .vinteltool-loader__title {
@@ -155,11 +178,10 @@ export default function ChunkLoader({ message }: { message: string }) {
 
                 .vinteltool-loader__progress span {
                     display: block;
-                    width: 42%;
                     height: 100%;
                     border-radius: inherit;
                     background: linear-gradient(90deg, #2563eb, #60a5fa);
-                    animation: vinteltool-loader-progress 1.45s ease-in-out infinite;
+                    transition: width .1s linear;
                 }
 
                 .vinteltool-loader__footer {
@@ -176,16 +198,17 @@ export default function ChunkLoader({ message }: { message: string }) {
 
                 .vinteltool-loader__ready {
                     color: #60a5fa;
+                    min-width: 30px;
+                    text-align: right;
+                }
+
+                @keyframes vinteltool-loader-badge-rotate {
+                    to { transform: rotate(360deg); }
                 }
 
                 @keyframes vinteltool-loader-pulse {
                     0%, 100% { opacity: .35; transform: scale(.85); }
                     50% { opacity: .95; transform: scale(1); }
-                }
-
-                @keyframes vinteltool-loader-progress {
-                    0% { transform: translateX(-125%); }
-                    100% { transform: translateX(255%); }
                 }
 
                 @media (max-width: 480px) {
@@ -196,9 +219,8 @@ export default function ChunkLoader({ message }: { message: string }) {
                 }
 
                 @media (prefers-reduced-motion: reduce) {
-                    .vinteltool-loader__dots span,
-                    .vinteltool-loader__progress span { animation: none; }
-                    .vinteltool-loader__progress span { width: 100%; }
+                    .vinteltool-loader__badge::before,
+                    .vinteltool-loader__dots span { animation: none; }
                 }
             `}</style>
         </div>
@@ -206,4 +228,4 @@ export default function ChunkLoader({ message }: { message: string }) {
 }
 
 // Visual splash only. AppContent removes it when real initialization is ready;
-// there is no artificial timeout, fake percentage, or simulated boot completion.
+// the percentage is visual only and does not control when the loader disappears.
