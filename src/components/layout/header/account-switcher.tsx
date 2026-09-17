@@ -34,7 +34,7 @@ const getNewApiAccountType = (account: unknown, loginid?: string): 'demo' | 'rea
     return isDemoAccount(loginid ?? '') ? 'demo' : 'real';
 };
 
-const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
+const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher & { onLogout?: () => void }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [selectedTab, setSelectedTab] = useState<'demo' | 'real' | null>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
@@ -231,6 +231,22 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                         </div>
 
                         <div className='acc-modal__trader-hub'>Looking for CFD accounts? Go to Trader's Hub</div>
+
+                        <button
+                            type='button'
+                            className='acc-modal__logout'
+                            onClick={() => {
+                                setIsOpen(false);
+                                onLogout?.();
+                            }}
+                        >
+                            <span>Logout</span>
+                            <svg width='20' height='20' viewBox='0 0 20 20' fill='none' aria-hidden='true'>
+                                <path d='M8 4H4.8C4.36 4 4 4.36 4 4.8V15.2C4 15.64 4.36 16 4.8 16H8' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+                                <path d='M11 6L15 10L11 14' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round' />
+                                <path d='M7 10H15' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+                            </svg>
+                        </button>
                     </div>
                 </div>
             )}
