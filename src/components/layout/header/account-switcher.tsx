@@ -36,6 +36,7 @@ const getNewApiAccountType = (account: unknown, loginid?: string): 'demo' | 'rea
 
 const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [selectedTab, setSelectedTab] = useState<'demo' | 'real' | null>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const { accountList, activeLoginid } = useApiBase();
     const { client, run_panel } = useStore() ?? {};
@@ -60,8 +61,9 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
 
     const toggleDropdown = useCallback(() => {
         if (is_bot_running || isSingleAccount) return;
+        setSelectedTab(getNewApiAccountType(activeAccount, activeLoginid));
         setIsOpen(prev => !prev);
-    }, [is_bot_running, isSingleAccount]);
+    }, [activeAccount, activeLoginid, isSingleAccount, is_bot_running]);
 
     const handleAccountSelect = useCallback(
         (loginid: string) => {
@@ -97,15 +99,10 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
     const { currency, balance } = activeAccount;
     const isVirtual = getNewApiAccountType(activeAccount, activeLoginid) === 'demo';
     const showChevron = !isSingleAccount && !is_bot_running;
-    const activeTab: 'demo' | 'real' = isVirtual ? 'demo' : 'real';
-    const visibleAccounts = formattedAccounts.filter(account => (activeTab === 'demo' ? account.isVirtual : !account.isVirtual));
-
-    const handleTabChange = (tab: 'demo' | 'real') => {
-        const tabAccount = formattedAccounts.find(account => (tab === 'demo' ? account.isVirtual : !account.isVirtual));
-        if (tabAccount) {
-            handleAccountSelect(tabAccount.loginid);
-        }
-    };
+    const activeTab: 'demo' | 'real' = selectedTab ?? (isVirtual ? 'demo' : 'real');
+    const visibleAccounts = formattedAccounts.filter(account =>
+        activeTab === 'demo' ? account.isVirtual : !account.isVirtual
+    );
 
     return (
         <div className='acc-info__wrapper' ref={wrapperRef}>
@@ -165,7 +162,7 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
             </AccountInfoWrapper>
 
             {isOpen && (
-                <div className='acc-modal-backdrop' role='presentation'>
+                <div className='acc-modal-backdrop' role='presentation' onMouseDown={e => e.stopPropagation()}>
                     <div className='acc-modal' role='dialog' aria-modal='true' aria-label='Accounts'>
                         <div className='acc-modal__tabs' role='tablist' aria-label='Account type'>
                             <button
@@ -173,7 +170,7 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                                 role='tab'
                                 aria-selected={activeTab === 'real'}
                                 className={classNames('acc-modal__tab', { 'acc-modal__tab--active': activeTab === 'real' })}
-                                onClick={() => handleTabChange('real')}
+                                onClick={() => setSelectedTab('real')}
                             >
                                 Real
                             </button>
@@ -182,7 +179,7 @@ const AccountSwitcher = observer(({ activeAccount }: TAccountSwitcher) => {
                                 role='tab'
                                 aria-selected={activeTab === 'demo'}
                                 className={classNames('acc-modal__tab', { 'acc-modal__tab--active': activeTab === 'demo' })}
-                                onClick={() => handleTabChange('demo')}
+                                onClick={() => setSelectedTab('demo')}
                             >
                                 Demo
                             </button>
