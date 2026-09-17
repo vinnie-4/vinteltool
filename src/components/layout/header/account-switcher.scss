@@ -268,6 +268,179 @@
     }
 }
 
+/** @define acc-modal */
+.acc-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    background: rgba(0, 0, 0, 0.72);
+}
+
+.acc-modal {
+    width: min(648px, calc(100vw - 32px));
+    max-height: min(620px, calc(100vh - 48px));
+    overflow: hidden;
+    border-radius: 16px;
+    background: var(--general-main-2, #fff);
+    box-shadow: 0 20px 55px rgba(0, 0, 0, 0.28);
+    color: var(--text-general);
+
+    &__tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        height: 54px;
+        border-bottom: 1px solid var(--general-section-1);
+    }
+
+    &__tab {
+        position: relative;
+        border: 0;
+        background: transparent;
+        color: var(--text-general);
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+
+        &--active {
+            font-weight: 700;
+            &::after {
+                content: '';
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: -1px;
+                height: 2px;
+                background: #ff444f;
+            }
+        }
+    }
+
+    &__section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 32px 12px;
+    }
+
+    &__section-title {
+        margin: 0;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        color: var(--text-prominent) !important;
+    }
+
+    &__collapse {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: var(--text-general);
+        cursor: pointer;
+    }
+
+    &__accounts {
+        padding: 0 12px 10px;
+        max-height: 360px;
+        overflow-y: auto;
+    }
+
+    &__account {
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr) auto 22px;
+        align-items: center;
+        width: 100%;
+        min-height: 58px;
+        margin-bottom: 4px;
+        padding: 8px 16px;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        text-align: left;
+        cursor: pointer;
+        color: var(--text-general);
+
+        &:hover { background: var(--state-hover); }
+        &--selected { background: rgba(31, 40, 42, 0.14); }
+    }
+
+    &__icon {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        width: 34px;
+        height: 34px;
+    }
+
+    &__details {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    &__account-name {
+        color: var(--text-prominent);
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    &__loginid {
+        margin-top: 3px;
+        color: var(--text-less-prominent);
+        font-size: 12px;
+        line-height: 1.2;
+    }
+
+    &__balance {
+        padding-left: 12px;
+        color: var(--text-prominent);
+        font-size: 16px;
+        font-weight: 700;
+        white-space: nowrap;
+        text-align: right;
+    }
+
+    &__check {
+        color: var(--status-success);
+        font-size: 20px;
+        font-weight: 800;
+        text-align: center;
+    }
+
+    &__trader-hub {
+        min-height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 20px;
+        border-top: 1px solid var(--general-section-1);
+        color: #ff444f;
+        font-size: 15px;
+        text-align: center;
+    }
+
+    @include mobile-screen {
+        width: calc(100vw - 32px);
+        max-height: calc(100vh - 48px);
+        border-radius: 16px;
+
+        &__section-header { padding: 16px 32px 10px; }
+        &__accounts { padding-inline: 10px; }
+        &__account { grid-template-columns: 40px minmax(0, 1fr) auto 20px; padding-inline: 12px; }
+        &__account-name { font-size: 15px; }
+        &__balance { font-size: 14px; }
+    }
+}
+
 .header {
     &__logout-button {
         margin-right: 0.8rem;
