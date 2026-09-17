@@ -57,7 +57,7 @@ export default function ChunkLoader({ message }: { message: string }) {
                     justify-content: center;
                     overflow: hidden;
                     box-sizing: border-box;
-                    background: #020817 url('/vinteltool-bg.jpg') center center / cover no-repeat;
+                    background: #020817 url('/vinteltool-brand-bg.jpg') center center / cover no-repeat;
                     color: #fff;
                     font-family: Arial, Helvetica, sans-serif;
                     isolation: isolate;
