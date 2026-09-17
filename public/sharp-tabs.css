@@ -7,6 +7,48 @@
     border-bottom-right-radius: 0 !important;
 }
 
+/* Keep the navy strip only at the tab-row height; do not stretch it vertically. */
+.main__container .dc-tabs__list,
+.main__container .dc-tabs__list--header--main__tabs {
+    background: #061a3a !important;
+    box-shadow: none !important;
+    clip-path: none !important;
+}
+
+@media (max-width: 1024px) {
+    .main__container .dc-tabs__list--header--main__tabs {
+        width: 100% !important;
+        min-width: 100% !important;
+        height: 4.8rem !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        background: #061a3a !important;
+    }
+
+    .main__container .dc-tabs__list {
+        min-width: 100% !important;
+        height: 4.8rem !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        background: #061a3a !important;
+    }
+
+    /* Slightly tighten mobile/tablet tab sizing without changing tab behavior. */
+    .main__container .dc-tabs__item {
+        padding-left: 1.5rem !important;
+        padding-right: 1.5rem !important;
+        font-size: 14px !important;
+    }
+
+    .main__container .dc-tabs__item svg {
+        margin-inline-end: 0.25rem !important;
+    }
+}
+
 /* Disable the tab-edge fade overlays without changing tab scrolling or behavior. */
 .tabs-shadow,
 .tabs-shadow--left,
