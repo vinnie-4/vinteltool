@@ -139,20 +139,9 @@ const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher 
                                 )}
                             </p>
                             {showChevron && (
-                                <span
-                                    className={classNames('acc-info__select-arrow', {
-                                        'acc-info__select-arrow--invert': isOpen,
-                                    })}
-                                    aria-hidden='true'
-                                >
+                                <span className={classNames('acc-info__select-arrow', { 'acc-info__select-arrow--invert': isOpen })} aria-hidden='true'>
                                     <svg width='12' height='12' viewBox='0 0 12 12' fill='none'>
-                                        <path
-                                            d='M2 4L6 8L10 4'
-                                            stroke='currentColor'
-                                            strokeWidth='1.5'
-                                            strokeLinecap='round'
-                                            strokeLinejoin='round'
-                                        />
+                                        <path d='M2 4L6 8L10 4' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round' />
                                     </svg>
                                 </span>
                             )}
@@ -165,66 +154,23 @@ const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher 
                 <div className='acc-modal-backdrop' role='presentation' onMouseDown={e => e.stopPropagation()}>
                     <div className='acc-modal' role='dialog' aria-modal='true' aria-label='Accounts'>
                         <div className='acc-modal__tabs' role='tablist' aria-label='Account type'>
-                            <button
-                                type='button'
-                                role='tab'
-                                aria-selected={activeTab === 'real'}
-                                className={classNames('acc-modal__tab', { 'acc-modal__tab--active': activeTab === 'real' })}
-                                onClick={() => setSelectedTab('real')}
-                            >
-                                Real
-                            </button>
-                            <button
-                                type='button'
-                                role='tab'
-                                aria-selected={activeTab === 'demo'}
-                                className={classNames('acc-modal__tab', { 'acc-modal__tab--active': activeTab === 'demo' })}
-                                onClick={() => setSelectedTab('demo')}
-                            >
-                                Demo
-                            </button>
+                            <button type='button' role='tab' aria-selected={activeTab === 'real'} className={classNames('acc-modal__tab', { 'acc-modal__tab--active': activeTab === 'real' })} onClick={() => setSelectedTab('real')}>Real</button>
+                            <button type='button' role='tab' aria-selected={activeTab === 'demo'} className={classNames('acc-modal__tab', { 'acc-modal__tab--active': activeTab === 'demo' })} onClick={() => setSelectedTab('demo')}>Demo</button>
                         </div>
 
                         <div className='acc-modal__section-header'>
-                            <Text size='xs' className='acc-modal__section-title'>
-                                {activeTab === 'demo' ? 'Deriv account' : 'Deriv accounts'}
-                            </Text>
-                            <button
-                                type='button'
-                                className='acc-modal__collapse'
-                                aria-label='Close accounts'
-                                onClick={() => setIsOpen(false)}
-                            >
-                                <svg width='18' height='18' viewBox='0 0 18 18' fill='none' aria-hidden='true'>
-                                    <path d='M5 11L9 7L13 11' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' />
-                                </svg>
+                            <Text size='xs' className='acc-modal__section-title'>{activeTab === 'demo' ? 'Deriv account' : 'Deriv accounts'}</Text>
+                            <button type='button' className='acc-modal__collapse' aria-label='Close accounts' onClick={() => setIsOpen(false)}>
+                                <svg width='18' height='18' viewBox='0 0 18 18' fill='none' aria-hidden='true'><path d='M5 11L9 7L13 11' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' /></svg>
                             </button>
                         </div>
 
                         <div className='acc-modal__accounts' role='listbox'>
                             {visibleAccounts.map(account => (
-                                <button
-                                    type='button'
-                                    key={account.loginid}
-                                    role='option'
-                                    aria-selected={account.isActive}
-                                    className={classNames('acc-modal__account', {
-                                        'acc-modal__account--selected': account.isActive,
-                                    })}
-                                    onClick={() => handleAccountSelect(account.loginid)}
-                                >
-                                    <span className='acc-modal__icon' aria-hidden='true'>
-                                        <CurrencyIcon currency={account.currency?.toLowerCase()} isVirtual={account.isVirtual} />
-                                    </span>
-                                    <span className='acc-modal__details'>
-                                        <span className='acc-modal__account-name'>
-                                            {activeTab === 'demo' ? 'Demo' : getCurrencyDisplayCode(account.currency)}
-                                        </span>
-                                        <span className='acc-modal__loginid'>{account.loginid}</span>
-                                    </span>
-                                    <span className='acc-modal__balance'>
-                                        {account.currency ? `${account.balance} ${getCurrencyDisplayCode(account.currency)}` : 'No currency'}
-                                    </span>
+                                <button type='button' key={account.loginid} role='option' aria-selected={account.isActive} className={classNames('acc-modal__account', { 'acc-modal__account--selected': account.isActive })} onClick={() => handleAccountSelect(account.loginid)}>
+                                    <span className='acc-modal__icon' aria-hidden='true'><CurrencyIcon currency={account.currency?.toLowerCase()} isVirtual={account.isVirtual} /></span>
+                                    <span className='acc-modal__details'><span className='acc-modal__account-name'>{activeTab === 'demo' ? 'Demo' : getCurrencyDisplayCode(account.currency)}</span><span className='acc-modal__loginid'>{account.loginid}</span></span>
+                                    <span className='acc-modal__balance'>{account.currency ? `${account.balance} ${getCurrencyDisplayCode(account.currency)}` : 'No currency'}</span>
                                     {account.isActive && <span className='acc-modal__check' aria-label='Selected'>✓</span>}
                                 </button>
                             ))}
@@ -235,6 +181,7 @@ const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher 
                         <button
                             type='button'
                             className='acc-modal__logout'
+                            style={{ width: '100%', minHeight: '72px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', padding: '0 32px', border: 0, borderTop: '4px solid #f4f4f4', borderRadius: 0, background: '#fff', color: '#333', fontSize: '15px', fontWeight: 400, textAlign: 'right', cursor: 'pointer' }}
                             onClick={() => {
                                 setIsOpen(false);
                                 onLogout?.();
