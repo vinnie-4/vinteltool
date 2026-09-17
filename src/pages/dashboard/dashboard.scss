@@ -111,6 +111,7 @@
     &__dashboard {
         display: flex;
         width: 100%;
+        background: #020817 url('/vinteltool-dashboard-bg.jpg') center center / cover no-repeat;
 
         &--tour-active {
             width: calc(100% - 36rem);
@@ -171,7 +172,7 @@
             align-items: flex-start;
             height: var(--tab-content-height);
             flex-grow: 1;
-            background: var(--general-main-1);
+            background: #020817 url('/vinteltool-dashboard-bg.jpg') center center / cover no-repeat;
             overflow: hidden;
             position: relative;
 
@@ -303,7 +304,7 @@
 
         &__info-panel {
             position: relative;
-            background-color: var(--general-main-1);
+            background: #020817 url('/vinteltool-dashboard-bg.jpg') center center / cover no-repeat;
             padding: 2.4rem;
             margin-inline-start: 1.6rem;
             display: none;
