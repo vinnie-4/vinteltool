@@ -9,6 +9,7 @@ import { DBOT_TABS } from '@/constants/bot-contents';
 import { useStore } from '@/hooks/useStore';
 import { Localize, localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
+import './quick-actions.scss';
 
 type TCardProps = { has_dashboard_strategies: boolean; is_mobile: boolean };
 
