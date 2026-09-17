@@ -79,9 +79,11 @@ export default function ChunkLoader({ message }: { message: string }) {
                     box-sizing: border-box;
                     padding: 32px 24px 20px;
                     border-radius: 16px;
-                    background: rgba(2, 8, 23, .42);
-                    border: 1px solid rgba(255, 255, 255, .10);
-                    box-shadow: 0 20px 50px rgba(0, 0, 0, .35);
+                    background: rgba(15, 23, 42, .72);
+                    border: 1px solid rgba(255, 255, 255, .18);
+                    box-shadow: 0 20px 50px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .08);
+                    backdrop-filter: blur(18px) saturate(125%);
+                    -webkit-backdrop-filter: blur(18px) saturate(125%);
                     text-align: center;
                 }
 
@@ -91,8 +93,8 @@ export default function ChunkLoader({ message }: { message: string }) {
                     height: 52px;
                     margin: 0 auto 16px;
                     border-radius: 12px;
-                    background: rgba(2, 8, 23, .28);
-                    border: 1px solid rgba(255, 255, 255, .18);
+                    background: rgba(15, 23, 42, .48);
+                    border: 1px solid rgba(255, 255, 255, .22);
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -102,6 +104,7 @@ export default function ChunkLoader({ message }: { message: string }) {
                     letter-spacing: 1px;
                     color: #fff;
                     isolation: isolate;
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 8px 24px rgba(0, 0, 0, .18);
                 }
 
                 .vinteltool-loader__badge::before {
