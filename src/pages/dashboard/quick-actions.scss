@@ -50,8 +50,21 @@
     text-align: start;
     cursor: pointer;
     overflow: hidden;
+    opacity: 0;
+    transform: translateY(14px);
+    animation: quick-card-enter .42s cubic-bezier(.22,.61,.36,1) forwards;
     transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
 }
+
+@keyframes quick-card-enter {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.tab__dashboard__quick-card:nth-child(1) { animation-delay: 0ms; }
+.tab__dashboard__quick-card:nth-child(2) { animation-delay: 80ms; }
+.tab__dashboard__quick-card:nth-child(3) { animation-delay: 160ms; }
+.tab__dashboard__quick-card:nth-child(4) { animation-delay: 240ms; }
 
 .tab__dashboard__quick-card::before {
     content: '';
@@ -61,10 +74,80 @@
     background: linear-gradient(135deg, rgba(255, 255, 255, .06), transparent 42%);
 }
 
-.tab__dashboard__quick-card:hover {
-    transform: translateY(-2px);
+ .tab__dashboard__quick-card:hover,
+.tab__dashboard__quick-card:focus-visible,
+.tab__dashboard__quick-card:active {
+    transform: translateY(-4px) scale(1.01);
     border-color: color-mix(in srgb, var(--card-accent) 65%, rgba(115, 174, 215, .35));
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 18px 38px rgba(0, 0, 0, .28), 0 0 24px color-mix(in srgb, var(--card-accent) 14%, transparent);
+}
+
+.tab__dashboard__quick-card:active {
+    transform: translateY(-1px) scale(.995);
+}
+
+.tab__dashboard__quick-card__icon {
+    transition: transform .22s ease;
+}
+
+.tab__dashboard__quick-card:hover .tab__dashboard__quick-card__icon,
+.tab__dashboard__quick-card:focus-visible .tab__dashboard__quick-card__icon,
+.tab__dashboard__quick-card:active .tab__dashboard__quick-card__icon {
+    transform: scale(1.06);
+}
+
+.tab__dashboard__quick-card--green:hover .tab__dashboard__quick-card__icon,
+.tab__dashboard__quick-card--green:focus-visible .tab__dashboard__quick-card__icon {
+    animation: quick-bot-pulse .65s ease;
+}
+
+.tab__dashboard__quick-card--purple:hover .tab__dashboard__quick-card__icon,
+.tab__dashboard__quick-card--purple:focus-visible .tab__dashboard__quick-card__icon {
+    animation: quick-gear-spin .55s ease;
+}
+
+.tab__dashboard__quick-card--amber:hover .tab__dashboard__quick-card__icon,
+.tab__dashboard__quick-card--amber:focus-visible .tab__dashboard__quick-card__icon {
+    animation: quick-icon-pulse .55s ease;
+}
+
+.tab__dashboard__quick-card__arrow {
+    transition: transform .18s ease;
+}
+
+.tab__dashboard__quick-card:hover .tab__dashboard__quick-card__arrow,
+.tab__dashboard__quick-card:focus-visible .tab__dashboard__quick-card__arrow {
+    transform: translateX(4px);
+}
+
+@keyframes quick-bot-pulse {
+    0%,100% { transform: scale(1.06); }
+    50% { transform: scale(1.14); }
+}
+
+@keyframes quick-gear-spin {
+    from { transform: scale(1.06) rotate(0deg); }
+    to { transform: scale(1.06) rotate(18deg); }
+}
+
+@keyframes quick-icon-pulse {
+    0%,100% { transform: scale(1.06); }
+    50% { transform: scale(1.16); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tab__dashboard__quick-card {
+        animation: none;
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+
+    .tab__dashboard__quick-card__icon,
+    .tab__dashboard__quick-card__arrow {
+        animation: none !important;
+        transition: none;
+    }
 }
 
 .tab__dashboard__quick-card--blue { --card-accent: #ff5a36; }
