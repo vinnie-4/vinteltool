@@ -279,8 +279,19 @@
     }
 
     .db-toolbox__content {
-        flex: 0 0 auto;
-        width: auto;
+        flex: 0 0 194px;
+        width: 194px;
+        height: 56px;
+        min-height: 56px;
+        max-height: 56px;
+        box-sizing: border-box;
+    }
+
+    .db-toolbox__controls {
+        height: 56px;
+        min-height: 56px;
+        box-sizing: border-box;
+        align-items: center;
     }
 
     .db-toolbox__controls > .toolbar__btn {
@@ -302,6 +313,9 @@
         min-width: 194px;
         height: 56px !important;
         min-height: 56px !important;
+        max-height: 56px !important;
+        box-sizing: border-box;
+        overflow: hidden;
         padding: 0 !important;
     }
 
