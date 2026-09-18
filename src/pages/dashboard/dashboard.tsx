@@ -5,6 +5,7 @@ import Text from '@/components/shared_ui/text';
 import { useStore } from '@/hooks/useStore';
 import { localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
+import { useApiBase } from '@/hooks/useApiBase';
 import OnboardTourHandler from '../tutorials/dbot-tours/onboarding-tour';
 import Cards from './cards';
 import InfoPanel from './info-panel';
@@ -15,6 +16,7 @@ type TMobileIconGuide = {
 
 const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
     const { load_modal, dashboard, google_drive } = useStore();
+    const { activeLoginid } = useApiBase();
     const { dashboard_strategies } = load_modal;
     const { is_google_drive_configured } = google_drive;
     const { active_tab, active_tour } = dashboard;
@@ -30,6 +32,18 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
             >
                 <div className='tab__dashboard__content'>
                     <div className='quick-panel'>
+                        <div className='tab__dashboard__header'>
+                            <Text
+                                className='title'
+                                as='h2'
+                                color='prominent'
+                                size={isDesktop ? 'sm' : 's'}
+                                lineHeight='xxl'
+                                weight='bold'
+                            >
+                                {activeLoginid ? `${localize('Hello')} ${activeLoginid}!` : localize('Hello trader!')}
+                            </Text>
+                        </div>
                         <div
                             className={classNames('tab__dashboard__header', {
                                 'tab__dashboard__header--listed': isDesktop && has_dashboard_strategies,
