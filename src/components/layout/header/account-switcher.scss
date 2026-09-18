@@ -594,3 +594,17 @@
         cursor: wait;
     }
 }
+
+
+.acc-modal__trader-hub a {
+    color: #ff444f !important;
+    text-decoration: underline !important;
+    text-decoration-color: #ff444f !important;
+    cursor: pointer;
+}
+
+.acc-modal__trader-hub a:hover,
+.acc-modal__trader-hub a:focus {
+    color: #ff444f !important;
+    text-decoration: underline !important;
+}
