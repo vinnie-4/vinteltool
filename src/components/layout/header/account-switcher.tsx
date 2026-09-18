@@ -111,9 +111,15 @@ const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher 
             '.acc-modal__tab, .acc-modal__account, .acc-modal__collapse, .acc-modal__logout'
         );
         whiteControls.forEach(element => {
-            element.style.setProperty('background-color', '#fff', 'important');
-            element.style.setProperty('background', '#fff', 'important');
+            const isSelectedAccount = element.classList.contains('acc-modal__account--selected');
+            const isTab = element.classList.contains('acc-modal__tab');
+            element.style.setProperty('background-color', isSelectedAccount ? '#d9ddde' : '#fff', 'important');
+            element.style.setProperty('background', isSelectedAccount ? '#d9ddde' : '#fff', 'important');
             element.style.setProperty('color', '#000', 'important');
+            if (isTab) {
+                element.style.setProperty('background-color', '#fff', 'important');
+                element.style.setProperty('background', '#fff', 'important');
+            }
         });
     }, [isOpen, activeTab, visibleAccounts.length]);
 
@@ -180,7 +186,7 @@ const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher 
 
                         <div className='acc-modal__accounts' role='listbox'>
                             {visibleAccounts.map(account => (
-                                <button type='button' key={account.loginid} role='option' aria-selected={account.isActive} className={classNames('acc-modal__account', { 'acc-modal__account--selected': account.isActive })} style={{ background: '#fff', color: '#000' }} onClick={() => handleAccountSelect(account.loginid)}>
+                                <button type='button' key={account.loginid} role='option' aria-selected={account.isActive} className={classNames('acc-modal__account', { 'acc-modal__account--selected': account.isActive })} style={{ background: account.isActive ? '#d9ddde' : '#fff', color: '#000' }} onClick={() => handleAccountSelect(account.loginid)}>
                                     <span className='acc-modal__icon' aria-hidden='true'><CurrencyIcon currency={account.currency?.toLowerCase()} isVirtual={account.isVirtual} /></span>
                                     <span className='acc-modal__details'><span className='acc-modal__account-name'>{activeTab === 'demo' ? 'Demo' : getCurrencyDisplayCode(account.currency)}</span><span className='acc-modal__loginid'>{account.loginid}</span></span>
                                     <span className='acc-modal__balance'>{account.currency ? `${account.balance} ${getCurrencyDisplayCode(account.currency)}` : 'No currency'}</span>
