@@ -22,13 +22,20 @@ type TQuickCard = {
     callback: () => void;
 };
 
-const ModernIcon = ({ type }: { type: 'local' | 'bot' | 'quick' }) => {
+const ModernIcon = ({ type }: { type: 'local' | 'bot' | 'gear' | 'quick' }) => {
     const common = { width: '50', height: '50', viewBox: '0 0 72 72', fill: 'none', xmlns: 'http://www.w3.org/2000/svg' };
 
     if (type === 'local') return (
         <svg {...common} aria-hidden='true'>
             <path d='M12 22C12 18.7 14.7 16 18 16H31L36 21H54C57.3 21 60 23.7 60 27V52C60 55.3 57.3 58 54 58H18C14.7 58 12 55.3 12 52V22Z' fill='#F7C843' stroke='#F59E0B' strokeWidth='3' strokeLinejoin='round' />
             <path d='M12 27H60' stroke='#F59E0B' strokeWidth='3' />
+        </svg>
+    );
+
+    if (type === 'gear') return (
+        <svg {...common} aria-hidden='true'>
+            <path d='M36 25.5a10.5 10.5 0 1 0 0 21 10.5 10.5 0 0 0 0-21Zm24 10.5-6-.2a19.2 19.2 0 0 0-1.8-4.4l3.9-4.6-5.5-5.5-4.6 3.9a19.2 19.2 0 0 0-4.4-1.8l-.2-6h-7.8l-.2 6a19.2 19.2 0 0 0-4.4 1.8l-4.6-3.9-5.5 5.5 3.9 4.6a19.2 19.2 0 0 0-1.8 4.4l-6 .2v7.8l6 .2a19.2 19.2 0 0 0 1.8 4.4l-3.9 4.6 5.5 5.5 4.6-3.9a19.2 19.2 0 0 0 4.4 1.8l.2 6h7.8l.2-6a19.2 19.2 0 0 0 4.4-1.8l4.6 3.9 5.5-5.5-3.9-4.6a19.2 19.2 0 0 0 1.8-4.4l6-.2v-7.8Z' fill='none' stroke='currentColor' strokeWidth='3' strokeLinejoin='round' />
+            <circle cx='36' cy='36' r='7' fill='none' stroke='currentColor' strokeWidth='3' />
         </svg>
     );
 
@@ -85,7 +92,7 @@ const Cards = observer(({ is_mobile, has_dashboard_strategies: _has_dashboard_st
         },
         {
             id: 'bot-builder',
-            icon: <ModernIcon type='bot' />,
+            icon: <ModernIcon type='gear' />,
             title: <Localize i18n_default_text='Bot Builder' />,
             description: <Localize i18n_default_text='Build a custom bot with the visual editor' />,
             tone: 'purple',
