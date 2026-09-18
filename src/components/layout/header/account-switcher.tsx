@@ -104,6 +104,23 @@ const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher 
         activeTab === 'demo' ? account.isVirtual : !account.isVirtual
     );
 
+    // Some global button/theme rules use !important. Force the account modal
+    // controls back to the native/default white surface after they mount.
+    useEffect(() => {
+        if (!isOpen) return;
+        const modal = document.querySelector('.acc-modal');
+        if (!modal) return;
+
+        const whiteControls = modal.querySelectorAll<HTMLElement>(
+            '.acc-modal__tab, .acc-modal__account, .acc-modal__collapse, .acc-modal__logout'
+        );
+        whiteControls.forEach(element => {
+            element.style.setProperty('background-color', '#fff', 'important');
+            element.style.setProperty('background', '#fff', 'important');
+            element.style.setProperty('color', '#000', 'important');
+        });
+    }, [isOpen, activeTab, visibleAccounts.length]);
+
     return (
         <div className='acc-info__wrapper' ref={wrapperRef}>
             <AccountInfoWrapper>
