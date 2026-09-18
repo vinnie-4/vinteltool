@@ -517,3 +517,42 @@
         }
     }
 }
+
+
+/* Account modal text: use true black, never navy/blue. */
+.acc-modal {
+    &__tab,
+    &__tab:hover,
+    &__tab:focus,
+    &__tab:active,
+    &__tab--active,
+    &__tab--active:hover,
+    &__tab--active:focus,
+    &__tab--active:active,
+    &__section-title,
+    &__account,
+    &__account:hover,
+    &__account:focus,
+    &__account:active,
+    &__account--selected,
+    &__account-name,
+    &__balance,
+    &__collapse,
+    &__collapse:hover,
+    &__collapse:focus,
+    &__collapse:active,
+    &__logout,
+    &__logout:hover,
+    &__logout:focus,
+    &__logout:active {
+        color: #000 !important;
+    }
+
+    &__loginid {
+        color: #000 !important;
+    }
+
+    &__trader-hub {
+        color: #ff444f !important;
+    }
+}
