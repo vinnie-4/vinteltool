@@ -30,9 +30,8 @@
     }
 
     &__content {
-        flex: 0 0 auto;
-        display: flex;
-        flex-direction: column;
+        flex: 0 0 194px;
+        display: block;
         overflow: visible;
         user-select: none;
         z-index: 51;
@@ -40,8 +39,10 @@
         border: 0;
         background: #ffffff;
         position: relative;
+        align-self: flex-start;
         min-width: 0;
-        width: auto;
+        width: 194px;
+        height: 56px;
     }
 
     &__header {
@@ -114,7 +115,7 @@
 
     &__content-wrapper {
         position: absolute;
-        top: calc(100% + 0.1rem);
+        top: 56px;
         inset-inline-start: 0;
         width: 26rem;
         height: 0;
@@ -285,6 +286,7 @@
         min-height: 56px;
         max-height: 56px;
         box-sizing: border-box;
+        align-self: flex-start;
     }
 
     .db-toolbox__controls {
