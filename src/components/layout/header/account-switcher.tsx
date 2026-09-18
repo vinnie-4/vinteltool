@@ -204,7 +204,21 @@ const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher 
 
                         <div className='acc-modal__accounts' role='listbox'>
                             {visibleAccounts.map(account => (
-                                <button type='button' key={account.loginid} role='option' aria-selected={account.isActive} className={classNames('acc-modal__account', { 'acc-modal__account--selected': account.isActive })} style={{ background: account.isActive ? '#d9ddde' : '#fff', color: '#000' }} onClick={() => handleAccountSelect(account.loginid)}>
+                                <div
+                                    key={account.loginid}
+                                    role='option'
+                                    aria-selected={account.isActive}
+                                    tabIndex={0}
+                                    className={classNames('acc-modal__account', { 'acc-modal__account--selected': account.isActive })}
+                                    style={{ background: account.isActive ? '#d9ddde' : '#fff', color: '#000' }}
+                                    onClick={() => handleAccountSelect(account.loginid)}
+                                    onKeyDown={e => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            handleAccountSelect(account.loginid);
+                                        }
+                                    }}
+                                >
                                     <span className='acc-modal__icon' aria-hidden='true'><CurrencyIcon currency={account.currency?.toLowerCase()} isVirtual={account.isVirtual} /></span>
                                     <span className='acc-modal__details'><span className='acc-modal__account-name'>{activeTab === 'demo' ? 'Demo' : getCurrencyDisplayCode(account.currency)}</span><span className='acc-modal__loginid'>{account.loginid}</span></span>
                                     <span className='acc-modal__balance'>{account.currency ? `${account.balance} ${getCurrencyDisplayCode(account.currency)}` : 'No currency'}</span>
@@ -223,7 +237,7 @@ const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher 
                                         </button>
                                     )}
                                     {account.isActive && !account.isVirtual && <span className='acc-modal__check' aria-label='Selected'>✓</span>}
-                                </button>
+                                </div>
                             ))}
                         </div>
 
