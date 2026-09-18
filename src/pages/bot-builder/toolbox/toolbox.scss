@@ -283,17 +283,26 @@
         width: auto;
     }
 
-    .db-toolbox__controls > .toolbar__btn,
-    .db-toolbox__header {
-        flex: 0 0 auto;
-        width: auto !important;
-        max-width: none;
-        min-width: 0;
-        height: 3.4rem !important;
-        min-height: 3.4rem !important;
+    .db-toolbox__controls > .toolbar__btn {
+        flex: 0 0 203px;
+        width: 203px !important;
+        max-width: 203px;
+        min-width: 203px;
+        height: 56px !important;
+        min-height: 56px !important;
         padding: 0 0.8rem !important;
         font-size: 1.2rem;
         white-space: nowrap;
+    }
+
+    .db-toolbox__header {
+        flex: 0 0 194px;
+        width: 194px !important;
+        max-width: 194px;
+        min-width: 194px;
+        height: 56px !important;
+        min-height: 56px !important;
+        padding: 0 !important;
     }
 
     .db-toolbox__title {
