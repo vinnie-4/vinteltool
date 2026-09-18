@@ -75,6 +75,8 @@ const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher 
         [activeLoginid, client]
     );
 
+    const activeTab: 'demo' | 'real' = selectedTab ?? (getNewApiAccountType(activeAccount, activeLoginid) === 'demo' ? 'demo' : 'real');
+
     const handleResetDemoBalance = useCallback(async () => {
         if (activeTab !== 'demo' || isResettingBalance || !api_base.api) return;
 
@@ -108,12 +110,8 @@ const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher 
             .sort((a, b) => (a.isActive ? -1 : b.isActive ? 1 : 0));
     }, [accountList, activeLoginid]);
 
-    if (!activeAccount) return null;
-
-    const { currency, balance } = activeAccount;
     const isVirtual = getNewApiAccountType(activeAccount, activeLoginid) === 'demo';
     const showChevron = !isSingleAccount && !is_bot_running;
-    const activeTab: 'demo' | 'real' = selectedTab ?? (isVirtual ? 'demo' : 'real');
     const visibleAccounts = formattedAccounts.filter(account =>
         activeTab === 'demo' ? account.isVirtual : !account.isVirtual
     );
@@ -140,6 +138,8 @@ const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher 
             }
         });
     }, [isOpen, activeTab, visibleAccounts.length]);
+
+    if (!activeAccount) return null;
 
     return (
         <div className='acc-info__wrapper' ref={wrapperRef}>
