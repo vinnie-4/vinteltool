@@ -52,14 +52,15 @@
         font-size: 1.4rem;
         text-align: left;
         color: #0f172a;
-        background: #f1f3f5;
-        border: 1px solid #dcdfe4;
-        border-radius: 8px;
+        background: transparent;
+        border: 0;
+        border-radius: 0;
         height: 3.6rem;
         min-width: 0;
         width: auto;
         display: flex;
         align-items: center;
+        box-shadow: none;
     }
 
     &__title {
@@ -317,7 +318,7 @@
         min-height: 56px !important;
         max-height: 56px !important;
         box-sizing: border-box;
-        overflow: hidden;
+        overflow: visible;
         padding: 0 !important;
     }
 
