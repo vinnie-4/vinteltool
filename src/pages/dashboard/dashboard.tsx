@@ -40,6 +40,7 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                                 size={isDesktop ? 'sm' : 's'}
                                 lineHeight='xxl'
                                 weight='bold'
+                                style={{ fontSize: '18px', color: '#FFFFFF' }}
                             >
                                 {activeLoginid ? `${localize('Hello')} ${activeLoginid}!` : localize('Hello trader!')}
                             </Text>
