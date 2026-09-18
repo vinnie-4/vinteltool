@@ -498,6 +498,11 @@
         background: #fff !important;
     }
 
+    &__account--selected {
+        background: #d9ddde !important;
+        color: #000 !important;
+    }
+
     &__logout {
         display: flex;
         align-items: center;
