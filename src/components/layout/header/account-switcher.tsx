@@ -123,6 +123,8 @@ const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher 
 
     if (!activeAccount) return null;
 
+    const { currency, balance } = activeAccount;
+
     return (
         <div className='acc-info__wrapper' ref={wrapperRef}>
             <AccountInfoWrapper>
