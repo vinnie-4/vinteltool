@@ -37,7 +37,7 @@ const BotBuilder = observer(() => {
         let y = -98;
         top_blocks.forEach(block => {
             const current_pos = block.getRelativeToSurfaceXY();
-            block.moveBy(-162 - current_pos.x, y - current_pos.y);
+            block.moveBy(-145 - current_pos.x, y - current_pos.y);
             y += block.getHeightWidth().height + 56;
         });
         workspace.scroll(0, 0);
