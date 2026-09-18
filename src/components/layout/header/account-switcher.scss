@@ -293,6 +293,7 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         height: 54px;
+        flex: 0 0 54px;
         border-bottom: 1px solid #e8e8e8;
     }
 
@@ -303,6 +304,7 @@
         color: #444;
         font-size: 16px;
         font-weight: 400;
+        text-align: center;
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
 
@@ -352,7 +354,9 @@
 
     &__accounts {
         padding: 0 12px 8px;
-        max-height: 360px;
+        height: 66px;
+        min-height: 66px;
+        max-height: 66px;
         overflow-y: auto;
     }
 
@@ -438,7 +442,7 @@
         border-radius: 14px;
 
         &__section-header { padding: 0 32px; }
-        &__accounts { padding-inline: 10px; }
+        &__accounts { padding-inline: 10px; height: 66px; min-height: 66px; max-height: 66px; }
         &__account { grid-template-columns: 40px minmax(0, 1fr) auto 20px; padding-inline: 12px; }
         &__account-name { font-size: 15px; }
         &__balance { font-size: 14px; }
@@ -478,8 +482,8 @@
     &__account:focus,
     &__account:active,
     &__account--selected {
-        background: #fff !important;
-        color: #333 !important;
+        background: #d9ddde !important;
+        color: #000 !important;
     }
 
     &__collapse,
