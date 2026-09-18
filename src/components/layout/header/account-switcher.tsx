@@ -154,8 +154,8 @@ const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher 
                 <div className='acc-modal-backdrop' role='presentation' onMouseDown={e => e.stopPropagation()}>
                     <div className='acc-modal' role='dialog' aria-modal='true' aria-label='Accounts'>
                         <div className='acc-modal__tabs' role='tablist' aria-label='Account type'>
-                            <button type='button' role='tab' aria-selected={activeTab === 'real'} className={classNames('acc-modal__tab', { 'acc-modal__tab--active': activeTab === 'real' })} onClick={() => setSelectedTab('real')}>Real</button>
-                            <button type='button' role='tab' aria-selected={activeTab === 'demo'} className={classNames('acc-modal__tab', { 'acc-modal__tab--active': activeTab === 'demo' })} onClick={() => setSelectedTab('demo')}>Demo</button>
+                            <button type='button' role='tab' aria-selected={activeTab === 'real'} className={classNames('acc-modal__tab', { 'acc-modal__tab--active': activeTab === 'real' })} style={{ background: '#fff', color: '#000' }} onClick={() => setSelectedTab('real')}>Real</button>
+                            <button type='button' role='tab' aria-selected={activeTab === 'demo'} className={classNames('acc-modal__tab', { 'acc-modal__tab--active': activeTab === 'demo' })} style={{ background: '#fff', color: '#000' }} onClick={() => setSelectedTab('demo')}>Demo</button>
                         </div>
 
                         <div className='acc-modal__section-header'>
@@ -167,7 +167,7 @@ const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher 
 
                         <div className='acc-modal__accounts' role='listbox'>
                             {visibleAccounts.map(account => (
-                                <button type='button' key={account.loginid} role='option' aria-selected={account.isActive} className={classNames('acc-modal__account', { 'acc-modal__account--selected': account.isActive })} onClick={() => handleAccountSelect(account.loginid)}>
+                                <button type='button' key={account.loginid} role='option' aria-selected={account.isActive} className={classNames('acc-modal__account', { 'acc-modal__account--selected': account.isActive })} style={{ background: '#fff', color: '#000' }} onClick={() => handleAccountSelect(account.loginid)}>
                                     <span className='acc-modal__icon' aria-hidden='true'><CurrencyIcon currency={account.currency?.toLowerCase()} isVirtual={account.isVirtual} /></span>
                                     <span className='acc-modal__details'><span className='acc-modal__account-name'>{activeTab === 'demo' ? 'Demo' : getCurrencyDisplayCode(account.currency)}</span><span className='acc-modal__loginid'>{account.loginid}</span></span>
                                     <span className='acc-modal__balance'>{account.currency ? `${account.balance} ${getCurrencyDisplayCode(account.currency)}` : 'No currency'}</span>
@@ -181,7 +181,7 @@ const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher 
                         <button
                             type='button'
                             className='acc-modal__logout'
-                            style={{ width: '100%', minHeight: '72px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', padding: '0 32px', border: 0, borderTop: '4px solid #f4f4f4', borderRadius: 0, background: '#fff', color: '#333', fontSize: '15px', fontWeight: 400, textAlign: 'right', cursor: 'pointer' }}
+                            style={{ width: '100%', minHeight: '72px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', padding: '0 32px', border: 0, borderTop: '4px solid #f4f4f4', borderRadius: 0, background: '#fff', color: '#000', fontSize: '15px', fontWeight: 400, textAlign: 'right', cursor: 'pointer' }}
                             onClick={() => {
                                 setIsOpen(false);
                                 onLogout?.();
