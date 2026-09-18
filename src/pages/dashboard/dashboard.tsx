@@ -40,9 +40,9 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                                 size={isDesktop ? 'sm' : 's'}
                                 lineHeight='xxl'
                                 weight='bold'
-                                style={{ fontSize: '18px', color: '#FFFFFF' }}
+                                style={{ fontSize: '20px', color: '#FFFFFF', fontWeight: 700 }}
                             >
-                                {activeLoginid ? `${localize('Hello')} ${activeLoginid}!` : localize('Hello trader!')}
+                                {activeLoginid ? <>{localize('Hello')} {activeLoginid}<span className='dashboard-greeting-exclamation'>!</span></> : <>{localize('Hello trader')}<span className='dashboard-greeting-exclamation'>!</span></>}
                             </Text>
                         </div>
                         <div
