@@ -241,7 +241,16 @@ const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher 
                             ))}
                         </div>
 
-                        <div className='acc-modal__trader-hub'>Looking for CFD accounts? Go to Trader's Hub</div>
+                        <div className='acc-modal__trader-hub'>
+                            Looking for CFD accounts?{' '}
+                            <a
+                                href='https://app.deriv.com/'
+                                target='_blank'
+                                rel='noopener noreferrer'
+                            >
+                                Go to Trader's Hub
+                            </a>
+                        </div>
 
                         <button
                             type='button'
