@@ -279,3 +279,23 @@
         font-size: 1.05rem;
     }
 }
+
+
+/* Dashboard greeting and quick-actions spacing */
+.tab__dashboard__header {
+    margin-bottom: 1.2rem;
+}
+
+.dashboard-greeting-exclamation {
+    display: inline-block;
+    animation: dashboard-greeting-blink 60ms steps(1, end) infinite;
+}
+
+@keyframes dashboard-greeting-blink {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dashboard-greeting-exclamation { animation: none; }
+}
