@@ -453,3 +453,67 @@
         .dc-text { color: var(--text-general) !important; }
     }
 }
+
+
+/* Account modal: keep all controls on the default white button surface. */
+.acc-modal {
+    &__tab,
+    &__tab:hover,
+    &__tab:focus,
+    &__tab:active {
+        background: #fff !important;
+        color: #444 !important;
+    }
+
+    &__tab--active,
+    &__tab--active:hover,
+    &__tab--active:focus,
+    &__tab--active:active {
+        background: #fff !important;
+        color: #333 !important;
+    }
+
+    &__account,
+    &__account:hover,
+    &__account:focus,
+    &__account:active,
+    &__account--selected {
+        background: #fff !important;
+        color: #333 !important;
+    }
+
+    &__collapse,
+    &__collapse:hover,
+    &__collapse:focus,
+    &__collapse:active {
+        background: #fff !important;
+        color: #555 !important;
+    }
+
+    &__trader-hub {
+        background: #fff !important;
+    }
+
+    &__logout {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        width: 100%;
+        min-height: 72px;
+        padding: 0 28px;
+        border: 0;
+        border-top: 4px solid #f4f4f4;
+        background: #fff !important;
+        color: #333 !important;
+        font-size: 15px;
+        cursor: pointer;
+
+        &:hover,
+        &:focus,
+        &:active {
+            background: #fff !important;
+            color: #333 !important;
+        }
+    }
+}
