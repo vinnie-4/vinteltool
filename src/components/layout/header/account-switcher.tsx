@@ -37,7 +37,6 @@ const getNewApiAccountType = (account: unknown, loginid?: string): 'demo' | 'rea
 const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher & { onLogout?: () => void }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [selectedTab, setSelectedTab] = useState<'demo' | 'real' | null>(null);
-    const [isResettingBalance, setIsResettingBalance] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const { accountList, activeLoginid } = useApiBase();
     const { client, run_panel } = useStore() ?? {};
@@ -76,23 +75,6 @@ const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher 
     );
 
     const activeTab: 'demo' | 'real' = selectedTab ?? (getNewApiAccountType(activeAccount, activeLoginid) === 'demo' ? 'demo' : 'real');
-
-    const handleResetDemoBalance = useCallback(async () => {
-        if (activeTab !== 'demo' || isResettingBalance || !api_base.api) return;
-
-        setIsResettingBalance(true);
-        try {
-            // Deriv's topup_virtual API restores the currently authorized
-            // virtual-money account balance to its standard demo amount.
-            await api_base.api.send({ topup_virtual: 1 });
-            // Request a fresh balance so the header/account list reflects the reset.
-            await api_base.api.send({ balance: 1 });
-        } catch (error) {
-            console.error('[AccountSwitcher] Failed to reset demo balance:', error);
-        } finally {
-            setIsResettingBalance(false);
-        }
-    }, [activeTab, isResettingBalance]);
 
     const formattedAccounts = useMemo(() => {
         if (!accountList) return [];
@@ -222,20 +204,6 @@ const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher 
                                     <span className='acc-modal__icon' aria-hidden='true'><CurrencyIcon currency={account.currency?.toLowerCase()} isVirtual={account.isVirtual} /></span>
                                     <span className='acc-modal__details'><span className='acc-modal__account-name'>{activeTab === 'demo' ? 'Demo' : getCurrencyDisplayCode(account.currency)}</span><span className='acc-modal__loginid'>{account.loginid}</span></span>
                                     <span className='acc-modal__balance'>{account.currency ? `${account.balance} ${getCurrencyDisplayCode(account.currency)}` : 'No currency'}</span>
-                                    {account.isVirtual && account.isActive && (
-                                        <button
-                                            type='button'
-                                            className='acc-modal__reset-balance'
-                                            disabled={isResettingBalance}
-                                            aria-label='Reset demo balance to 10,000 USD'
-                                            onClick={e => {
-                                                e.stopPropagation();
-                                                void handleResetDemoBalance();
-                                            }}
-                                        >
-                                            {isResettingBalance ? 'Resetting…' : 'Reset balance'}
-                                        </button>
-                                    )}
                                     {account.isActive && !account.isVirtual && <span className='acc-modal__check' aria-label='Selected'>✓</span>}
                                 </div>
                             ))}
