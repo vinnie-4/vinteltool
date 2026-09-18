@@ -67,13 +67,9 @@ const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher 
 
     const handleAccountSelect = useCallback(
         (loginid: string) => {
-            if (loginid === activeLoginid) {
-                setIsOpen(false);
-                return;
-            }
+            if (loginid === activeLoginid) return;
             localStorage.setItem('active_loginid', loginid);
             client?.checkAndRegenerateWebSocket();
-            setIsOpen(false);
         },
         [activeLoginid, client]
     );
@@ -176,7 +172,7 @@ const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher 
                         </div>
 
                         <div className='acc-modal__section-header'>
-                            <Text size='xs' className='acc-modal__section-title'>{activeTab === 'demo' ? 'Deriv account' : 'Deriv accounts'}</Text>
+                            <Text size='xs' className='acc-modal__section-title'>Deriv accounts</Text>
                             <button type='button' className='acc-modal__collapse' aria-label='Close accounts' onClick={() => setIsOpen(false)}>
                                 <svg width='18' height='18' viewBox='0 0 18 18' fill='none' aria-hidden='true'><path d='M5 11L9 7L13 11' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' /></svg>
                             </button>
