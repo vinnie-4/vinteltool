@@ -345,3 +345,9 @@
         max-height: calc(60vh - 5rem);
     }
 }
+
+
+/* BinaryTool layout: hide the Blocks Menu control while keeping its code mounted. */
+.db-toolbox__content {
+    display: none !important;
+}
