@@ -48,7 +48,7 @@ export const MobileQSFooter = observer(({ current_step, setCurrentStep }: TMobil
                         }}
                         disabled={!isValid || quick_strategy.is_options_loading}
                     >
-                        {localize('Load into Bot Builder')}
+                        {localize('Load')}
                     </Button>
                 </div>
             )}
