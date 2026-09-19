@@ -3,6 +3,7 @@
 import React from 'react';
 import { useStore } from '@/hooks/useStore';
 import { observer } from 'mobx-react-lite';
+import { localize } from '@deriv-com/translations';
 import './quick-strategy.scss';
 import SymbolSelect from './selects/symbol';
 import TradeTypeSelect from './selects/trade-type';
