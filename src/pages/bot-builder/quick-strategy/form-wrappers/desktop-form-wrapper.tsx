@@ -9,6 +9,7 @@ import { LegacyClose1pxIcon } from '@deriv/quill-icons/Legacy';
 import { localize } from '@deriv-com/translations';
 import { STRATEGIES } from '../config';
 import { TFormData, TFormValues } from '../types';
+import QSStepper from './qs-stepper';
 import StrategyTabContent from './strategy-tab-content';
 import StrategyTemplatePicker from './strategy-template-picker';
 import { QsSteps } from './trade-constants';
@@ -22,38 +23,23 @@ type TDesktopFormWrapper = {
     setSelectedTradeType: (selected_trade_type: string) => void;
 };
 
-const QuickSelectionPanel = ({
-    selected_trade_type,
-    selected_startegy_label,
-    children,
-}: Pick<TDesktopFormWrapper, 'selected_trade_type' | 'children'> & { selected_startegy_label: string }) => (
+const QuickSelectionPanel = ({ selected_trade_type, selected_startegy_label, children }: Pick<TDesktopFormWrapper, 'selected_trade_type' | 'children'> & { selected_startegy_label: string }) => (
     <>
         <div className='qs__selected-options'>
             <div className='qs__selected-options__item'>
-                <span className='qs__selected-options__eyebrow'>{localize('Trade type')}</span>
+                <Text size='xs' lineHeight='s'>{localize('Trade type')}</Text>
                 <Text size='xs' weight='bold' lineHeight='s'>{selected_trade_type}</Text>
             </div>
             <div className='qs__selected-options__item'>
-                <span className='qs__selected-options__eyebrow'>{localize('Bot template')}</span>
+                <Text size='xs' lineHeight='s'>Strategy</Text>
                 <Text className='qs__selected-options__item__description' weight='bold' lineHeight='s'>{selected_startegy_label}</Text>
             </div>
-            <div className='qs__selected-options__status'>
-                <span className='qs__status-dot' />
-                <span>{localize('Ready to configure')}</span>
-            </div>
         </div>
-        <StrategyTabContent formfields={children} active_tab='TRADE_PARAMETERS' />
+        <StrategyTabContent formfields={children} active_tab={'TRADE_PARAMETERS'} />
     </>
 );
 
-const FormWrapper = observer(({
-    children,
-    current_step,
-    setCurrentStep,
-    onClickClose,
-    selected_trade_type,
-    setSelectedTradeType,
-}: TDesktopFormWrapper) => {
+const FormWrapper = observer(({ children, current_step, setCurrentStep, onClickClose, selected_trade_type, setSelectedTradeType }: TDesktopFormWrapper) => {
     const scroll_ref = React.useRef<HTMLDivElement & SVGSVGElement>(null);
     const { submitForm, isValid, setFieldValue, validateForm, values } = useFormikContext<TFormValues>();
     const { quick_strategy } = useStore();
@@ -78,90 +64,47 @@ const FormWrapper = observer(({
         onClickClose();
     };
 
-    const onBack = () => setCurrentStep(QsSteps.StrategySelect);
+    const onBack = () => { setCurrentStep(QsSteps.StrategySelect); };
 
     const renderContent = React.useCallback(() => {
-        if (is_selected_strategy_step) {
-            return (
-                <div className='qs__builder-start'>
-                    <div className='qs__builder-intro'>
-                        <span className='qs__builder-kicker'>{localize('VintelTool')}</span>
-                        <h2>{localize('Choose a bot template')}</h2>
-                        <p>{localize('Start with a trading template, then configure the rules and risk controls before loading it into Bot Builder.')}</p>
-                    </div>
-                    <StrategyTemplatePicker setCurrentStep={setCurrentStep} setSelectedTradeType={setSelectedTradeType} />
-                </div>
-            );
+        switch (current_step) {
+            case QsSteps.StrategySelect:
+                return <StrategyTemplatePicker setCurrentStep={setCurrentStep} setSelectedTradeType={setSelectedTradeType} />;
+            case QsSteps.StrategyVerified:
+            case QsSteps.StrategyCompleted:
+                return <QuickSelectionPanel selected_trade_type={selected_trade_type} selected_startegy_label={selected_startegy_label}>{children}</QuickSelectionPanel>;
+            default:
+                return null;
         }
-
-        return (
-            <div className='qs__builder-configure'>
-                <div className='qs__builder-intro qs__builder-intro--compact'>
-                    <span className='qs__builder-kicker'>{localize('Bot configuration')}</span>
-                    <h2>{localize('Configure your bot')}</h2>
-                    <p>{localize('Set the market, contract, stake and risk controls. Nothing is loaded until you press Load into Bot Builder.')}</p>
-                </div>
-                <QuickSelectionPanel selected_trade_type={selected_trade_type} selected_startegy_label={selected_startegy_label}>
-                    {children}
-                </QuickSelectionPanel>
-            </div>
-        );
-    }, [
-        children,
-        is_selected_strategy_step,
-        selected_startegy_label,
-        selected_trade_type,
-        setCurrentStep,
-        setSelectedTradeType,
-    ]);
+    }, [current_step, selected_trade_type, selected_startegy_label, children, setCurrentStep, setSelectedTradeType]);
 
     return !is_stop_bot_dialog_open && (
-        <div className='qs qs--professional'>
-            <header className='qs__head'>
-                <div className='qs__brand'>
-                    <span className='qs__brand-mark'>QB</span>
-                    <div>
-                        <Text weight='bold'>{localize('Quick Bot Builder')}</Text>
-                        <span>{localize('Build a strategy. Load it into your bot.')}</span>
-                    </div>
+        <div className='qs'>
+            <div className='qs__head'>
+                <div className='qs__head__title'><Text weight='bold'>{localize('Quick Strategy')}</Text></div>
+                <div className='qs__head__action'>
+                    <span data-testid='qs-desktop-close-button' onClick={onClickClose} tabIndex={0} onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') onClickClose(); }}>
+                        <LegacyClose1pxIcon height='20px' width='20px' />
+                    </span>
                 </div>
-                <button className='qs__close' type='button' onClick={onClickClose} aria-label={localize('Close')}>
-                    <LegacyClose1pxIcon height='20px' width='20px' />
-                </button>
-            </header>
-
-            <div className='qs__progress'>
-                <button type='button' className={is_selected_strategy_step ? 'is-active' : 'is-complete'} onClick={() => setCurrentStep(QsSteps.StrategySelect)}>
-                    <span>01</span>{localize('Template')}
-                </button>
-                <span className='qs__progress-line' />
-                <button type='button' className={!is_selected_strategy_step ? 'is-active' : ''} disabled={is_selected_strategy_step}>
-                    <span>02</span>{localize('Configure')}
-                </button>
-                <div className='qs__progress-spacer' />
-                <span className='qs__live-pill'><span className='qs__status-dot' />{localize('Bot Builder ready')}</span>
             </div>
-
-            <main className='qs__body qs__body--professional'>
-                <ThemedScrollbars
-                    className='qs__form__container qs__form__container--footer'
-                    autohide={false}
-                    refSetter={scroll_ref}
-                >
-                    {renderContent()}
-                </ThemedScrollbars>
-
-                {!is_selected_strategy_step && (
-                    <footer className='qs__body__content__footer'>
-                        <Button transparent classNameSpan='qs__body__content__footer--back' onClick={onBack}>
-                            {localize('Back')}
-                        </Button>
-                        <Button primary disabled={!isValid || quick_strategy.is_options_loading} onClick={onLoad}>
-                            {localize('Load into Bot Builder')}
-                        </Button>
-                    </footer>
-                )}
-            </main>
+            <div className='qs__body'>
+                <div className='qs__body__sidebar'>
+                    <div className='qs__body__sidebar__subtitle'><Text size='xs'>{localize('Choose a template below and set your trade parameters.')}</Text></div>
+                    <QSStepper current_step={current_step} />
+                </div>
+                <div className='qs__body__content'>
+                    <ThemedScrollbars className='qs__form__container qs__form__container--footer' autohide={false} refSetter={scroll_ref}>
+                        {renderContent()}
+                    </ThemedScrollbars>
+                    {!is_selected_strategy_step && (
+                        <div className='qs__body__content__footer'>
+                            <Button transparent classNameSpan='qs__body__content__footer--back' disabled={is_selected_strategy_step} onClick={onBack}>{localize('Back')}</Button>
+                            <Button primary disabled={!isValid || quick_strategy.is_options_loading} onClick={onLoad}>{localize('Load')}</Button>
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
     );
 });
