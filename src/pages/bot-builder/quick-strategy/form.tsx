@@ -109,7 +109,15 @@ const QuickStrategyForm = observer(() => {
         return config.map((group, group_index) => {
             if (!group?.length) return null;
             return (
-                <div className='qs__body__content__form__group' key={group_index}>
+                <section className='qs__body__content__form__group' key={group_index}>
+                    <div className='qs__group-heading'>
+                        <span className='qs__group-index'>{String(group_index + 1).padStart(2, '0')}</span>
+                        <div>
+                            <strong>{group_index === 0 ? localize('Trade setup') : localize('Risk & money management')}</strong>
+                            <span>{group_index === 0 ? localize('Define where and how the bot enters trades.') : localize('Control profit, loss and stake progression.')}</span>
+                        </div>
+                    </div>
+                    <div className='qs__group-fields'>
                     {group.map((field, field_index) => {
                         const key = `${field.name || field.type} + ${field_index}`;
 
@@ -242,7 +250,8 @@ const QuickStrategyForm = observer(() => {
                                 return null;
                         }
                     })}
-                </div>
+                    </div>
+                </section>
             );
         });
     };
