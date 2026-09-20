@@ -16,9 +16,20 @@ export const MobileQSFooter = observer(({ current_step, setCurrentStep }: TMobil
     const { quick_strategy } = useStore();
     const { isValid } = useFormikContext<TFormValues>();
     const { handleSubmit } = useQsSubmitHandler();
+    const { onSubmit } = quick_strategy;
     const is_verified_or_completed_step =
         current_step === QsSteps.StrategyVerified || current_step === QsSteps.StrategyCompleted;
     const is_selected_strategy_step = current_step === QsSteps.StrategySelect;
+
+    const onLoad = async () => {
+        await setFieldValue('action', 'EDIT');
+        validateForm();
+        submitForm().then((form_data: TFormData | void) => {
+            if (isValid && form_data) {
+                onSubmit(form_data);
+            }
+        });
+    };
 
     const onRun = () => {
         /* [AI] - Analytics removed - rudderstack event call removed */
@@ -36,6 +47,17 @@ export const MobileQSFooter = observer(({ current_step, setCurrentStep }: TMobil
                 <div className='qs__body__content__footer'>
                     <Button secondary disabled={is_selected_strategy_step} onClick={onBack}>
                         {localize('Back')}
+                    </Button>
+                    <Button
+                        secondary
+                        data-testid='qs-load-button'
+                        onClick={e => {
+                            e.preventDefault();
+                            onLoad();
+                        }}
+                        disabled={!isValid || quick_strategy.is_options_loading}
+                    >
+                        {localize('Load')}
                     </Button>
                     <Button
                         primary
