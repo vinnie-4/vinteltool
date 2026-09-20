@@ -13,71 +13,10 @@ const WorkspaceWrapper = observer(() => {
 
     React.useEffect(() => {
         onMount();
-        return () => onUnmount();
-    }, []);
-
-    React.useEffect(() => {
-        if (is_loading) return;
-
-        let workspace: any = null;
-        let pollTimer: number | null = null;
-        let retryTimer: number | null = null;
-
-        const alignBlocksToLeftMargin = () => {
-            if (!workspace) return;
-            const topBlocks = workspace.getTopBlocks(false);
-            if (!topBlocks?.length) return;
-
-            workspace.scroll(0, 0);
-
-            // Keep the requested horizontal margin and start blocks 15px below the workspace top.
-            const targetX = -145;
-            let currentY = -98;
-
-            topBlocks.forEach((block: any) => {
-                const blockXY = block.getRelativeToSurfaceXY();
-                const dx = targetX - blockXY.x;
-                const dy = currentY - blockXY.y;
-                if (dx !== 0 || dy !== 0) block.moveBy(dx, dy);
-                currentY += block.getHeightWidth().height + 56;
-            });
-
-            workspace.scroll(0, 0);
-        };
-
-        const applyAlignment = () => {
-            alignBlocksToLeftMargin();
-            requestAnimationFrame(() => {
-                alignBlocksToLeftMargin();
-                retryTimer = window.setTimeout(alignBlocksToLeftMargin, 100);
-            });
-        };
-
-        const attachToWorkspace = () => {
-            workspace = window.Blockly?.derivWorkspace;
-            if (!workspace) {
-                pollTimer = window.setTimeout(attachToWorkspace, 50);
-                return;
-            }
-
-            const handleChange = (event: { type?: string }) => {
-                if (event.type === window.Blockly?.Events?.FINISHED_LOADING) applyAlignment();
-            };
-
-            workspace.addChangeListener(handleChange);
-            applyAlignment();
-            return () => workspace?.removeChangeListener(handleChange);
-        };
-
-        let detach: (() => void) | undefined;
-        detach = attachToWorkspace();
-
         return () => {
-            if (pollTimer !== null) window.clearTimeout(pollTimer);
-            if (retryTimer !== null) window.clearTimeout(retryTimer);
-            detach?.();
+            onUnmount();
         };
-    }, [is_loading]);
+    }, []);
 
     if (is_loading) return null;
 
