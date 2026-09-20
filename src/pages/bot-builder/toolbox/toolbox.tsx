@@ -14,7 +14,7 @@ import SearchBox from './search-box';
 import { ToolboxItems } from './toolbox-items';
 
 const Toolbox = observer(() => {
-    useDevice();
+    const { isDesktop } = useDevice();
     const { toolbox, flyout, quick_strategy } = useStore();
     const {
         hasSubCategory,
@@ -34,7 +34,7 @@ const Toolbox = observer(() => {
     const { setVisibility, selected_category } = flyout;
 
     const toolbox_ref = React.useRef(ToolboxItems());
-    const [is_open, setOpen] = React.useState(false);
+    const [is_open, setOpen] = React.useState(true);
     const [pending_selection] = React.useState<string | null>(null);
 
     React.useEffect(() => {
@@ -49,29 +49,27 @@ const Toolbox = observer(() => {
         /* [/AI] */
     };
 
-    return (
-        <div className='db-toolbox' data-testid='dashboard__toolbox'>
-            <div className='db-toolbox__controls'>
+    if (isDesktop) {
+        return (
+            <div className='db-toolbox' data-testid='dashboard__toolbox'>
+                <ToolbarButton
+                    popover_message={localize('Click here to start building your Deriv Bot.')}
+                    button_id='db-toolbar__get-started-button'
+                    button_classname='toolbar__btn toolbar__btn--icon toolbar__btn--start'
+                    buttonOnClick={handleQuickStrategyOpen}
+                    button_text={localize('Quick strategy')}
+                />
                 <div id='gtm-toolbox' className='db-toolbox__content'>
                     <div className='db-toolbox__header'>
                         <div
                             className='db-toolbox__title'
                             data-testid='db-toolbox__title'
-                            role='button'
-                            tabIndex={0}
                             onClick={() => {
                                 setOpen(!is_open);
                                 setVisibility(false);
                             }}
-                            onKeyDown={event => {
-                                if (event.key === 'Enter' || event.key === ' ') {
-                                    event.preventDefault();
-                                    setOpen(!is_open);
-                                    setVisibility(false);
-                                }
-                            }}
                         >
-                            <span>{localize('Blocks menu')}</span>
+                            {localize('Blocks menu')}
                             <span
                                 className={classNames('db-toolbox__title__chevron', {
                                     'db-toolbox__title__chevron--active': is_open,
@@ -111,6 +109,7 @@ const Toolbox = observer(() => {
                                                 <div
                                                     className='db-toolbox__item'
                                                     onClick={() => {
+                                                        // eslint-disable-next-line no-unused-expressions
                                                         has_sub_category
                                                             ? onToolboxItemExpand(index)
                                                             : onToolboxItemClick(category);
@@ -123,7 +122,8 @@ const Toolbox = observer(() => {
                                                         {has_sub_category && (
                                                             <div
                                                                 className={classNames('db-toolbox__category-arrow', {
-                                                                    'db-toolbox__category-arrow--active': is_sub_category_open,
+                                                                    'db-toolbox__category-arrow--active':
+                                                                        is_sub_category_open,
                                                                 })}
                                                             >
                                                                 <LabelPairedChevronDownMdFillIcon fill='var(--text-general)' />
@@ -133,22 +133,36 @@ const Toolbox = observer(() => {
                                                 </div>
                                                 {has_sub_category &&
                                                     is_sub_category_open &&
-                                                    (Array.from(category.childNodes) as HTMLElement[]).map(subCategory => (
-                                                        <div
-                                                            key={`db-toolbox__sub-category-row--${subCategory.getAttribute('id')}`}
-                                                            className={classNames('db-toolbox__sub-category-row', {
-                                                                'db-toolbox__sub-category-row--active':
-                                                                    selected_category?.getAttribute('id') === subCategory?.id,
-                                                                'db-toolbox__sub-category-row--pending':
-                                                                    pending_selection === subCategory?.getAttribute('id'),
-                                                            })}
-                                                            onClick={() => onToolboxItemClick(subCategory)}
-                                                        >
-                                                            <Text size='xxs'>
-                                                                {subCategory.getAttribute('name') as string}
-                                                            </Text>
-                                                        </div>
-                                                    ))}
+                                                    (Array.from(category.childNodes) as HTMLElement[]).map(
+                                                        subCategory => {
+                                                            return (
+                                                                <div
+                                                                    key={`db-toolbox__sub-category-row--${subCategory.getAttribute(
+                                                                        'id'
+                                                                    )}`}
+                                                                    className={classNames(
+                                                                        'db-toolbox__sub-category-row',
+                                                                        {
+                                                                            'db-toolbox__sub-category-row--active':
+                                                                                selected_category?.getAttribute(
+                                                                                    'id'
+                                                                                ) === subCategory?.id,
+                                                                            'db-toolbox__sub-category-row--pending':
+                                                                                pending_selection ===
+                                                                                subCategory?.getAttribute('id'),
+                                                                        }
+                                                                    )}
+                                                                    onClick={() => {
+                                                                        onToolboxItemClick(subCategory);
+                                                                    }}
+                                                                >
+                                                                    <Text size='xxs'>
+                                                                        {subCategory.getAttribute('name') as string}
+                                                                    </Text>
+                                                                </div>
+                                                            );
+                                                        }
+                                                    )}
                                             </div>
                                         );
                                     }
@@ -157,17 +171,10 @@ const Toolbox = observer(() => {
                         </div>
                     </div>
                 </div>
-
-                <ToolbarButton
-                    popover_message={localize('Click here to start building your Deriv Bot.')}
-                    button_id='db-toolbar__get-started-button'
-                    button_classname='toolbar__btn toolbar__btn--icon toolbar__btn--start'
-                    buttonOnClick={handleQuickStrategyOpen}
-                    button_text={localize('Quick Bot Builder')}
-                />
             </div>
-        </div>
-    );
+        );
+    }
+    return null;
 });
 
 export default Toolbox;
