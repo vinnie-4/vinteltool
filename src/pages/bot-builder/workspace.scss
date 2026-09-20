@@ -31,39 +31,4 @@
     position: relative;
     touch-action: none;
     overflow: hidden;
-    margin: 0;
-    padding: 10px 0 0 0;
-}
-
-/*
- * Mobile/tablet: the vertical toolbar is 4rem wide. Put the Blockly
- * workspace immediately to its right, and begin it below the Blocks menu.
- * Blockly block coordinates remain X=10/Y=15 inside this workspace.
- */
-@include mobile-or-tablet-screen {
-    .injectionDiv {
-        margin-inline-start: 4rem;
-        width: calc(100% - 4rem);
-        height: calc(100vh - 17.6rem);
-        padding: 1rem 0 0 0;
-        box-sizing: border-box;
-    }
-}
-
-/* Desktop/tablet-wide toolbar lane. */
-@media (min-width: 768px) {
-    .injectionDiv {
-        margin-inline-start: 3.2rem;
-        width: calc(100% - 3.2rem);
-    }
-}
-
-/* Keep Blockly's internal block coordinates independent of the toolbar offset. */
-.blocklyWorkspace {
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-.blocklyBlockCanvas {
-    margin: 0 !important;
 }
