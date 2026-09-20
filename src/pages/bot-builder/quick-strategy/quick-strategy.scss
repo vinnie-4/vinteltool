@@ -1,6 +1,48 @@
 @use 'components/shared/styles/mixins' as *;
 
 .qs {
+    .qs-stepper {
+        padding: 1.6rem;
+
+        &__item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            min-height: 4.4rem;
+            color: var(--text-less-prominent);
+            font-size: 1.4rem;
+            font-weight: 500;
+
+            &.active,
+            &.completed {
+                color: var(--text-general);
+                font-weight: 700;
+            }
+        }
+
+        &__number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.8rem;
+            height: 2.8rem;
+            border-radius: 50%;
+            background: var(--general-main-1);
+            border: 1px solid var(--border-divider);
+        }
+
+        &__mobile {
+            padding-bottom: 1.2rem;
+
+            &-label {
+                padding-top: 0.8rem;
+                font-size: 1.2rem;
+                font-weight: 600;
+                color: var(--text-general);
+            }
+        }
+    }
+
     --sidebar-width: 24rem;
     --footer-height: 7.2rem;
     --header-height: 5.6rem;
