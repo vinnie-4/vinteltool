@@ -153,6 +153,10 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             const blockly_xml = strategy_dom.querySelectorAll('block');
             removeLimitedBlocks(workspace, Array.from(blockly_xml).map(block => block.getAttribute('type')));
             loadBlocks(strategy_dom, null, `quick-strategy-load${Date.now()}`, workspace);
+            if (action === 'EDIT') {
+                this.setFormVisibility(false);
+                return;
+            }
             if (action === 'RUN') return;
         };
         const previous = this.workspace_load_queue;
