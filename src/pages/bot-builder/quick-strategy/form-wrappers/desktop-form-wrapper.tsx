@@ -1,3 +1,4 @@
+/* Quick Bot Builder Strategy Studio - sync deployment */
 import React from 'react';
 import { useFormikContext } from 'formik';
 import { observer } from 'mobx-react-lite';
