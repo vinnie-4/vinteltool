@@ -4,7 +4,7 @@ import Button from '@/components/shared_ui/button';
 import { useStore } from '@/hooks/useStore';
 import { localize } from '@deriv-com/translations';
 import useQsSubmitHandler from '../form-wrappers/useQsSubmitHandler';
-import { TFormValues } from '../types';
+import { TFormData, TFormValues } from '../types';
 import { QsSteps } from './trade-constants';
 
 type TMobileQSFooter = {
@@ -14,7 +14,7 @@ type TMobileQSFooter = {
 
 export const MobileQSFooter = observer(({ current_step, setCurrentStep }: TMobileQSFooter) => {
     const { quick_strategy } = useStore();
-    const { isValid } = useFormikContext<TFormValues>();
+    const { isValid, submitForm, setFieldValue, validateForm } = useFormikContext<TFormValues>();
     const { handleSubmit } = useQsSubmitHandler();
     const { onSubmit } = quick_strategy;
     const is_verified_or_completed_step =
