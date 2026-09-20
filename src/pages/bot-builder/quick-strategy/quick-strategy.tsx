@@ -255,7 +255,9 @@ const QuickStrategy = observer(() => {
                             // Split localize calls are intentional - these are separate translatable strings
                             header={`${localize('Step {{current_step}}/2:', {
                                 current_step: current_step === QsSteps.StrategyCompleted ? 2 : 1,
-                            })} ${localize('Choose your strategy')}`}
+                            })} ${localize(
+                                current_step === QsSteps.StrategySelect ? 'Select strategy' : 'Configure parameters'
+                            )}`}
                             onClickClose={handleClose}
                             height_offset='8rem'
                         >
