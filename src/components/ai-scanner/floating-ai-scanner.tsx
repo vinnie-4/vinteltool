@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api_base } from '@/external/bot-skeleton';
 import { useStore } from '@/hooks/useStore';
 import { DBOT_TABS } from '@/constants/bot-contents';
+import martingaleXml from '@/xml/martingale.xml';
 import './floating-ai-scanner.scss';
 
 type Tick = { quote: number; digit: number };
@@ -34,8 +35,9 @@ const MARKETS: Market[] = [
     { name: 'Volatility 100 (1s)', symbol: '1HZ100V' },
 ];
 
-const TICK_WINDOWS = [100, 60, 40, 30];
-const MAX_TICKS = 100;
+const TICK_WINDOWS = [3000, 1000, 500, 300, 100, 60, 30];
+const DEFAULT_TICK_WINDOW = 3000;
+const MAX_TICKS = 3000;
 
 const digitOf = (quote: number, decimals: number) =>
     Number(quote.toFixed(Math.max(0, Math.min(8, decimals))).replace('.', '').slice(-1));
@@ -54,8 +56,8 @@ const emptyAnalysis = (): Analysis => ({
     rationale: 'Waiting for enough live tick data.',
 });
 
-const analyseTicks = (ticks: Tick[]): Analysis => {
-    const values = ticks.slice(-MAX_TICKS);
+const analyseTicks = (ticks: Tick[], windowSize = DEFAULT_TICK_WINDOW): Analysis => {
+    const values = ticks.slice(-Math.min(MAX_TICKS, Math.max(30, windowSize)));
     const counts = Array(10).fill(0) as number[];
     values.forEach(tick => {
         if (tick.digit >= 0 && tick.digit <= 9) counts[tick.digit] += 1;
@@ -130,46 +132,78 @@ const analyseTicks = (ticks: Tick[]): Analysis => {
 };
 
 const scannerXml = (market: Market, signal: Signal) => {
-    const id = 'ai_scanner_' + Date.now();
     const isEvenOdd = signal === 'Even' || signal === 'Odd';
     const contract = signal === 'Even' ? 'DIGITEVEN' : signal === 'Odd' ? 'DIGITODD' : signal === 'Over 4' ? 'DIGITOVER' : 'DIGITUNDER';
     const tradeType = isEvenOdd ? 'evenodd' : 'overunder';
     const prediction = signal === 'Over 4' ? 4 : signal === 'Under 5' ? 5 : 0;
-    const predictionXml = isEvenOdd
-        ? ''
-        : '<value name="PREDICTION"><shadow type="math_number_positive"><field name="NUM">' + prediction + '</field></shadow><block type="variables_get"><field name="VAR" id="' + id + '_prediction">Prediction</field></block></value>';
 
-    return '<?xml version="1.0" encoding="UTF-8"?>' +
-        '<xml xmlns="https://developers.google.com/blockly/xml" is_dbot="true" collection="false">' +
-        '<variables><variable id="' + id + '_stake">Stake</variable><variable id="' + id + '_prediction">Prediction</variable></variables>' +
-        '<block type="trade_definition" id="' + id + '_definition" x="0" y="0">' +
-        '<statement name="TRADE_OPTIONS"><block type="trade_definition_market" id="' + id + '_market" deletable="false" movable="false">' +
-        '<field name="MARKET_LIST">synthetic_index</field><field name="SUBMARKET_LIST">random_index</field><field name="SYMBOL_LIST">' + market.symbol + '</field>' +
-        '<next><block type="trade_definition_tradetype" id="' + id + '_tradetype" deletable="false" movable="false">' +
-        '<field name="TRADETYPECAT_LIST">digits</field><field name="TRADETYPE_LIST">' + tradeType + '</field>' +
-        '<next><block type="trade_definition_contracttype" id="' + id + '_contract" deletable="false" movable="false">' +
-        '<field name="TYPE_LIST">' + contract + '</field><next><block type="trade_definition_restartbuysell" id="' + id + '_restart">' +
-        '<field name="TIME_MACHINE_ENABLED">FALSE</field><next><block type="trade_definition_restartonerror" id="' + id + '_error">' +
-        '<field name="RESTARTONERROR">FALSE</field></block></next></block></next></block></next></block></next></block></statement>' +
-        '<statement name="INITIALIZATION"><block type="variables_set" id="' + id + '_stake"><field name="VAR" id="' + id + '_stake">Stake</field>' +
-        '<value name="VALUE"><block type="math_number"><field name="NUM">1</field></block></value><next><block type="variables_set" id="' + id + '_prediction">' +
-        '<field name="VAR" id="' + id + '_prediction">Prediction</field><value name="VALUE"><block type="math_number"><field name="NUM">' + prediction + '</field></block></value></block></next></block></statement>' +
-        '<statement name="SUBMARKET"><block type="trade_definition_tradeoptions" id="' + id + '_options">' +
-        '<mutation has_first_barrier="false" has_second_barrier="false" has_prediction="' + (isEvenOdd ? 'false' : 'true') + '"></mutation>' +
-        '<field name="DURATIONTYPE_LIST">t</field><value name="DURATION"><shadow type="math_number"><field name="NUM">1</field></shadow></value>' +
-        '<value name="AMOUNT"><shadow type="math_number"><field name="NUM">1</field></shadow><block type="variables_get"><field name="VAR" id="' + id + '_stake">Stake</field></block></value>' +
-        predictionXml + '</block></statement></block>' +
-        '<block type="before_purchase" id="' + id + '_before" x="0" y="620"><statement name="BEFOREPURCHASE_STACK">' +
-        '<block type="purchase" id="' + id + '_purchase"><field name="PURCHASE_LIST">' + contract + '</field></block></statement></block>' +
-        '<block type="after_purchase" id="' + id + '_after" x="520" y="620"><statement name="AFTERPURCHASE_STACK"><block type="trade_again" id="' + id + '_again"></block></statement></block>' +
-        '</xml>';
+    const doc = new DOMParser().parseFromString(martingaleXml, 'text/xml');
+    const field = (name: string, value: string, previous?: string) => {
+        const nodes = Array.from(doc.querySelectorAll(`field[name="${name}"]`));
+        const node = previous ? nodes.find(item => item.textContent === previous) : nodes[0];
+        if (node) node.textContent = value;
+    };
+
+    field('MARKET_LIST', 'synthetic_index', 'basket_index');
+    field('SUBMARKET_LIST', 'random_index', 'forex_basket');
+    field('SYMBOL_LIST', market.symbol, 'WLDAUD');
+    field('TRADETYPECAT_LIST', 'digits', 'callput');
+    field('TRADETYPE_LIST', tradeType, 'callput');
+    field('TYPE_LIST', contract, 'both');
+    field('DURATIONTYPE_LIST', 't', 'm');
+    field('PURCHASE_LIST', contract, 'CALL');
+
+    const duration = doc.querySelector('block[type="trade_definition_tradeoptions"] value[name="DURATION"] field[name="NUM"]');
+    if (duration) duration.textContent = '1';
+
+    const predictionMutation = doc.querySelector('block[type="trade_definition_tradeoptions"] > mutation');
+    if (predictionMutation) predictionMutation.setAttribute('has_prediction', isEvenOdd ? 'false' : 'true');
+
+    const tradeOptions = doc.querySelector('block[type="trade_definition_tradeoptions"]');
+    if (tradeOptions) {
+        const predictionValue = tradeOptions.querySelector('value[name="PREDICTION"]');
+        if (isEvenOdd) {
+            predictionValue?.remove();
+        } else if (predictionValue) {
+            const num = predictionValue.querySelector('field[name="NUM"]');
+            if (num) num.textContent = String(prediction);
+        }
+
+        if (!isEvenOdd && !predictionValue) {
+            const value = doc.createElement('value');
+            value.setAttribute('name', 'PREDICTION');
+            const shadow = doc.createElement('shadow');
+            shadow.setAttribute('type', 'math_number_positive');
+            const num = doc.createElement('field');
+            num.setAttribute('name', 'NUM');
+            num.textContent = String(prediction);
+            shadow.appendChild(num);
+            value.appendChild(shadow);
+            tradeOptions.appendChild(value);
+        }
+    }
+
+    const initialization = doc.querySelector('statement[name="INITIALIZATION"]');
+    if (initialization) {
+        const initialStakeSet = Array.from(initialization.querySelectorAll('block[type="variables_set"]'))
+            .find(block => block.querySelector('field[name="VAR"]')?.textContent === 'martingale:initialStake');
+        const initialStakeNum = initialStakeSet?.querySelector('value[name="VALUE"] field[name="NUM"]');
+        if (initialStakeNum) initialStakeNum.textContent = '1';
+
+        const multiplierSet = Array.from(initialization.querySelectorAll('block[type="variables_set"]'))
+            .find(block => block.querySelector('field[name="VAR"]')?.textContent === 'martingale:multiplier');
+        const multiplierNum = multiplierSet?.querySelector('value[name="VALUE"] field[name="NUM"]');
+        if (multiplierNum) multiplierNum.textContent = '2';
+    }
+
+    return new XMLSerializer().serializeToString(doc);
 };
 
 const FloatingAIScanner = () => {
     const { quick_strategy, dashboard } = useStore();
     const [open, setOpen] = useState(false);
     const [market, setMarket] = useState(MARKETS[8]);
-    const [tickWindow, setTickWindow] = useState(100);
+    const [tickWindow, setTickWindow] = useState(DEFAULT_TICK_WINDOW);
     const [ticks, setTicks] = useState<Tick[]>([]);
     const [connected, setConnected] = useState(false);
     const [scanning, setScanning] = useState(false);
@@ -260,7 +294,7 @@ const FloatingAIScanner = () => {
         return () => { cancelled = true; void disconnect(); };
     }, [open, market.symbol, connectMarket, disconnect]);
 
-    const analysis = useMemo(() => analyseTicks(ticks.slice(-tickWindow)), [ticks, tickWindow]);
+    const analysis = useMemo(() => analyseTicks(ticks, tickWindow), [ticks, tickWindow]);
 
     useEffect(() => setConfidence(analysis.confidence), [analysis.confidence]);
 
@@ -300,7 +334,7 @@ const FloatingAIScanner = () => {
                 }));
 
                 if (history.length < 20) continue;
-                results.push({ market: item, ticks: history, analysis: analyseTicks(history) });
+                results.push({ market: item, ticks: history, analysis: analyseTicks(history, tickWindow) });
             }
 
             if (!results.length) throw new Error('No usable tick history was returned by Deriv.');
