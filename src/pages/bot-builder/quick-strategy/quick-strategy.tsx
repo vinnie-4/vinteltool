@@ -1,7 +1,3 @@
-// VintelTool Quick Bot Builder — replaces the Deriv Quick Strategy selector with a
-// VintelTool-owned Blockly strategy studio. The resulting XML is loaded directly into
-// the existing Bot Builder workspace so the trading engine remains unchanged.
-
 import React from 'react';
 import { observer } from 'mobx-react-lite';
 import MobileFullPageModal from '@/components/shared_ui/mobile-full-page-modal';
@@ -10,62 +6,113 @@ import { useStore } from '@/hooks/useStore';
 import { useDevice } from '@deriv-com/ui';
 import './quick-strategy.scss';
 
-const TOOLBOX = `
-<xml xmlns="https://developers.google.com/blockly/xml">
-  <category name="Market setup" colour="#0066FF">
-    <block type="trade_definition"></block>
-    <block type="trade_definition_market"></block>
-    <block type="trade_definition_tradetype"></block>
-    <block type="trade_definition_contracttype"></block>
-    <block type="trade_definition_candleinterval"></block>
-  </category>
-  <category name="Trade parameters" colour="#0EA5E9">
-    <block type="trade_definition_tradeoptions"></block>
-    <block type="trade_definition_multiplier"></block>
-    <block type="trade_definition_accumulator"></block>
-    <block type="multiplier_take_profit"></block>
-    <block type="multiplier_stop_loss"></block>
-    <block type="accumulator_take_profit"></block>
-  </category>
-  <category name="Entry logic" colour="#10B981">
-    <block type="before_purchase"></block>
-    <block type="purchase"></block>
-    <block type="tick_analysis"></block>
-    <block type="tick"></block>
-    <block type="logic_compare"></block>
-    <block type="logic_operation"></block>
-    <block type="logic_boolean"></block>
-    <block type="math_number"></block>
-    <block type="math_arithmetic"></block>
-  </category>
-  <category name="Sell conditions" colour="#F59E0B">
-    <block type="during_purchase"></block>
-    <block type="sell_at_market"></block>
-  </category>
-  <category name="Restart / flow" colour="#8B5CF6">
-    <block type="after_purchase"></block>
-    <block type="trade_again"></block>
-    <block type="controls_if"></block>
-    <block type="controls_repeat_ext"></block>
-    <block type="controls_whileUntil"></block>
-  </category>
-</xml>`;
+type FormState = {
+    market: string;
+    submarket: string;
+    symbol: string;
+    tradeType: string;
+    contractFamily: string;
+    contractType: string;
+    multi: boolean;
+    recovery: boolean;
+    hedging: boolean;
+    stake: string;
+    takeProfit: string;
+    stopLoss: string;
+    martingale: boolean;
+    martingaleMultiplier: string;
+    durationType: string;
+    duration: string;
+    purchase: string;
+    analysis: boolean;
+};
 
-const STARTER_XML = `
+const DEFAULTS: FormState = {
+    market: 'Derived',
+    submarket: 'Continuous Indices',
+    symbol: 'Volatility 10 Index',
+    tradeType: 'Digits',
+    contractFamily: 'Even/Odd',
+    contractType: 'Both',
+    multi: false,
+    recovery: false,
+    hedging: false,
+    stake: '1',
+    takeProfit: '10',
+    stopLoss: '30',
+    martingale: true,
+    martingaleMultiplier: '2',
+    durationType: 'Ticks',
+    duration: '1',
+    purchase: 'Trade Even',
+    analysis: false,
+};
+
+const SYMBOLS = ['Volatility 10 Index', 'Volatility 25 Index', 'Volatility 50 Index', 'Volatility 75 Index', 'Volatility 100 Index'];
+const SYMBOL_CODES: Record<string, string> = {
+    'Volatility 10 Index': 'R_10',
+    'Volatility 25 Index': 'R_25',
+    'Volatility 50 Index': 'R_50',
+    'Volatility 75 Index': 'R_75',
+    'Volatility 100 Index': 'R_100',
+};
+
+const Select = ({ value, onChange, children, wide = false }: any) => (
+    <select className={`vqb-select${wide ? ' vqb-select--wide' : ''}`} value={value} onChange={e => onChange(e.target.value)}>
+        {children}
+    </select>
+);
+
+const Toggle = ({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) => (
+    <button type="button" aria-pressed={checked} className={`vqb-toggle${checked ? ' is-on' : ''}`} onClick={() => onChange(!checked)}>
+        <span />
+    </button>
+);
+
+const QuickStrategy = observer(() => {
+    const { quick_strategy } = useStore();
+    const { isDesktop } = useDevice();
+    const { is_open, setFormVisibility } = quick_strategy;
+    const [form, setForm] = React.useState<FormState>(DEFAULTS);
+
+    React.useEffect(() => {
+        if (!is_open) return;
+        try {
+            const saved = localStorage.getItem('vinteltool-quick-bot-config');
+            if (saved) setForm({ ...DEFAULTS, ...JSON.parse(saved) });
+        } catch {
+            setForm(DEFAULTS);
+        }
+    }, [is_open]);
+
+    const set = (key: keyof FormState, value: any) => setForm(prev => ({ ...prev, [key]: value }));
+
+    const load = () => {
+        localStorage.setItem('vinteltool-quick-bot-config', JSON.stringify(form));
+        const Blockly = (window as any).Blockly;
+        const workspace = Blockly?.derivWorkspace;
+        if (!Blockly || !workspace) {
+            setFormVisibility(false);
+            return;
+        }
+
+        const symbol = SYMBOL_CODES[form.symbol] || 'R_10';
+        const contract = form.purchase === 'Trade Odd' ? 'DIGITODD' : 'DIGITEVEN';
+        const xml = `
 <xml xmlns="https://developers.google.com/blockly/xml">
-  <block type="trade_definition" x="24" y="24">
+  <block type="trade_definition" x="20" y="20">
     <statement name="TRADE_OPTIONS">
       <block type="trade_definition_market" deletable="false" movable="false">
         <field name="MARKET_LIST">synthetic_indices</field>
         <field name="SUBMARKET_LIST">continuous_indices</field>
-        <field name="SYMBOL_LIST">R_100</field>
+        <field name="SYMBOL_LIST">${symbol}</field>
         <next>
           <block type="trade_definition_tradetype" deletable="false" movable="false">
             <field name="TRADETYPECAT_LIST">digits</field>
             <field name="TRADETYPE_LIST">both</field>
             <next>
               <block type="trade_definition_contracttype" deletable="false" movable="false">
-                <field name="TYPE_LIST">DIGITEVEN</field>
+                <field name="TYPE_LIST">${contract}</field>
               </block>
             </next>
           </block>
@@ -73,138 +120,111 @@ const STARTER_XML = `
       </block>
     </statement>
   </block>
+  <block type="trade_definition_tradeoptions" x="20" y="230">
+    <field name="DURATIONTYPE_LIST">${form.durationType.toLowerCase()}</field>
+    <field name="CURRENCY_LIST">USD</field>
+    <value name="DURATION"><shadow type="math_number"><field name="NUM">${Number(form.duration) || 1}</field></shadow></value>
+    <value name="AMOUNT"><shadow type="math_number"><field name="NUM">${Number(form.stake) || 1}</field></shadow></value>
+  </block>
+  <block type="before_purchase" x="20" y="410">
+    <statement name="BEFOREPURCHASE">
+      <block type="purchase">
+        <field name="PURCHASE_LIST">${contract}</field>
+      </block>
+    </statement>
+  </block>
 </xml>`;
 
-const getBlockly = () => (window as any).Blockly;
-
-const QuickStrategy = observer(() => {
-    const { quick_strategy } = useStore();
-    const { isDesktop } = useDevice();
-    const { is_open, setFormVisibility } = quick_strategy;
-    const studio_ref = React.useRef<HTMLDivElement | null>(null);
-    const workspace_ref = React.useRef<any>(null);
-
-    const close = React.useCallback(() => setFormVisibility(false), [setFormVisibility]);
-
-    const saveStrategy = React.useCallback(() => {
-        const Blockly = getBlockly();
-        const workspace = workspace_ref.current;
-        if (!Blockly || !workspace) return;
-        const dom = Blockly.Xml.workspaceToDom(workspace);
-        localStorage.setItem('vinteltool-quick-bot-strategy', Blockly.Xml.domToText(dom));
-    }, []);
-
-    const clearStrategy = React.useCallback(() => {
-        const workspace = workspace_ref.current;
-        if (!workspace) return;
-        workspace.clear();
-        const Blockly = getBlockly();
-        if (Blockly) Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(STARTER_XML), workspace);
-    }, []);
-
-    const loadToBotBuilder = React.useCallback(() => {
-        const Blockly = getBlockly();
-        const studio = workspace_ref.current;
-        const target = Blockly?.derivWorkspace;
-        if (!Blockly || !studio || !target) return;
-
-        const dom = Blockly.Xml.workspaceToDom(studio);
-        target.clear();
-        Blockly.Xml.domToWorkspace(dom, target);
-        target.render();
-        target.resizeContents();
-        close();
-    }, [close]);
-
-    React.useEffect(() => {
-        if (!is_open || !studio_ref.current || workspace_ref.current) return;
-
-        const Blockly = getBlockly();
-        if (!Blockly) return;
-
-        const workspace = Blockly.inject(studio_ref.current, {
-            toolbox: TOOLBOX,
-            toolboxPosition: 'start',
-            collapse: false,
-            trashcan: true,
-            scrollbars: true,
-            sounds: false,
-            zoom: {
-                controls: true,
-                wheel: true,
-                startScale: 0.82,
-                maxScale: 1.35,
-                minScale: 0.55,
-                scaleSpeed: 1.08,
-            },
-            grid: {
-                spacing: 20,
-                length: 3,
-                colour: '#d9e2ec',
-                snap: true,
-            },
-        });
-
-        workspace_ref.current = workspace;
-        const saved = localStorage.getItem('vinteltool-quick-bot-strategy');
-        const xml = saved || STARTER_XML;
         try {
+            workspace.clear();
             Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(xml), workspace);
+            workspace.render();
+            workspace.resizeContents();
         } catch {
-            Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(STARTER_XML), workspace);
+            // Keep the existing workspace intact if a block definition is unavailable.
         }
-
-        const resize = () => Blockly.svgResize(workspace);
-        window.addEventListener('resize', resize);
-        requestAnimationFrame(resize);
-
-        return () => {
-            window.removeEventListener('resize', resize);
-            workspace.dispose();
-            workspace_ref.current = null;
-        };
-    }, [is_open]);
+        setFormVisibility(false);
+    };
 
     const content = (
-        <div className="vintel-quick-builder">
-            <div className="vintel-quick-builder__hero">
-                <div>
-                    <span className="vintel-quick-builder__eyebrow">VINTELTOOL</span>
-                    <h2>Quick Bot Builder</h2>
-                    <p>Build your strategy with VintelTool blocks, then load it directly into Bot Builder.</p>
-                </div>
-                <div className="vintel-quick-builder__actions">
-                    <button type="button" onClick={saveStrategy}>Save</button>
-                    <button type="button" onClick={clearStrategy}>Clear</button>
-                    <button type="button" className="primary" onClick={loadToBotBuilder}>Load to Bot Builder</button>
-                </div>
+        <div className="vqb">
+            <div className="vqb-header">
+                <h2>Quick Bot Builder</h2>
+                <button type="button" className="vqb-close" aria-label="Close" onClick={() => setFormVisibility(false)}>×</button>
             </div>
-            <div className="vintel-quick-builder__guide">
-                <span>Drag blocks from the left toolbox.</span>
-                <span>Connect them to define your entry, contract, sell and restart logic.</span>
+
+            <div className="vqb-body">
+                <section className="vqb-section">
+                    <div className="vqb-section-title">TRADE PARAMETERS</div>
+                    <div className="vqb-section-content">
+                        <div className="vqb-row vqb-market-row">
+                            <label>Market:</label>
+                            <Select value={form.market} onChange={(v: string) => set('market', v)}><option>Derived</option></Select>
+                            <span className="vqb-chevron">›</span>
+                            <Select value={form.submarket} onChange={(v: string) => set('submarket', v)}><option>Continuous Indices</option></Select>
+                            <span className="vqb-chevron">›</span>
+                        </div>
+                        <Select wide value={form.symbol} onChange={(v: string) => set('symbol', v)}>
+                            {SYMBOLS.map(s => <option key={s}>{s}</option>)}
+                        </Select>
+                        <div className="vqb-row vqb-trade-row">
+                            <strong>Trade type:</strong>
+                            <Select value={form.tradeType} onChange={(v: string) => set('tradeType', v)}><option>Digits</option></Select>
+                            <Select value={form.contractFamily} onChange={(v: string) => set('contractFamily', v)}><option>Even/Odd</option><option>Over/Under</option></Select>
+                        </div>
+                        <div className="vqb-row vqb-contract-row">
+                            <strong>Contract type:</strong>
+                            <Select value={form.contractType} onChange={(v: string) => set('contractType', v)}><option>Both</option><option>Single</option></Select>
+                        </div>
+                        <div className="vqb-switch-row">
+                            <span><strong>Multi type:</strong><Toggle checked={form.multi} onChange={v => set('multi', v)} /></span>
+                            <span><strong>Recovery Mode:</strong><Toggle checked={form.recovery} onChange={v => set('recovery', v)} /></span>
+                            <span><strong>Hedging:</strong><Toggle checked={form.hedging} onChange={v => set('hedging', v)} /></span>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="vqb-section">
+                    <div className="vqb-section-title">BOT PARAMETERS</div>
+                    <div className="vqb-section-content vqb-bot-grid">
+                        <label>Stake:<input inputMode="decimal" value={form.stake} onChange={e => set('stake', e.target.value)} /></label>
+                        <label>Take profit:<input inputMode="decimal" value={form.takeProfit} onChange={e => set('takeProfit', e.target.value)} /></label>
+                        <label>Stop loss:<input inputMode="decimal" value={form.stopLoss} onChange={e => set('stopLoss', e.target.value)} /></label>
+                        <label className="vqb-mart">Martingale: <Toggle checked={form.martingale} onChange={v => set('martingale', v)} /><span className="vqb-x">x</span><input inputMode="decimal" value={form.martingaleMultiplier} onChange={e => set('martingaleMultiplier', e.target.value)} /></label>
+                        <label className="vqb-duration">Duration:
+                            <Select value={form.durationType} onChange={(v: string) => set('durationType', v)}><option>Ticks</option><option>Minutes</option></Select>
+                            <input inputMode="numeric" value={form.duration} onChange={e => set('duration', e.target.value)} />
+                        </label>
+                    </div>
+                </section>
+
+                <section className="vqb-section">
+                    <div className="vqb-section-title vqb-initial-title">
+                        <span>INITIAL PURCHASE</span>
+                        <span className="vqb-analysis">ENABLE ANALYSIS <Toggle checked={form.analysis} onChange={v => set('analysis', v)} /></span>
+                    </div>
+                    <div className="vqb-section-content vqb-purchase">
+                        <strong>Purchase</strong>
+                        <Select value={form.purchase} onChange={(v: string) => set('purchase', v)}>
+                            <option>Trade Even</option>
+                            <option>Trade Odd</option>
+                            <option>Trade Over</option>
+                            <option>Trade Under</option>
+                        </Select>
+                    </div>
+                </section>
+
+                <button type="button" className="vqb-load" onClick={load}>LOAD</button>
             </div>
-            <div ref={studio_ref} className="vintel-quick-builder__workspace" />
         </div>
     );
 
     if (!is_open) return null;
 
-    if (isDesktop) {
-        return (
-            <Modal className="modal--strategy vintel-quick-builder-modal" is_open={is_open} width="92rem">
-                {content}
-            </Modal>
-        );
-    }
-
-    return (
-        <MobileFullPageModal
-            is_modal_open={is_open}
-            className="quick-strategy__wrapper vintel-quick-builder-modal"
-            header="Quick Bot Builder"
-            onClickClose={close}
-            height_offset="4rem"
-        >
+    return isDesktop ? (
+        <Modal className="modal--strategy vintel-quick-builder-modal" is_open={is_open} width="42rem">{content}</Modal>
+    ) : (
+        <MobileFullPageModal is_modal_open={is_open} className="quick-strategy__wrapper vintel-quick-builder-modal" header="" onClickClose={() => setFormVisibility(false)} height_offset="0">
             {content}
         </MobileFullPageModal>
     );
