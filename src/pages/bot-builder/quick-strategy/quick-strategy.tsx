@@ -1,280 +1,212 @@
-// @ts-nocheck — vendored bot code with known upstream type gaps; see AGENTS.md
-import React, { useRef, useState } from 'react';
-import { Form as FormikForm, Formik } from 'formik';
+// VintelTool Quick Bot Builder — replaces the Deriv Quick Strategy selector with a
+// VintelTool-owned Blockly strategy studio. The resulting XML is loaded directly into
+// the existing Bot Builder workspace so the trading engine remains unchanged.
+
+import React from 'react';
 import { observer } from 'mobx-react-lite';
-import * as Yup from 'yup';
 import MobileFullPageModal from '@/components/shared_ui/mobile-full-page-modal';
 import Modal from '@/components/shared_ui/modal';
-import { config as qs_config } from '@/external/bot-skeleton';
 import { useStore } from '@/hooks/useStore';
-import { localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
-// Removed import for rudderStackSendCloseEvent as per V2 requirements - no close events needed
-import DesktopFormWrapper from './form-wrappers/desktop-form-wrapper';
-import MobileFormWrapper from './form-wrappers/mobile-form-wrapper';
-import MobileQSFooter from './form-wrappers/mobile-qs-footer';
-import { QsSteps } from './form-wrappers/trade-constants';
-import LossThresholdWarningDialog from './parts/loss-threshold-warning-dialog';
-import { STRATEGIES } from './config';
-import Form from './form';
-import { TConfigItem, TFormData } from './types';
 import './quick-strategy.scss';
 
-type TFormikWrapper = {
-    children: React.ReactNode;
-};
+const TOOLBOX = `
+<xml xmlns="https://developers.google.com/blockly/xml">
+  <category name="Market setup" colour="#0066FF">
+    <block type="trade_definition"></block>
+    <block type="trade_definition_market"></block>
+    <block type="trade_definition_tradetype"></block>
+    <block type="trade_definition_contracttype"></block>
+    <block type="trade_definition_candleinterval"></block>
+  </category>
+  <category name="Trade parameters" colour="#0EA5E9">
+    <block type="trade_definition_tradeoptions"></block>
+    <block type="trade_definition_multiplier"></block>
+    <block type="trade_definition_accumulator"></block>
+    <block type="multiplier_take_profit"></block>
+    <block type="multiplier_stop_loss"></block>
+    <block type="accumulator_take_profit"></block>
+  </category>
+  <category name="Entry logic" colour="#10B981">
+    <block type="before_purchase"></block>
+    <block type="purchase"></block>
+    <block type="tick_analysis"></block>
+    <block type="tick"></block>
+    <block type="logic_compare"></block>
+    <block type="logic_operation"></block>
+    <block type="logic_boolean"></block>
+    <block type="math_number"></block>
+    <block type="math_arithmetic"></block>
+  </category>
+  <category name="Sell conditions" colour="#F59E0B">
+    <block type="during_purchase"></block>
+    <block type="sell_at_market"></block>
+  </category>
+  <category name="Restart / flow" colour="#8B5CF6">
+    <block type="after_purchase"></block>
+    <block type="trade_again"></block>
+    <block type="controls_if"></block>
+    <block type="controls_repeat_ext"></block>
+    <block type="controls_whileUntil"></block>
+  </category>
+</xml>`;
 
-const getErrorMessage = (dir: 'MIN' | 'MAX', value: number, type = 'DEFAULT') => {
-    const errors: { [key: string]: { MIN: string; MAX: string } } = {
-        DURATION: {
-            MIN: localize('Minimum duration: {{ value }}', { value }),
-            MAX: localize('Maximum duration: {{ value }}', { value }),
-        },
-        LAST_DIGIT_PREDICTION: {
-            MIN: localize('Enter a value from {{ value }} to 9.', { value }),
-            MAX: localize('Enter a value from 0 to {{ value }}.', { value }),
-        },
-        DEFAULT: {
-            MIN: localize('The value must be equal or greater than {{ value }}', { value }),
-            MAX: localize('The value must be equal or less than {{ value }}', { value }),
-        },
-    };
-    return errors[type][dir];
-};
+const STARTER_XML = `
+<xml xmlns="https://developers.google.com/blockly/xml">
+  <block type="trade_definition" x="24" y="24">
+    <statement name="TRADE_OPTIONS">
+      <block type="trade_definition_market" deletable="false" movable="false">
+        <field name="MARKET_LIST">synthetic_indices</field>
+        <field name="SUBMARKET_LIST">continuous_indices</field>
+        <field name="SYMBOL_LIST">R_100</field>
+        <next>
+          <block type="trade_definition_tradetype" deletable="false" movable="false">
+            <field name="TRADETYPECAT_LIST">digits</field>
+            <field name="TRADETYPE_LIST">both</field>
+            <next>
+              <block type="trade_definition_contracttype" deletable="false" movable="false">
+                <field name="TYPE_LIST">DIGITEVEN</field>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </statement>
+  </block>
+</xml>`;
 
-const FormikWrapper: React.FC<TFormikWrapper> = observer(({ children }) => {
-    const { quick_strategy } = useStore();
-    const { selected_strategy, form_data, initializeLossThresholdWarningData } = quick_strategy;
-    const config: TConfigItem[][] = STRATEGIES()[selected_strategy]?.fields;
-    const [dynamic_schema, setDynamicSchema] = useState(Yup.object().shape({}));
-    const is_mounted = useRef(true);
-
-    let initial_value: TFormData | null = null;
-
-    const getSavedValues = () => {
-        let data: TFormData | null = null;
-        try {
-            data = JSON.parse(localStorage.getItem('qs-fields') ?? '{}');
-        } catch {
-            data = null;
-        }
-        return data;
-    };
-
-    const getInitialValue = () => {
-        const data = getSavedValues();
-        initial_value = {
-            symbol: data?.symbol ?? qs_config().QUICK_STRATEGY.DEFAULT.symbol,
-            tradetype: data?.tradetype ?? '',
-            type: data?.type ?? '',
-            durationtype: data?.durationtype ?? qs_config().QUICK_STRATEGY.DEFAULT.durationtype,
-            duration: data?.duration ?? '1',
-            stake: data?.stake ?? '1',
-            loss: data?.loss ?? '',
-            profit: data?.profit ?? '',
-            size: data?.size ?? String(qs_config().QUICK_STRATEGY.DEFAULT.size),
-            unit: data?.unit ?? String(qs_config().QUICK_STRATEGY.DEFAULT.unit),
-            action: data?.action ?? 'RUN',
-            max_stake: data?.max_stake ?? 10,
-            boolean_max_stake: data?.boolean_max_stake ?? false,
-            last_digit_prediction: data?.last_digit_prediction ?? 1,
-            growth_rate: data?.growth_rate ?? '0.01',
-            tick_count: data?.tick_count ?? 0,
-            take_profit: data?.take_profit ?? 0,
-            boolean_tick_count: data?.boolean_tick_count ?? false,
-            max_payout: data?.max_payout ?? 0,
-            max_ticks: data?.max_ticks ?? 0,
-        };
-        return initial_value;
-    };
-
-    React.useEffect(() => {
-        return () => {
-            is_mounted.current = false;
-        };
-    }, []);
-
-    React.useEffect(() => {
-        initializeLossThresholdWarningData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    const updateSchema = (formikData: TFormData) => {
-        const sub_schema: Record<string, any> = {};
-        config.forEach(group => {
-            if (!group?.length) return null;
-            group.forEach(field => {
-                if (field?.validation?.length && field?.name) {
-                    if (field.validation.includes('number')) {
-                        let schema: Record<string, any> = Yup.number().typeError(localize('Must be a number'));
-                        let min = 0;
-                        let max = 10;
-                        let min_error = getErrorMessage('MIN', min);
-                        let max_error = getErrorMessage('MAX', max);
-                        let integer_error_message = '';
-                        const { current_duration_min_max } = quick_strategy;
-                        if (field.name === 'duration' && current_duration_min_max) {
-                            min = current_duration_min_max.min;
-                            max = current_duration_min_max.max;
-                            min_error = getErrorMessage('MIN', min, 'DURATION');
-                            max_error = getErrorMessage('MAX', max, 'DURATION');
-                        }
-                        const should_validate = field.should_have
-                            ? field.should_have?.every(item => {
-                                  const item_value = formikData?.[item.key]?.toString();
-                                  if (item.multiple) return item.multiple.includes(item_value);
-                                  return formikData?.[item.key] === item.value;
-                              })
-                            : true;
-                        if (should_validate && field.name === 'max_stake') {
-                            min = +form_data?.stake;
-                            if (isNaN(min)) {
-                                min = +(initial_value?.stake ?? 0);
-                            }
-                            min_error = getErrorMessage('MIN', min);
-                        }
-                        if (should_validate && field.name === 'last_digit_prediction') {
-                            min = 0;
-                            max = 9;
-                            max_error = getErrorMessage('MAX', max, 'LAST_DIGIT_PREDICTION');
-                            integer_error_message = localize('Enter a value from 0 to 9.');
-                        }
-                        if (should_validate) {
-                            field.validation.forEach(validation => {
-                                if (typeof validation === 'string') {
-                                    switch (validation) {
-                                        case 'required':
-                                            schema = schema.required(localize('Field cannot be empty'));
-                                            break;
-                                        case 'min':
-                                            schema = schema.min(min, min_error);
-                                            break;
-                                        case 'max':
-                                            schema = schema.max(max, max_error);
-                                            break;
-                                        case 'ceil':
-                                            schema = schema.round('ceil');
-                                            break;
-                                        case 'floor':
-                                            schema = schema.round('floor');
-                                            break;
-                                        case 'integer':
-                                            schema = schema.integer(integer_error_message);
-                                            break;
-                                        default:
-                                            break;
-                                    }
-                                } else if (typeof validation === 'object') {
-                                    if (validation?.type) {
-                                        // Use dynamic value if available
-                                        const value = validation.getDynamicValue
-                                            ? validation.getDynamicValue(quick_strategy)
-                                            : validation.value;
-
-                                        schema = schema[validation.type](value, localize(validation.getMessage(value)));
-                                    }
-                                }
-                            });
-                        }
-                        sub_schema[field.name] = schema;
-                    }
-                }
-            });
-        });
-        if (is_mounted.current) {
-            setDynamicSchema(Yup.object().shape(sub_schema));
-        }
-    };
-
-    const handleSubmit = (form_data: TFormData) => {
-        updateSchema(form_data);
-        localStorage?.setItem('qs-fields', JSON.stringify(form_data));
-        return form_data;
-    };
-
-    return (
-        <Formik
-            initialValues={getInitialValue()}
-            validationSchema={dynamic_schema}
-            onSubmit={handleSubmit}
-            validate={values => updateSchema(values)}
-            validateOnChange={false}
-        >
-            {children}
-        </Formik>
-    );
-});
+const getBlockly = () => (window as any).Blockly;
 
 const QuickStrategy = observer(() => {
     const { quick_strategy } = useStore();
     const { isDesktop } = useDevice();
     const { is_open, setFormVisibility } = quick_strategy;
+    const studio_ref = React.useRef<HTMLDivElement | null>(null);
+    const workspace_ref = React.useRef<any>(null);
 
-    const [current_step, setCurrentStep] = React.useState(QsSteps.StrategySelect);
-    const [selected_trade_type, setSelectedTradeType] = React.useState('');
+    const close = React.useCallback(() => setFormVisibility(false), [setFormVisibility]);
 
-    // Prevent body scrolling when modal is open
+    const saveStrategy = React.useCallback(() => {
+        const Blockly = getBlockly();
+        const workspace = workspace_ref.current;
+        if (!Blockly || !workspace) return;
+        const dom = Blockly.Xml.workspaceToDom(workspace);
+        localStorage.setItem('vinteltool-quick-bot-strategy', Blockly.Xml.domToText(dom));
+    }, []);
+
+    const clearStrategy = React.useCallback(() => {
+        const workspace = workspace_ref.current;
+        if (!workspace) return;
+        workspace.clear();
+        const Blockly = getBlockly();
+        if (Blockly) Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(STARTER_XML), workspace);
+    }, []);
+
+    const loadToBotBuilder = React.useCallback(() => {
+        const Blockly = getBlockly();
+        const studio = workspace_ref.current;
+        const target = Blockly?.derivWorkspace;
+        if (!Blockly || !studio || !target) return;
+
+        const dom = Blockly.Xml.workspaceToDom(studio);
+        target.clear();
+        Blockly.Xml.domToWorkspace(dom, target);
+        target.render();
+        target.resizeContents();
+        close();
+    }, [close]);
+
     React.useEffect(() => {
-        if (is_open) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
+        if (!is_open || !studio_ref.current || workspace_ref.current) return;
+
+        const Blockly = getBlockly();
+        if (!Blockly) return;
+
+        const workspace = Blockly.inject(studio_ref.current, {
+            toolbox: TOOLBOX,
+            toolboxPosition: 'start',
+            collapse: false,
+            trashcan: true,
+            scrollbars: true,
+            sounds: false,
+            zoom: {
+                controls: true,
+                wheel: true,
+                startScale: 0.82,
+                maxScale: 1.35,
+                minScale: 0.55,
+                scaleSpeed: 1.08,
+            },
+            grid: {
+                spacing: 20,
+                length: 3,
+                colour: '#d9e2ec',
+                snap: true,
+            },
+        });
+
+        workspace_ref.current = workspace;
+        const saved = localStorage.getItem('vinteltool-quick-bot-strategy');
+        const xml = saved || STARTER_XML;
+        try {
+            Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(xml), workspace);
+        } catch {
+            Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(STARTER_XML), workspace);
         }
 
+        const resize = () => Blockly.svgResize(workspace);
+        window.addEventListener('resize', resize);
+        requestAnimationFrame(resize);
+
         return () => {
-            document.body.style.overflow = '';
+            window.removeEventListener('resize', resize);
+            workspace.dispose();
+            workspace_ref.current = null;
         };
     }, [is_open]);
 
-    const handleClose = () => {
-        // Removed close event tracking as per V2 requirements
-        setFormVisibility(false);
-    };
+    const content = (
+        <div className="vintel-quick-builder">
+            <div className="vintel-quick-builder__hero">
+                <div>
+                    <span className="vintel-quick-builder__eyebrow">VINTELTOOL</span>
+                    <h2>Quick Bot Builder</h2>
+                    <p>Build your strategy with VintelTool blocks, then load it directly into Bot Builder.</p>
+                </div>
+                <div className="vintel-quick-builder__actions">
+                    <button type="button" onClick={saveStrategy}>Save</button>
+                    <button type="button" onClick={clearStrategy}>Clear</button>
+                    <button type="button" className="primary" onClick={loadToBotBuilder}>Load to Bot Builder</button>
+                </div>
+            </div>
+            <div className="vintel-quick-builder__guide">
+                <span>Drag blocks from the left toolbox.</span>
+                <span>Connect them to define your entry, contract, sell and restart logic.</span>
+            </div>
+            <div ref={studio_ref} className="vintel-quick-builder__workspace" />
+        </div>
+    );
+
+    if (!is_open) return null;
+
+    if (isDesktop) {
+        return (
+            <Modal className="modal--strategy vintel-quick-builder-modal" is_open={is_open} width="92rem">
+                {content}
+            </Modal>
+        );
+    }
 
     return (
-        <FormikWrapper>
-            <FormikForm>
-                <LossThresholdWarningDialog />
-                {isDesktop ? (
-                    <Modal className='modal--strategy' is_open={is_open} width='72rem'>
-                        <DesktopFormWrapper
-                            onClickClose={handleClose}
-                            setCurrentStep={setCurrentStep}
-                            current_step={current_step}
-                            selected_trade_type={selected_trade_type}
-                            setSelectedTradeType={setSelectedTradeType}
-                        >
-                            <Form />
-                        </DesktopFormWrapper>
-                    </Modal>
-                ) : (
-                    <>
-                        <MobileFullPageModal
-                            is_modal_open={is_open}
-                            className='quick-strategy__wrapper'
-                            // Split localize calls are intentional - these are separate translatable strings
-                            header={`${localize('Step {{current_step}}/2:', {
-                                current_step: current_step === QsSteps.StrategyCompleted ? 2 : 1,
-                            })} ${localize(
-                                current_step === QsSteps.StrategySelect ? 'Select strategy' : 'Configure parameters'
-                            )}`}
-                            onClickClose={handleClose}
-                            height_offset='8rem'
-                        >
-                            <MobileFormWrapper
-                                setCurrentStep={setCurrentStep}
-                                current_step={current_step}
-                                selected_trade_type={selected_trade_type}
-                                setSelectedTradeType={setSelectedTradeType}
-                            >
-                                <Form />
-                            </MobileFormWrapper>
-                        </MobileFullPageModal>
-                        <MobileQSFooter setCurrentStep={setCurrentStep} current_step={current_step} />
-                    </>
-                )}
-            </FormikForm>
-        </FormikWrapper>
+        <MobileFullPageModal
+            is_modal_open={is_open}
+            className="quick-strategy__wrapper vintel-quick-builder-modal"
+            header="Quick Bot Builder"
+            onClickClose={close}
+            height_offset="4rem"
+        >
+            {content}
+        </MobileFullPageModal>
     );
 });
 
