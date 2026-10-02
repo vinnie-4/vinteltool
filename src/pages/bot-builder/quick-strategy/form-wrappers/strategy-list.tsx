@@ -1,19 +1,12 @@
 // Removed unused React import - React 17+ JSX transform doesn't require it
 import Text from '@/components/shared_ui/text';
-import { localizeAccumulators } from '@/utils/conditional-localize';
 import { Link } from '@deriv-com/quill-ui';
 import { localize } from '@deriv-com/translations';
-import {
-    STRATEGY_TRADE_ASSOCIATIONS,
-    TRADE_TYPE_INDEX,
-    TRADE_TYPES,
-    TStrategyTradeAssociations,
-} from './trade-constants';
+import { STRATEGY_TRADE_ASSOCIATIONS, TStrategyTradeAssociations } from './trade-constants';
 
 type TStrategyListProps = {
-    selector_chip_value: number;
-    search_value: string;
-    is_searching: boolean;
+    search_value?: string;
+    is_searching?: boolean;
     onSelectStrategy: (strategy: string, trade_type: string) => void;
 };
 type TStrategyBlock = {
@@ -42,7 +35,7 @@ const StrategyBlock = ({ title, items, onSelectStrategy }: TStrategyBlock) => {
     ) : null;
 };
 
-const StrategyList = ({ search_value, is_searching, onSelectStrategy }: Omit<TStrategyListProps, 'selector_chip_value'>) => {
+const StrategyList = ({ search_value = '', is_searching = false, onSelectStrategy }: TStrategyListProps) => {
     const martingale = STRATEGY_TRADE_ASSOCIATIONS.filter(item => item.name === 'MARTINGALE');
 
     const visible = is_searching && search_value
