@@ -1,9 +1,7 @@
 import React from 'react';
 import { useFormikContext } from 'formik';
 import { observer } from 'mobx-react-lite';
-import { DBOT_TABS } from '@/constants/bot-contents';
 import { useStore } from '@/hooks/useStore';
-import { SearchField } from '@deriv-com/quill-ui-next';
 import { localize } from '@deriv-com/translations';
 import { TFormData } from '../types';
 import StrategyList from './strategy-list';
@@ -16,9 +14,8 @@ type TStrategyTemplatePicker = {
 };
 
 const StrategyTemplatePicker = observer(({ setCurrentStep, setSelectedTradeType }: TStrategyTemplatePicker) => {
-    const { dashboard, quick_strategy } = useStore();
-    const { setActiveTabTutorial, setActiveTab, setFAQSearchValue, filterTuotrialTab } = dashboard;
-    const { setFormVisibility, setSelectedStrategy } = quick_strategy;
+    const { quick_strategy } = useStore();
+    const { setSelectedStrategy } = quick_strategy;
     const { setFieldValue } = useFormikContext<TFormData>();
 
     const onSelectStrategy = (strategy: string, trade_type: string) => {
@@ -41,11 +38,7 @@ const StrategyTemplatePicker = observer(({ setCurrentStep, setSelectedTradeType 
 
     return (
         <div className='strategy-template-picker'>
-            <StrategyList
-                search_value={search_value}
-                is_searching={is_searching}
-                onSelectStrategy={onSelectStrategy}
-            />
+            <StrategyList onSelectStrategy={onSelectStrategy} />
         </div>
     );
 });
