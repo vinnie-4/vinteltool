@@ -1,4 +1,3 @@
-import { localizeAccumulators } from '@/utils/conditional-localize';
 import { localize } from '@deriv-com/translations';
 import { STRATEGIES } from '../config';
 
@@ -13,14 +12,11 @@ type TTradeTypesItemsIndex = {
 };
 
 export const TRADE_TYPE_INDEX: TTradeTypesItemsIndex = Object.freeze({
-    ALL: 0,
-    // MULTIPLIERS: 2,
-    ACCUMULATORS: 1,
-    OPTIONS: 2,
+    OPTIONS: 0,
 });
 
 // export const TRADE_TYPES = [localize('All'), localizeAccumulators(), localize('Options'), localize('Multipliers')];
-export const TRADE_TYPES = [localize('All'), localizeAccumulators(), localize('Options')];
+export const TRADE_TYPES = [localize('Options')];
 
 export type TTStrategyTradeAssociation = {
     name: string;
@@ -67,53 +63,5 @@ export const STRATEGY_TRADE_ASSOCIATIONS: TStrategyTradeAssociations = [
         display_name: STRATEGIES().STRATEGY_1_3_2_6.label,
         id: 5,
         parent: [localize('Options')],
-    },
-    {
-        name: 'ACCUMULATORS_MARTINGALE',
-        display_name: STRATEGIES().ACCUMULATORS_MARTINGALE.label,
-        id: 6,
-        parent: [localizeAccumulators()],
-    },
-    {
-        name: 'ACCUMULATORS_MARTINGALE_ON_STAT_RESET',
-        display_name: STRATEGIES().ACCUMULATORS_MARTINGALE_ON_STAT_RESET.label,
-        id: 7,
-        parent: [localizeAccumulators()],
-    },
-    {
-        name: 'ACCUMULATORS_DALEMBERT',
-        display_name: STRATEGIES().ACCUMULATORS_DALEMBERT.label,
-        id: 8,
-        parent: [localizeAccumulators()],
-    },
-    {
-        name: 'ACCUMULATORS_DALEMBERT_ON_STAT_RESET',
-        display_name: STRATEGIES().ACCUMULATORS_DALEMBERT_ON_STAT_RESET.label,
-        id: 9,
-        parent: [localizeAccumulators()],
-    },
-    {
-        name: 'ACCUMULATORS_REVERSE_MARTINGALE',
-        display_name: STRATEGIES().ACCUMULATORS_REVERSE_MARTINGALE.label,
-        id: 10,
-        parent: [localizeAccumulators()],
-    },
-    {
-        name: 'ACCUMULATORS_REVERSE_MARTINGALE_ON_STAT_RESET',
-        display_name: STRATEGIES().ACCUMULATORS_REVERSE_MARTINGALE_ON_STAT_RESET.label,
-        id: 11,
-        parent: [localizeAccumulators()],
-    },
-    {
-        name: 'ACCUMULATORS_REVERSE_DALEMBERT',
-        display_name: STRATEGIES().ACCUMULATORS_REVERSE_DALEMBERT.label,
-        id: 12,
-        parent: [localizeAccumulators()],
-    },
-    {
-        name: 'ACCUMULATORS_REVERSE_DALEMBERT_ON_STAT_RESET',
-        display_name: STRATEGIES().ACCUMULATORS_REVERSE_DALEMBERT_ON_STAT_RESET.label,
-        id: 13,
-        parent: [localizeAccumulators()],
     },
 ];
