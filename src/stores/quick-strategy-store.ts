@@ -89,26 +89,33 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
         void this.importPendingFreeBot();
     };
 
+    waitForWorkspace = async () => {
+        for (let attempt = 0; attempt < 240; attempt += 1) {
+            const workspace = window.Blockly?.derivWorkspace;
+            if (workspace && window.Blockly?.utils?.xml) return workspace;
+            await new Promise<void>(resolve => setTimeout(resolve, 50));
+        }
+        throw new Error('Bot Builder workspace is not ready.');
+    };
+
     importPendingFreeBot = async () => {
         if (!this.pending_free_bot) return;
         const pending = this.pending_free_bot;
         const runImport = async () => {
-            let workspace = window.Blockly?.derivWorkspace;
-            for (let attempt = 0; !workspace && attempt < 100; attempt += 1) {
-                await new Promise<void>(resolve => setTimeout(resolve, 50));
-                workspace = window.Blockly?.derivWorkspace;
+            try {
+                const workspace = await this.waitForWorkspace();
+                const strategy_dom = window.Blockly.utils.xml.textToDom(pending.xml);
+                const blockTypes = Array.from(strategy_dom.querySelectorAll('block'))
+                    .map(block => block.getAttribute('type'))
+                    .filter(Boolean);
+                removeLimitedBlocks(workspace, blockTypes);
+                loadBlocks(strategy_dom, null, `quick-strategy-free-bot-${Date.now()}`, workspace);
+                this.pending_free_bot = null;
+                this.setAdditionalData({ free_bot_name: pending.name });
+                this.setFormVisibility(false);
+            } catch (error) {
+                console.error('Quick Strategy free bot load failed:', error);
             }
-            if (!workspace) {
-                console.error(`Quick Strategy workspace did not mount while loading free bot: ${pending.name}`);
-                return;
-            }
-            const strategy_dom = window.Blockly.utils.xml.textToDom(pending.xml);
-            const blockTypes = Array.from(strategy_dom.querySelectorAll('block')).map(block => block.getAttribute('type')).filter(Boolean);
-            removeLimitedBlocks(workspace, blockTypes);
-            loadBlocks(strategy_dom, null, `quick-strategy-free-bot-${Date.now()}`, workspace);
-            this.pending_free_bot = null;
-            this.setAdditionalData({ free_bot_name: pending.name });
-            this.setFormVisibility(false);
         };
         const previous = this.workspace_load_queue;
         const current = previous.catch(() => undefined).then(runImport);
@@ -148,10 +155,12 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
                 if (!isNaN(value as number) && key !== 'growthrate') modifyValueInputs(key, value as number);
                 else if (typeof value === 'string') modifyFieldDropdownValues(key, value);
             });
-            const workspace = window.Blockly?.derivWorkspace;
-            if (!workspace) return;
+            const workspace = await this.waitForWorkspace();
             const blockly_xml = strategy_dom.querySelectorAll('block');
-            removeLimitedBlocks(workspace, Array.from(blockly_xml).map(block => block.getAttribute('type')));
+            const blockTypes = Array.from(blockly_xml)
+                .map(block => block.getAttribute('type'))
+                .filter(Boolean);
+            removeLimitedBlocks(workspace, blockTypes);
             loadBlocks(strategy_dom, null, `quick-strategy-load${Date.now()}`, workspace);
             if (action === 'EDIT') {
                 this.setFormVisibility(false);
