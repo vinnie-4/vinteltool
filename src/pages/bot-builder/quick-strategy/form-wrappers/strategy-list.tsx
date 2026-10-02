@@ -42,62 +42,20 @@ const StrategyBlock = ({ title, items, onSelectStrategy }: TStrategyBlock) => {
     ) : null;
 };
 
-const StrategyList = ({ selector_chip_value, search_value, is_searching, onSelectStrategy }: TStrategyListProps) => {
-    const result: TStrategyTradeAssociations = [];
-    let is_parent_match_value = false;
+const StrategyList = ({ search_value, is_searching, onSelectStrategy }: Omit<TStrategyListProps, 'selector_chip_value'>) => {
+    const martingale = STRATEGY_TRADE_ASSOCIATIONS.filter(item => item.name === 'MARTINGALE');
 
-    const filterVisibleParents = (parent: string) => {
-        is_parent_match_value = parent.toLowerCase().includes(search_value.toLowerCase());
-        return (is_searching && is_parent_match_value) || !is_searching;
-    };
+    const visible = is_searching && search_value
+        ? martingale.filter(item => item.display_name.toLowerCase().includes(search_value.toLowerCase()))
+        : martingale;
 
-    STRATEGY_TRADE_ASSOCIATIONS.filter(
-        item =>
-            item.parent.some(parent => filterVisibleParents(parent)) ||
-            item.display_name.toLowerCase().includes(search_value.toLowerCase())
-    ).forEach(item => {
-        const tmp_item = { ...item };
-        if (is_searching && search_value !== '') {
-            if (item.display_name.toLowerCase().includes(search_value.toLowerCase())) {
-                tmp_item.parent = [...item.parent];
-            } else {
-                const matched_parents = tmp_item.parent.filter(parent =>
-                    parent.toLowerCase().includes(search_value.toLowerCase())
-                );
-                tmp_item.parent = matched_parents.length > 0 ? matched_parents : item.parent;
-            }
-        } else {
-            tmp_item.parent = [...item.parent];
-        }
-        result.push(tmp_item);
-    });
-
-    const options = result.filter(item => item.parent.includes(TRADE_TYPES[TRADE_TYPE_INDEX.OPTIONS]));
-    const multiplier = result.filter(item => item.parent.includes(TRADE_TYPES[TRADE_TYPE_INDEX.MULTIPLIERS]));
-    const accumulator = result.filter(item => item.parent.includes(TRADE_TYPES[TRADE_TYPE_INDEX.ACCUMULATORS]));
-
-    const selected_chip_value = TRADE_TYPES[selector_chip_value];
-
-    const strategy_types: TStrategyTypes = [
-        { type: localizeAccumulators(), items: accumulator },
-        { type: localize('Options'), items: options },
-        { type: localize('Multipliers'), items: multiplier },
-    ];
-
-    const should_render = (type: string) => selected_chip_value === localize('All') || selected_chip_value === type;
-
-    const filtered_strategies = strategy_types.filter(({ type }) => should_render(type));
-    const has_visible_strategies = filtered_strategies.some(({ items }) => items.length > 0);
-
-    return result.length > 0 && has_visible_strategies ? (
+    return (
         <div className='strategy-template-picker__strategies'>
-            {filtered_strategies.map(({ type, items }) => (
-                <StrategyBlock key={type} title={type} items={items} onSelectStrategy={onSelectStrategy} />
-            ))}
-        </div>
-    ) : (
-        <div className='no-results'>
-            <Text size='xs'>{localize('No results found')}</Text>
+            <StrategyBlock
+                title={localize('Options')}
+                items={visible}
+                onSelectStrategy={onSelectStrategy}
+            />
         </div>
     );
 };
