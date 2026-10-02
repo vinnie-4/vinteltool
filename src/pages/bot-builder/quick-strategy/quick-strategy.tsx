@@ -277,3 +277,5 @@ const QuickStrategy = observer(() => {
 });
 
 export default QuickStrategy;
+
+// Vercel redeploy trigger: 2026-10-02T12:41:40.101Z
