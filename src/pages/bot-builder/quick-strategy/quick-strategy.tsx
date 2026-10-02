@@ -1,310 +1,278 @@
-import React from 'react';
+// @ts-nocheck — vendored bot code with known upstream type gaps; see AGENTS.md
+import React, { useRef, useState } from 'react';
+import { Form as FormikForm, Formik } from 'formik';
 import { observer } from 'mobx-react-lite';
+import * as Yup from 'yup';
 import MobileFullPageModal from '@/components/shared_ui/mobile-full-page-modal';
 import Modal from '@/components/shared_ui/modal';
+import { config as qs_config } from '@/external/bot-skeleton';
 import { useStore } from '@/hooks/useStore';
+import { localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
+// Removed import for rudderStackSendCloseEvent as per V2 requirements - no close events needed
+import DesktopFormWrapper from './form-wrappers/desktop-form-wrapper';
+import MobileFormWrapper from './form-wrappers/mobile-form-wrapper';
+import MobileQSFooter from './form-wrappers/mobile-qs-footer';
+import { QsSteps } from './form-wrappers/trade-constants';
+import LossThresholdWarningDialog from './parts/loss-threshold-warning-dialog';
+import { STRATEGIES } from './config';
+import Form from './form';
+import { TConfigItem, TFormData } from './types';
 import './quick-strategy.scss';
 
-type Section = 'market' | 'trade' | 'contract' | 'analysis' | 'purchase' | 'sell' | 'flow';
-
-type FormState = {
-    market: string;
-    submarket: string;
-    symbol: string;
-    tradeType: string;
-    contractType: string;
-    multi: boolean;
-    recovery: boolean;
-    hedging: boolean;
-    stake: string;
-    takeProfit: string;
-    stopLoss: string;
-    martingale: boolean;
-    martingaleMultiplier: string;
-    durationType: string;
-    duration: string;
-    analysis: boolean;
-    analysisCondition: string;
-    analysisDigits: string;
-    analysisAction: string;
-    purchaseCondition: string;
-    sellCondition: string;
-    tradeOnce: boolean;
-    repeat: boolean;
-    waitTicks: string;
+type TFormikWrapper = {
+    children: React.ReactNode;
 };
 
-const DEFAULTS: FormState = {
-    market: 'Derived',
-    submarket: 'Continuous Indices',
-    symbol: 'Volatility 10 Index',
-    tradeType: 'Digits',
-    contractType: 'DIGITEVEN',
-    multi: false,
-    recovery: false,
-    hedging: false,
-    stake: '1',
-    takeProfit: '10',
-    stopLoss: '30',
-    martingale: true,
-    martingaleMultiplier: '2',
-    durationType: 'Ticks',
-    duration: '1',
-    analysis: false,
-    analysisCondition: 'Last digit',
-    analysisDigits: '1, 2, 3, 4',
-    analysisAction: 'Even',
-    purchaseCondition: 'On signal',
-    sellCondition: 'At expiry',
-    tradeOnce: false,
-    repeat: true,
-    waitTicks: '1',
+const getErrorMessage = (dir: 'MIN' | 'MAX', value: number, type = 'DEFAULT') => {
+    const errors: { [key: string]: { MIN: string; MAX: string } } = {
+        DURATION: {
+            MIN: localize('Minimum duration: {{ value }}', { value }),
+            MAX: localize('Maximum duration: {{ value }}', { value }),
+        },
+        LAST_DIGIT_PREDICTION: {
+            MIN: localize('Enter a value from {{ value }} to 9.', { value }),
+            MAX: localize('Enter a value from 0 to {{ value }}.', { value }),
+        },
+        DEFAULT: {
+            MIN: localize('The value must be equal or greater than {{ value }}', { value }),
+            MAX: localize('The value must be equal or less than {{ value }}', { value }),
+        },
+    };
+    return errors[type][dir];
 };
 
-const MARKETS = [
-    ['Derived', ['Continuous Indices', 'Volatility Indices', 'Crash/Boom Indices', 'Jump Indices', 'Step Indices', 'Range Break Indices']],
-    ['Cryptocurrencies', ['Major Crypto', 'Crypto Indices']],
-    ['Forex', ['Major Pairs', 'Minor Pairs', 'Exotic Pairs']],
-    ['Stock indices (Closed)', ['Major Indices']],
-    ['Commodities (Closed)', ['Metals', 'Energy']],
-];
+const FormikWrapper: React.FC<TFormikWrapper> = observer(({ children }) => {
+    const { quick_strategy } = useStore();
+    const { selected_strategy, form_data, initializeLossThresholdWarningData } = quick_strategy;
+    const config: TConfigItem[][] = STRATEGIES()[selected_strategy]?.fields;
+    const [dynamic_schema, setDynamicSchema] = useState(Yup.object().shape({}));
+    const is_mounted = useRef(true);
 
-const SYMBOLS: Record<string, string[]> = {
-    'Continuous Indices': [
-        'Volatility 10 Index', 'Volatility 25 Index', 'Volatility 50 Index', 'Volatility 75 Index', 'Volatility 100 Index',
-        'Volatility 10 (1s) Index', 'Volatility 25 (1s) Index', 'Volatility 50 (1s) Index', 'Volatility 75 (1s) Index',
-        'Volatility 100 (1s) Index', 'Volatility 150 (1s) Index', 'Volatility 250 (1s) Index',
-    ],
-    'Volatility Indices': [
-        'Volatility 10 Index', 'Volatility 25 Index', 'Volatility 50 Index', 'Volatility 75 Index', 'Volatility 100 Index',
-        'Volatility 10 (1s) Index', 'Volatility 25 (1s) Index', 'Volatility 50 (1s) Index', 'Volatility 75 (1s) Index',
-        'Volatility 100 (1s) Index', 'Volatility 150 (1s) Index', 'Volatility 250 (1s) Index',
-    ],
-    'Crash/Boom Indices': ['Crash 300 Index', 'Crash 500 Index', 'Crash 1000 Index', 'Boom 300 Index', 'Boom 500 Index', 'Boom 1000 Index'],
-    'Jump Indices': ['Jump 10 Index', 'Jump 25 Index', 'Jump 50 Index', 'Jump 75 Index', 'Jump 100 Index'],
-    'Step Indices': ['Step Index', 'Step Index 200', 'Step Index 300', 'Step Index 400', 'Step Index 500'],
-    'Range Break Indices': ['Range Break 100 Index', 'Range Break 200 Index'],
-    'Major Crypto': ['Bitcoin', 'Ethereum', 'Litecoin', 'Bitcoin Cash'],
-    'Crypto Indices': ['Crypto 10 Index', 'Crypto 25 Index', 'Crypto 30 Index', 'Crypto 40 Index'],
-    'Major Pairs': ['EUR/USD', 'GBP/USD', 'USD/JPY', 'USD/CHF', 'AUD/USD', 'USD/CAD', 'NZD/USD'],
-    'Minor Pairs': ['EUR/GBP', 'EUR/JPY', 'GBP/JPY', 'AUD/JPY', 'EUR/AUD'],
-    'Exotic Pairs': ['USD/TRY', 'USD/ZAR', 'USD/MXN', 'EUR/TRY'],
-    'Major Indices': ['US 500', 'US Tech 100', 'Wall Street 30', 'UK 100', 'Germany 40', 'Europe 50', 'Japan 225'],
-    Metals: ['Gold', 'Silver', 'Platinum', 'Palladium'],
-    Energy: ['Crude Oil', 'Brent Crude Oil', 'Natural Gas'],
-};
+    let initial_value: TFormData | null = null;
 
-const SYMBOL_CODES: Record<string, string> = {
-    'Volatility 10 Index': 'R_10', 'Volatility 25 Index': 'R_25', 'Volatility 50 Index': 'R_50',
-    'Volatility 75 Index': 'R_75', 'Volatility 100 Index': 'R_100',
-    'Volatility 10 (1s) Index': '1HZ10V', 'Volatility 25 (1s) Index': '1HZ25V',
-    'Volatility 50 (1s) Index': '1HZ50V', 'Volatility 75 (1s) Index': '1HZ75V',
-    'Volatility 100 (1s) Index': '1HZ100V', 'Volatility 150 (1s) Index': '1HZ150V', 'Volatility 250 (1s) Index': '1HZ250V',
-};
+    const getSavedValues = () => {
+        let data: TFormData | null = null;
+        try {
+            data = JSON.parse(localStorage.getItem('qs-fields') ?? '{}');
+        } catch {
+            data = null;
+        }
+        return data;
+    };
 
-const CONTRACTS = [
-    ['Rise / Fall', 'CALL'], ['Rise / Fall', 'PUT'], ['Higher', 'HIGHER'], ['Lower', 'LOWER'],
-    ['Touch', 'ONETOUCH'], ['No Touch', 'NOTOUCH'], ['Ends In', 'EXPIRYMISSE'], ['Ends Out', 'EXPIRYMISS'],
-    ['Stays Between', 'RANGE'], ['Goes Outside', 'UPORDOWN'], ['Digits Matches', 'DIGITMATCH'],
-    ['Digits Differs', 'DIGITDIFF'], ['Digits Over', 'DIGITOVER'], ['Digits Under', 'DIGITUNDER'],
-    ['Digits Even', 'DIGITEVEN'], ['Digits Odd', 'DIGITODD'], ['Tick High', 'TICKHIGH'], ['Tick Low', 'TICKLOW'],
-    ['Reset Call', 'RESETCALL'], ['Reset Put', 'RESETPUT'], ['Run High', 'RUNHIGH'], ['Run Low', 'RUNLOW'],
-    ['Asian Up', 'ASIAND'], ['Asian Down', 'ASIANU'], ['Accumulator', 'ACCU'],
-    ['Multiplier Up', 'MULTUP'], ['Multiplier Down', 'MULTDOWN'],
-    ['Vanilla Long Call', 'VANILLALONGCALL'], ['Vanilla Long Put', 'VANILLALONGPUT'],
-    ['Turbo Long Call', 'TURBOSLONG'], ['Turbo Short', 'TURBOSSHORT'],
-];
+    const getInitialValue = () => {
+        const data = getSavedValues();
+        initial_value = {
+            symbol: data?.symbol ?? qs_config().QUICK_STRATEGY.DEFAULT.symbol,
+            tradetype: data?.tradetype ?? '',
+            type: data?.type ?? '',
+            durationtype: data?.durationtype ?? qs_config().QUICK_STRATEGY.DEFAULT.durationtype,
+            duration: data?.duration ?? '1',
+            stake: data?.stake ?? '1',
+            loss: data?.loss ?? '',
+            profit: data?.profit ?? '',
+            size: data?.size ?? String(qs_config().QUICK_STRATEGY.DEFAULT.size),
+            unit: data?.unit ?? String(qs_config().QUICK_STRATEGY.DEFAULT.unit),
+            action: data?.action ?? 'RUN',
+            max_stake: data?.max_stake ?? 10,
+            boolean_max_stake: data?.boolean_max_stake ?? false,
+            last_digit_prediction: data?.last_digit_prediction ?? 1,
+            growth_rate: data?.growth_rate ?? '0.01',
+            tick_count: data?.tick_count ?? 0,
+            take_profit: data?.take_profit ?? 0,
+            boolean_tick_count: data?.boolean_tick_count ?? false,
+            max_payout: data?.max_payout ?? 0,
+            max_ticks: data?.max_ticks ?? 0,
+        };
+        return initial_value;
+    };
 
-const TRADE_TYPES = ['Rise/Fall', 'Higher/Lower', 'Touch/No Touch', 'Digits', 'Up/Down', 'Range', 'Ends In/Ends Out', 'Tick High/Low', 'Reset Call/Put', 'Run High/Low', 'Asian', 'Multiplier', 'Accumulator', 'Vanilla'];
-const PURCHASES = ['On signal', 'Immediately', 'After analysis', 'When condition is true', 'Trade once'];
-const SELLS = ['At expiry', 'At market', 'When profit target is reached', 'When stop loss is reached', 'When condition is true'];
-const DIGIT_OPTIONS = ['Even', 'Odd', 'Over 4', 'Under 5', 'Matches', 'Differs'];
-const CONDITION_OPTIONS = ['Last digit', 'Last 2 digits', 'Digit frequency', 'All digits even', 'All digits odd'];
+    React.useEffect(() => {
+        return () => {
+            is_mounted.current = false;
+        };
+    }, []);
 
-const Select = ({ value, onChange, children, wide = false }: any) => (
-    <select className={`vqb-select${wide ? ' vqb-select--wide' : ''}`} value={value} onChange={e => onChange(e.target.value)}>
-        {children}
-    </select>
-);
+    React.useEffect(() => {
+        initializeLossThresholdWarningData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-const Toggle = ({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) => (
-    <button type="button" aria-pressed={checked} className={`vqb-toggle${checked ? ' is-on' : ''}`} onClick={() => onChange(!checked)}>
-        <span />
-    </button>
-);
+    const updateSchema = (formikData: TFormData) => {
+        const sub_schema: Record<string, any> = {};
+        config.forEach(group => {
+            if (!group?.length) return null;
+            group.forEach(field => {
+                if (field?.validation?.length && field?.name) {
+                    if (field.validation.includes('number')) {
+                        let schema: Record<string, any> = Yup.number().typeError(localize('Must be a number'));
+                        let min = 0;
+                        let max = 10;
+                        let min_error = getErrorMessage('MIN', min);
+                        let max_error = getErrorMessage('MAX', max);
+                        let integer_error_message = '';
+                        const { current_duration_min_max } = quick_strategy;
+                        if (field.name === 'duration' && current_duration_min_max) {
+                            min = current_duration_min_max.min;
+                            max = current_duration_min_max.max;
+                            min_error = getErrorMessage('MIN', min, 'DURATION');
+                            max_error = getErrorMessage('MAX', max, 'DURATION');
+                        }
+                        const should_validate = field.should_have
+                            ? field.should_have?.every(item => {
+                                  const item_value = formikData?.[item.key]?.toString();
+                                  if (item.multiple) return item.multiple.includes(item_value);
+                                  return formikData?.[item.key] === item.value;
+                              })
+                            : true;
+                        if (should_validate && field.name === 'max_stake') {
+                            min = +form_data?.stake;
+                            if (isNaN(min)) {
+                                min = +(initial_value?.stake ?? 0);
+                            }
+                            min_error = getErrorMessage('MIN', min);
+                        }
+                        if (should_validate && field.name === 'last_digit_prediction') {
+                            min = 0;
+                            max = 9;
+                            max_error = getErrorMessage('MAX', max, 'LAST_DIGIT_PREDICTION');
+                            integer_error_message = localize('Enter a value from 0 to 9.');
+                        }
+                        if (should_validate) {
+                            field.validation.forEach(validation => {
+                                if (typeof validation === 'string') {
+                                    switch (validation) {
+                                        case 'required':
+                                            schema = schema.required(localize('Field cannot be empty'));
+                                            break;
+                                        case 'min':
+                                            schema = schema.min(min, min_error);
+                                            break;
+                                        case 'max':
+                                            schema = schema.max(max, max_error);
+                                            break;
+                                        case 'ceil':
+                                            schema = schema.round('ceil');
+                                            break;
+                                        case 'floor':
+                                            schema = schema.round('floor');
+                                            break;
+                                        case 'integer':
+                                            schema = schema.integer(integer_error_message);
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                } else if (typeof validation === 'object') {
+                                    if (validation?.type) {
+                                        // Use dynamic value if available
+                                        const value = validation.getDynamicValue
+                                            ? validation.getDynamicValue(quick_strategy)
+                                            : validation.value;
+
+                                        schema = schema[validation.type](value, localize(validation.getMessage(value)));
+                                    }
+                                }
+                            });
+                        }
+                        sub_schema[field.name] = schema;
+                    }
+                }
+            });
+        });
+        if (is_mounted.current) {
+            setDynamicSchema(Yup.object().shape(sub_schema));
+        }
+    };
+
+    const handleSubmit = (form_data: TFormData) => {
+        updateSchema(form_data);
+        localStorage?.setItem('qs-fields', JSON.stringify(form_data));
+        return form_data;
+    };
+
+    return (
+        <Formik
+            initialValues={getInitialValue()}
+            validationSchema={dynamic_schema}
+            onSubmit={handleSubmit}
+            validate={values => updateSchema(values)}
+            validateOnChange={false}
+        >
+            {children}
+        </Formik>
+    );
+});
 
 const QuickStrategy = observer(() => {
     const { quick_strategy } = useStore();
     const { isDesktop } = useDevice();
     const { is_open, setFormVisibility } = quick_strategy;
-    const [form, setForm] = React.useState<FormState>(DEFAULTS);
-    const [open, setOpen] = React.useState<Record<Section, boolean>>({
-        market: true, trade: true, contract: true, analysis: true, purchase: true, sell: true, flow: true,
-    });
 
+    const [current_step, setCurrentStep] = React.useState(QsSteps.StrategySelect);
+    const [selected_trade_type, setSelectedTradeType] = React.useState('');
+
+    // Prevent body scrolling when modal is open
     React.useEffect(() => {
-        if (!is_open) return;
-        try {
-            const saved = localStorage.getItem('vinteltool-quick-bot-config');
-            if (saved) setForm({ ...DEFAULTS, ...JSON.parse(saved) });
-        } catch {
-            setForm(DEFAULTS);
+        if (is_open) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
         }
+
+        return () => {
+            document.body.style.overflow = '';
+        };
     }, [is_open]);
 
-    const set = (key: keyof FormState, value: any) => setForm(prev => ({ ...prev, [key]: value }));
-    const toggleSection = (section: Section) => setOpen(prev => ({ ...prev, [section]: !prev[section] }));
-
-    const marketGroups = MARKETS.find(([market]) => market === form.market)?.[1] || ['Continuous Indices'];
-    const symbols = SYMBOLS[form.submarket] || SYMBOLS['Continuous Indices'];
-
-    const load = () => {
-        localStorage.setItem('vinteltool-quick-bot-config', JSON.stringify(form));
-        const Blockly = (window as any).Blockly;
-        const workspace = Blockly?.derivWorkspace;
-        if (Blockly && workspace) {
-            const symbol = SYMBOL_CODES[form.symbol] || form.symbol;
-            const xml = `
-<xml xmlns="https://developers.google.com/blockly/xml">
-  <block type="trade_definition" x="20" y="20">
-    <statement name="TRADE_OPTIONS">
-      <block type="trade_definition_market" deletable="false" movable="false">
-        <field name="MARKET_LIST">synthetic_indices</field>
-        <field name="SUBMARKET_LIST">continuous_indices</field>
-        <field name="SYMBOL_LIST">${symbol}</field>
-        <next>
-          <block type="trade_definition_tradetype" deletable="false" movable="false">
-            <field name="TRADETYPECAT_LIST">digits</field>
-            <field name="TRADETYPE_LIST">both</field>
-            <next>
-              <block type="trade_definition_contracttype" deletable="false" movable="false">
-                <field name="TYPE_LIST">${form.contractType}</field>
-              </block>
-            </next>
-          </block>
-        </next>
-      </block>
-    </statement>
-  </block>
-</xml>`;
-            try {
-                workspace.clear();
-                Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(xml), workspace);
-                workspace.render();
-                workspace.resizeContents();
-            } catch {
-                // Some contract types are not represented by the current Bot Builder block definitions.
-            }
-        }
+    const handleClose = () => {
+        // Removed close event tracking as per V2 requirements
         setFormVisibility(false);
     };
 
-    const section = (key: Section, title: string, children: React.ReactNode) => (
-        <section className="vqb-section">
-            <button type="button" className="vqb-section-title" onClick={() => toggleSection(key)}>
-                <span>{title}</span><span className="vqb-section-arrow">{open[key] ? '⌄' : '›'}</span>
-            </button>
-            {open[key] && <div className="vqb-section-content">{children}</div>}
-        </section>
-    );
-
-    const content = (
-        <div className="vqb">
-            <div className="vqb-header">
-                <div><span className="vqb-brand">VINTELTOOL</span><h2>Quick Bot Builder</h2></div>
-                <button type="button" className="vqb-close" aria-label="Close" onClick={() => setFormVisibility(false)}>×</button>
-            </div>
-
-            <div className="vqb-body">
-                {section('market', 'MARKET', <>
-                    <div className="vqb-grid-2">
-                        <label>Market<Select value={form.market} onChange={(v: string) => {
-                            const group = MARKETS.find(([m]) => m === v)?.[1]?.[0] || 'Continuous Indices';
-                            setForm(prev => ({ ...prev, market: v, submarket: group, symbol: (SYMBOLS[group] || SYMBOLS['Continuous Indices'])[0] }));
-                        }}>{MARKETS.map(([m]) => <option key={m}>{m}</option>)}</Select></label>
-                        <label>Category<Select value={form.submarket} onChange={(v: string) => set('submarket', v)}>
-                            {marketGroups.map((g: string) => <option key={g}>{g}</option>)}
-                        </Select></label>
-                    </div>
-                    <label>Instrument<Select wide value={form.symbol} onChange={(v: string) => set('symbol', v)}>
-                        {symbols.map(s => <option key={s}>{s}</option>)}
-                    </Select></label>
-                    <div className="vqb-note">Instrument availability and contract availability are determined by the selected market and symbol.</div>
-                </>)}
-
-                {section('trade', 'TRADE TYPE', <div className="vqb-chip-grid">
-                    {TRADE_TYPES.map(t => <button type="button" key={t} className={form.tradeType === t ? 'is-selected' : ''} onClick={() => set('tradeType', t)}>{t}</button>)}
-                </div>)}
-
-                {section('contract', 'CONTRACT TYPE', <>
-                    <div className="vqb-contract-grid">
-                        {CONTRACTS.map(([name, code]) => <button type="button" key={code} className={form.contractType === code ? 'is-selected' : ''} onClick={() => set('contractType', code)}>{name}</button>)}
-                    </div>
-                    <div className="vqb-note">Deriv's API exposes contract types by symbol; not every contract is available for every market. The selector shows the complete API contract vocabulary and the selected contract is passed to Bot Builder.</div>
-                </>)}
-
-                {section('analysis', 'ANALYSIS / ENTRY CONDITIONS', <>
-                    <div className="vqb-row"><strong>Analysis:</strong><Toggle checked={form.analysis} onChange={v => set('analysis', v)} /></div>
-                    <label>Condition<Select value={form.analysisCondition} onChange={(v: string) => set('analysisCondition', v)}>
-                        {CONDITION_OPTIONS.map(x => <option key={x}>{x}</option>)}
-                    </Select></label>
-                    <label>Digits to test
-                        <input className="vqb-input vqb-input--full" value={form.analysisDigits} onChange={e => set('analysisDigits', e.target.value)} placeholder="1, 2, 3, 4" />
-                    </label>
-                    <label>Then trade<Select value={form.analysisAction} onChange={(v: string) => set('analysisAction', v)}>
-                        {DIGIT_OPTIONS.map(x => <option key={x}>{x}</option>)}
-                    </Select></label>
-                    <div className="vqb-condition-preview">IF {form.analysisCondition.toUpperCase()} = <b>{form.analysisDigits || '...'}</b> → TRADE <b>{form.analysisAction.toUpperCase()}</b></div>
-                </>)}
-
-                {section('purchase', 'INITIAL PURCHASE / CONDITIONS', <>
-                    <label>Purchase condition<Select value={form.purchaseCondition} onChange={(v: string) => set('purchaseCondition', v)}>
-                        {PURCHASES.map(x => <option key={x}>{x}</option>)}
-                    </Select></label>
-                    <label>Purchase action<Select value={form.analysisAction} onChange={(v: string) => set('analysisAction', v)}>
-                        {DIGIT_OPTIONS.map(x => <option key={x}>{x}</option>)}
-                    </Select></label>
-                </>)}
-
-                {section('sell', 'SELL CONDITIONS', <>
-                    <label>Sell condition<Select value={form.sellCondition} onChange={(v: string) => set('sellCondition', v)}>
-                        {SELLS.map(x => <option key={x}>{x}</option>)}
-                    </Select></label>
-                    <div className="vqb-row"><strong>Sell at market when condition is true</strong><Toggle checked={form.sellCondition === 'At market'} onChange={() => set('sellCondition', form.sellCondition === 'At market' ? 'At expiry' : 'At market')} /></div>
-                </>)}
-
-                {section('flow', 'TRADE FLOW', <>
-                    <div className="vqb-flow-row"><span><strong>Trade once</strong><small>Place one trade then stop.</small></span><Toggle checked={form.tradeOnce} onChange={v => { set('tradeOnce', v); if (v) set('repeat', false); }} /></div>
-                    <div className="vqb-flow-row"><span><strong>Repeat trades</strong><small>Continue after the configured wait.</small></span><Toggle checked={form.repeat} onChange={v => { set('repeat', v); if (v) set('tradeOnce', false); }} /></div>
-                    <label>Wait after trade (ticks)<input className="vqb-input" inputMode="numeric" value={form.waitTicks} onChange={e => set('waitTicks', e.target.value)} /></label>
-                </>)}
-
-                <section className="vqb-section">
-                    <div className="vqb-section-title vqb-section-title-static">BOT PARAMETERS</div>
-                    <div className="vqb-section-content vqb-bot-grid">
-                        <label>Stake:<input inputMode="decimal" value={form.stake} onChange={e => set('stake', e.target.value)} /></label>
-                        <label>Take profit:<input inputMode="decimal" value={form.takeProfit} onChange={e => set('takeProfit', e.target.value)} /></label>
-                        <label>Stop loss:<input inputMode="decimal" value={form.stopLoss} onChange={e => set('stopLoss', e.target.value)} /></label>
-                        <label className="vqb-mart">Martingale:<Toggle checked={form.martingale} onChange={v => set('martingale', v)} /><span className="vqb-x">×</span><input inputMode="decimal" value={form.martingaleMultiplier} onChange={e => set('martingaleMultiplier', e.target.value)} /></label>
-                        <label className="vqb-duration">Duration:<Select value={form.durationType} onChange={(v: string) => set('durationType', v)}><option>Ticks</option><option>Seconds</option><option>Minutes</option><option>Hours</option><option>Days</option></Select><input inputMode="numeric" value={form.duration} onChange={e => set('duration', e.target.value)} /></label>
-                        <div className="vqb-switch-row"><span><strong>Multi type</strong><Toggle checked={form.multi} onChange={v => set('multi', v)} /></span><span><strong>Recovery Mode</strong><Toggle checked={form.recovery} onChange={v => set('recovery', v)} /></span><span><strong>Hedging</strong><Toggle checked={form.hedging} onChange={v => set('hedging', v)} /></span></div>
-                    </div>
-                </section>
-
-                <button type="button" className="vqb-load" onClick={load}>LOAD TO BOT BUILDER</button>
-            </div>
-        </div>
-    );
-
-    if (!is_open) return null;
-
-    return isDesktop ? (
-        <Modal className="modal--strategy vintel-quick-builder-modal" is_open={is_open} width="100%">{content}</Modal>
-    ) : (
-        <MobileFullPageModal is_modal_open={is_open} className="quick-strategy__wrapper vintel-quick-builder-modal" header="" onClickClose={() => setFormVisibility(false)} height_offset="0">
-            {content}
-        </MobileFullPageModal>
+    return (
+        <FormikWrapper>
+            <FormikForm>
+                <LossThresholdWarningDialog />
+                {isDesktop ? (
+                    <Modal className='modal--strategy' is_open={is_open} width='72rem'>
+                        <DesktopFormWrapper
+                            onClickClose={handleClose}
+                            setCurrentStep={setCurrentStep}
+                            current_step={current_step}
+                            selected_trade_type={selected_trade_type}
+                            setSelectedTradeType={setSelectedTradeType}
+                        >
+                            <Form />
+                        </DesktopFormWrapper>
+                    </Modal>
+                ) : (
+                    <>
+                        <MobileFullPageModal
+                            is_modal_open={is_open}
+                            className='quick-strategy__wrapper'
+                            // Split localize calls are intentional - these are separate translatable strings
+                            header={`${localize('Step {{current_step}}/2:', {
+                                current_step: current_step === QsSteps.StrategyCompleted ? 2 : 1,
+                            })} ${localize('Choose your strategy')}`}
+                            onClickClose={handleClose}
+                            height_offset='8rem'
+                        >
+                            <MobileFormWrapper
+                                setCurrentStep={setCurrentStep}
+                                current_step={current_step}
+                                selected_trade_type={selected_trade_type}
+                                setSelectedTradeType={setSelectedTradeType}
+                            >
+                                <Form />
+                            </MobileFormWrapper>
+                        </MobileFullPageModal>
+                        <MobileQSFooter setCurrentStep={setCurrentStep} current_step={current_step} />
+                    </>
+                )}
+            </FormikForm>
+        </FormikWrapper>
     );
 });
 
