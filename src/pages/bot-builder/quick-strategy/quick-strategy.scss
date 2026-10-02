@@ -61,3 +61,14 @@
  .vqb-duration { grid-column:auto; }
  .vqb-load { height:3.1rem; }
 }
+
+/* Quick Strategy full-screen modal */
+.modal--strategy {
+  width: 100vw !important;
+  max-width: 100vw !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+.modal--strategy > * { max-height: 100vh; }
