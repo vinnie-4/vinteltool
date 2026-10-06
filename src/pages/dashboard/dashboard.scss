@@ -185,13 +185,14 @@
             }
 
             @include desktop-screen {
-                padding: 80px 216px 0;
+                padding: clamp(2.4rem, 5vh, 6rem) clamp(2.4rem, 7vw, 12rem) 2.4rem;
             }
 
             @include mobile-or-tablet-screen {
-                height: calc(100vh - 19rem);
+                height: calc(100vh - 10.5rem);
+                min-height: 0;
                 align-items: flex-start;
-                padding: 1.6rem;
+                padding: 1.2rem;
             }
 
             .quick-panel {
