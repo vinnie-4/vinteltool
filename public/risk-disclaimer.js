@@ -88,10 +88,28 @@
         function syncRiskDisclaimerOverlay() {
             var hash = window.location.hash.replace(/^#/, '').toLowerCase();
             var path = window.location.pathname.toLowerCase();
-            var isDashboard = hash === 'dashboard' || path === '/' || path === '/dashboard';
+            var activeTab = document.querySelector('.dc-tabs__active, .dc-tabs__item[aria-selected="true"]');
+            var activeTabText = activeTab ? (activeTab.textContent || '').trim().toLowerCase() : '';
+            var isDashboard =
+                activeTabText === 'dashboard' ||
+                activeTabText.indexOf('dashboard') !== -1 ||
+                hash === 'dashboard' ||
+                path === '/' ||
+                path === '/dashboard';
+
             button.style.display = isDashboard ? 'block' : 'none';
+            button.style.position = 'fixed';
+
             if (!isDashboard) closeModal();
         }
+
+        var visibilityObserver = new MutationObserver(syncRiskDisclaimerOverlay);
+        visibilityObserver.observe(document.body, {
+            subtree: true,
+            childList: true,
+            attributes: true,
+            attributeFilter: ['class', 'aria-selected']
+        });
 
         window.addEventListener('hashchange', syncRiskDisclaimerOverlay);
         window.addEventListener('popstate', syncRiskDisclaimerOverlay);
