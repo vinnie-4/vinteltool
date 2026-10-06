@@ -200,6 +200,9 @@ const scannerXml = (market: Market, signal: Signal) => {
 };
 
 const FloatingAIScanner = () => {
+    return null;
+
+    /* Hidden floating scanner UI retained below for future re-enable. */
     const { quick_strategy, dashboard } = useStore();
     const [open, setOpen] = useState(false);
     const [market, setMarket] = useState(MARKETS[8]);
