@@ -1,8 +1,18 @@
-# Deriv Trading Bot
+# VintelTool
 
-A self-hosted, visual trading-bot builder on the Deriv WebSocket API. Drag-and-drop
-strategy building with Blockly, an interactive SmartCharts chart, automated strategy
-execution, and dashboard/tutorials.
+VintelTool is a self-hosted visual trading platform built around the **Deriv WebSocket API**. It provides a Blockly-based Bot Builder for creating and executing automated trading strategies, together with Quick Strategy, live market/tick analysis, SmartCharts, and configurable white-label branding.
+
+### Core features
+
+- **Bot Builder** — drag-and-drop Blockly workspace for building Deriv trading strategies.
+- **Quick Strategy** — configure strategy parameters and load them into the native Bot Builder workspace.
+- **Live market analysis** — tick and last-digit analysis for digit-based trading workflows.
+- **SmartCharts** — interactive Deriv market charting.
+- **Deriv OAuth/API connectivity** — account authentication and WebSocket market/trading connectivity.
+- **White-label branding** — configurable application name, logo, favicon, colors, fonts, and theme.
+- **Optional Google Drive integration** — save and load strategies when configured.
+
+> **Architecture:** VintelTool is an **Rsbuild + React Router** single-page application, not a Next.js application. Production builds are generated into `dist/`.
 
 > **Note:** Unlike the other templates in this repo (Rise/Fall, Accumulators, Digits)
 > which are **Next.js** apps, the bot is a **[Rsbuild](https://rsbuild.dev) + React
@@ -121,3 +131,22 @@ font, and app name are injected at deploy time).
 <!-- production recovery deployment marker -->
 
 <!-- deployment trigger for restored 63f9976 -->
+
+## VintelTool development notes
+
+### Bot Builder
+
+The Bot Builder uses native **Blockly** blocks and workspace state. Strategy loading should keep configured parameters synchronized with the actual Blockly workspace rather than relying on temporary visual overlays.
+
+### Quick Strategy
+
+Quick Strategy is intended to configure a strategy and then load that configuration into the Bot Builder. Changes to this flow should preserve the connection between the configuration form, generated strategy data, and the native Blockly workspace.
+
+### Live analysis
+
+Market-analysis features are designed around live Deriv tick data and can support last-digit workflows such as Even/Odd, Over/Under, digit frequency, and configurable tick-window analysis.
+
+### Deployment
+
+The repository deploys as an Rsbuild static application. Vercel builds with `npm run build` and serves the generated `dist/` directory, as configured in `vercel.json`.
+
