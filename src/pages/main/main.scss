@@ -20,12 +20,12 @@
     display: flex;
     overflow: hidden;
     width: 100%;
-    height: calc(100vh - 9rem);
+    height: calc(100dvh - 9rem);
     padding: 1.6rem;
     background-color: var(--general-main-1);
     color: #ffffff;
 
-    @include mobile-or-tablet-screen { height: calc(100vh - 6rem); padding: 0; }
+    @include mobile-or-tablet-screen { height: calc(100dvh - 6rem); padding: 0; }
 
     &__container {
         position: relative;
@@ -55,6 +55,8 @@
                 &--border-bottom { @include mobile-or-tablet-screen { border-bottom: 0; } }
             }
             &__content {
+                min-height: 0;
+                flex: 1 1 auto;
                 background-color: var(--general-main-1);
                 color: #ffffff;
                 @include mobile-or-tablet-screen { width: 100%; overflow-x: auto; }
@@ -109,7 +111,8 @@
 
     &__run-strategy-wrapper {
         inset-inline-end: 1.6rem;
-        top: 1.6rem;
+        bottom: 1.6rem;
+        top: auto;
         z-index: 2;
         @include desktop-screen { position: absolute; }
         .animation {
@@ -388,4 +391,31 @@
     z-index: 1000;
     background-color: var(--general-main-1);
     &--active { height: auto; min-height: 18rem; }
+}
+
+
+@media (min-width: 768px) {
+    .main {
+        min-height: 0;
+        box-sizing: border-box;
+    }
+
+    .main__container {
+        min-height: 0;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .main__container .dc-tabs__content--main__tabs {
+        min-height: 0;
+        flex: 1 1 auto;
+        overflow: hidden;
+    }
+}
+
+@media (max-width: 767px) {
+    .main__container { min-height: 0; }
+    .main__container .dc-tabs__content--main__tabs { min-height: 0; }
+    .main__run-strategy-wrapper { inset-inline: 0.8rem; bottom: 0.8rem; top: auto; }
 }
