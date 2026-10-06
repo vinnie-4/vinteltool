@@ -37,8 +37,9 @@
 .tab__dashboard__quick-card {
     position: relative;
     min-width: 0;
-    min-height: 216px;
-    padding: 2.2rem 2.4rem 1.6rem;
+    min-height: 0;
+    height: 100%;
+    padding: 1.8rem 2rem 1.4rem;
     border: 1px solid rgba(115, 174, 215, .35);
     border-top: 2px solid var(--card-accent);
     border-radius: 1.6rem;
@@ -221,6 +222,13 @@
 }
 
 @media (max-width: 700px) {
+    .tab__dashboard__table { width: 100%; }
+
+    .tab__dashboard__table__tiles {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .8rem;
+    }
+
     .tab__dashboard__table {
         max-width: none;
     }
@@ -236,8 +244,9 @@
     }
 
     .tab__dashboard__quick-card {
-        min-height: 190px;
-        padding: 1.5rem 1.4rem 1.2rem;
+        min-height: 0;
+        height: 100%;
+        padding: 1.2rem 1rem 1rem;
         border-radius: 1.3rem;
     }
 
