@@ -90,6 +90,12 @@ const AppWrapper = observer(() => {
         return Number(hash.indexOf(String(tab_value)));
     };
     const active_hash_tab = GetHashedValue(active_tab);
+    const forceDashboardAfterLogin = () => {
+        if (window.location.hash && window.location.hash !== '#dashboard') {
+            window.history.replaceState({}, '', `${window.location.search}#dashboard`);
+        }
+        if (active_tab !== DASHBOARD) setActiveTab(DASHBOARD);
+    };
 
     React.useEffect(() => { setModalStateChangeCallback(new_state => setTradeTypeModalState(new_state)); }, [is_loading]);
     React.useEffect(() => { resetUrlParamProcessing(); }, [location.search]);
@@ -128,7 +134,17 @@ const AppWrapper = observer(() => {
     }, [active_tab, is_loading]);
     React.useEffect(() => {
         updateTabShadowsHeight(); if (is_open) setTourDialogVisibility(false);
-        if (init_render.current) { setActiveTab(Number(active_hash_tab)); if (!isDesktop) handleTabChange(Number(active_hash_tab)); init_render.current = false; }
+        if (init_render.current) {
+            const wasLoginRedirect = new URLSearchParams(window.location.search).has('code') || sessionStorage.getItem('vinteltool:just_logged_in') === 'true';
+            if (wasLoginRedirect) {
+                sessionStorage.removeItem('vinteltool:just_logged_in');
+                forceDashboardAfterLogin();
+            } else {
+                setActiveTab(Number(active_hash_tab));
+                if (!isDesktop) handleTabChange(Number(active_hash_tab));
+            }
+            init_render.current = false;
+        }
         else navigate(`${window.location.search}#${hash[active_tab] || hash[0]}`);
         if (active_tour !== '') setActiveTour('');
         const mainElement = document.querySelector('.main__container');
