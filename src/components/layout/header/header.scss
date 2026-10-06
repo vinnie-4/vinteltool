@@ -277,6 +277,10 @@
         background-color: #000080 !important;
         color: #ffffff !important;
 
+        span {
+            color: #ffffff !important;
+        }
+
         &:disabled,
         &[disabled] {
             opacity: 1;
