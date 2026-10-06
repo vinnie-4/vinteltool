@@ -161,10 +161,6 @@ const AppHeader = observer(() => {
                 <Wrapper variant='left'>
                     <MobileMenu onLogout={handleLogout} />
                     <AppLogo />
-                    <button className='header-refresh-control' type='button' aria-label='Refresh' onClick={() => window.location.reload()}>
-                        <span className='header-refresh-control__up'>↑</span>
-                        <span className='header-refresh-control__down'>↓</span>
-                    </button>
                 </Wrapper>
                 <Wrapper variant='right'>
                     {renderAccountSection('right')}
