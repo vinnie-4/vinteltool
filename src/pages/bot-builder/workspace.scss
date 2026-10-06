@@ -5,6 +5,7 @@
     position: relative;
     width: calc(100vw - 3.2rem);
     height: var(--bot-content-height);
+    max-height: calc(100dvh - 10.4rem);
     top: 0;
 
     @include mobile-or-tablet-screen {
@@ -27,8 +28,14 @@
 }
 
 .injectionDiv {
-    height: calc(100vh - 16.4rem);
+    height: calc(100dvh - 10.4rem);
     position: relative;
     touch-action: none;
     overflow: hidden;
+}
+
+
+@media (max-width: 767px) {
+    #scratch_div { height: calc(100dvh - 10.4rem); max-height: none; }
+    .injectionDiv { height: calc(100dvh - 10.4rem); }
 }
