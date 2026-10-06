@@ -85,6 +85,17 @@
         document.body.appendChild(button);
         document.body.appendChild(overlay);
 
+        function syncRiskDisclaimerOverlay() {
+            var hash = window.location.hash.replace(/^#/, '').toLowerCase();
+            var path = window.location.pathname.toLowerCase();
+            var isDashboard = hash === 'dashboard' || path === '/' || path === '/dashboard';
+            button.style.display = isDashboard ? 'block' : 'none';
+            if (!isDashboard) closeModal();
+        }
+
+        window.addEventListener('hashchange', syncRiskDisclaimerOverlay);
+        window.addEventListener('popstate', syncRiskDisclaimerOverlay);
+
         function closeModal() {
             overlay.style.display = 'none';
         }
@@ -95,6 +106,7 @@
         overlay.addEventListener('click', function (event) {
             if (event.target === overlay || event.target.hasAttribute('data-risk-close')) closeModal();
         });
+        syncRiskDisclaimerOverlay();
     }
 
     window.addEventListener('vinteltool:initialized', initRiskDisclaimer, { once: true });
