@@ -66,6 +66,7 @@ const router = createBrowserRouter(
 );
 
 const OFFLINE_GRACE_MS = 20 * 60 * 1000;
+const INACTIVITY_TIMEOUT_MS = 180 * 1000;
 const TOKEN_REFRESH_SKEW_MS = 60 * 1000;
 
 function getAuthConfig() {
@@ -93,8 +94,6 @@ async function refreshAuthenticatedSession(): Promise<void> {
     const accounts = await DerivWSAccountsService.fetchAccountsList(authInfo.access_token);
     if (!accounts.length) throw new Error('No Deriv trading accounts were returned');
 
-    // Refresh account data, including balances, while preserving the user's
-    // currently selected account whenever it still exists.
     const previousLoginId = localStorage.getItem('active_loginid');
     const selectedAccount =
         (previousLoginId && accounts.find(account => account.account_id === previousLoginId)) || accounts[0];
@@ -114,6 +113,18 @@ function App() {
     React.useEffect(() => {
         let disposed = false;
         let offlineTimer: ReturnType<typeof setInterval> | undefined;
+        let inactivityTimer: ReturnType<typeof setTimeout> | undefined;
+
+        const resetInactivityTimer = () => {
+            if (inactivityTimer) clearTimeout(inactivityTimer);
+
+            if (!getStoredAuthInfo()) return;
+
+            inactivityTimer = setTimeout(() => {
+                clearAllAuthData();
+                if (!disposed) window.location.reload();
+            }, INACTIVITY_TIMEOUT_MS);
+        };
 
         const enforceOfflineGrace = () => {
             const lastOnlineAuth = getLastOnlineAuthAt();
@@ -123,6 +134,12 @@ function App() {
             }
         };
 
+        const activityEvents = ['pointerdown', 'keydown', 'touchstart', 'mousemove', 'scroll', 'wheel'];
+
+        activityEvents.forEach(event => {
+            window.addEventListener(event, resetInactivityTimer, { passive: true });
+        });
+
         const bootstrapSession = async () => {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.has('code')) return;
@@ -130,9 +147,9 @@ function App() {
             const storedAuth = getStoredAuthInfo();
             if (!storedAuth) return;
 
+            resetInactivityTimer();
+
             if (!navigator.onLine) {
-                // Keep the existing session usable while offline for 20 minutes.
-                // After that period the app requires a fresh Deriv login.
                 if (!getLastOnlineAuthAt()) markOnlineAuth();
                 enforceOfflineGrace();
                 offlineTimer = setInterval(enforceOfflineGrace, 30 * 1000);
@@ -140,13 +157,10 @@ function App() {
             }
 
             try {
-                // Browser refresh stays logged in, but the online session is
-                // revalidated and the latest Deriv balances are fetched.
                 await refreshAuthenticatedSession();
+                resetInactivityTimer();
             } catch (error) {
                 console.error('[Auth] Session refresh failed:', error);
-                // Transient network/API failure gets the offline grace period;
-                // never log the user out merely because one request failed.
                 if (!getLastOnlineAuthAt()) markOnlineAuth();
             }
         };
@@ -154,6 +168,7 @@ function App() {
         const handleOnline = async () => {
             try {
                 await refreshAuthenticatedSession();
+                resetInactivityTimer();
             } catch (error) {
                 console.error('[Auth] Reconnect/refresh failed:', error);
             }
@@ -165,6 +180,10 @@ function App() {
         return () => {
             disposed = true;
             if (offlineTimer) clearInterval(offlineTimer);
+            if (inactivityTimer) clearTimeout(inactivityTimer);
+            activityEvents.forEach(event => {
+                window.removeEventListener(event, resetInactivityTimer);
+            });
             window.removeEventListener('online', handleOnline);
         };
     }, []);
