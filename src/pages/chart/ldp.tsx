@@ -21,6 +21,7 @@ const LDP = observer(() => {
     const { symbol, updateSymbol } = chart_store;
     const { getQuotes, subscribeQuotes } = useSmartChartAdaptor();
     const [ticks, setTicks] = useState<Tick[]>([]);
+    const [livePrice, setLivePrice] = useState<string>('—');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -37,7 +38,11 @@ const LDP = observer(() => {
             try {
                 const result = await getQuotes({ symbol, granularity: 0, count: 3000 });
                 const prices = result?.history?.prices ?? [];
-                if (active) setTicks(prices.slice(-3000).map(toTick));
+                if (active) {
+                    const history = prices.slice(-3000).map(toTick);
+                    setTicks(history);
+                    if (history.length) setLivePrice(history[history.length - 1].price);
+                }
             } catch (error) {
                 console.error('Failed to load LDP tick history', error);
             } finally {
@@ -48,7 +53,9 @@ const LDP = observer(() => {
             unsubscribe = subscribeQuotes({ symbol, granularity: 0 }, quote => {
                 const price = quote?.Close ?? quote?.close ?? quote?.price;
                 if (price === undefined || price === null) return;
-                setTicks(current => [...current, toTick(price)].slice(-3000));
+                const next = toTick(price);
+                setLivePrice(next.price);
+                setTicks(current => [...current, next].slice(-3000));
             });
         };
 
@@ -100,15 +107,17 @@ const LDP = observer(() => {
             <div className='ldp__header'>
                 <div>
                     <div className='ldp__title'>LDP · Last Digit</div>
-                    <div className='ldp__subtitle'>Live price &amp; 3,000-tick analysis</div>
+                    <div className='ldp__subtitle'>3,000 ticks · LIVE analysis</div>
                 </div>
                 <div className='ldp__live'><span /> LIVE</div>
             </div>
 
             <div className='ldp__price-card'>
-                <div><span className='ldp__label'>PRICE</span><strong>{loading ? '—' : latest?.price ?? '—'}</strong></div>
+                <div><span className='ldp__label'>PRICE</span><strong>{livePrice}</strong></div>
                 <div className='ldp__digit'><span>LAST DIGIT</span><strong>{loading ? '—' : latest?.digit ?? '—'}</strong></div>
             </div>
+
+            <div className='ldp__live-analysis'><span>📊</span> LIVE · Last 3,000 ticks</div>
 
             <div className='ldp__section'>
                 <div className='ldp__section-title'>Even / Odd</div>
