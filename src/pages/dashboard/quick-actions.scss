@@ -75,7 +75,7 @@
     background: linear-gradient(135deg, rgba(255, 255, 255, .06), transparent 42%);
 }
 
- .tab__dashboard__quick-card:hover,
+.tab__dashboard__quick-card:hover,
 .tab__dashboard__quick-card:focus-visible,
 .tab__dashboard__quick-card:active {
     transform: translateY(-4px) scale(1.01);
@@ -219,6 +219,71 @@
     color: var(--card-accent);
     font-size: 1.3rem;
     font-weight: 800;
+}
+
+@media (min-width: 701px) {
+    .tab__dashboard__table {
+        max-width: 100%;
+    }
+
+    .tab__dashboard__table__tiles {
+        grid-template-columns: repeat(4, max-content);
+        justify-content: center;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .tab__dashboard__quick-card {
+        width: max-content;
+        min-width: 180px;
+        max-width: 240px;
+        height: auto;
+        padding: 1rem 1.1rem .9rem;
+        border-radius: 1rem;
+    }
+
+    .tab__dashboard__quick-card__icon {
+        width: 3.8rem;
+        height: 3.8rem;
+        border-radius: .85rem;
+    }
+
+    .tab__dashboard__quick-card__icon svg {
+        width: 2.9rem;
+        height: 2.9rem;
+    }
+
+    .tab__dashboard__quick-card__arrow {
+        top: .9rem;
+        inset-inline-end: .9rem;
+        width: 2.2rem;
+        height: 2.2rem;
+        border-radius: .6rem;
+        font-size: 1.3rem;
+    }
+
+    .tab__dashboard__quick-card__body {
+        margin-top: .8rem;
+        padding-bottom: .7rem;
+    }
+
+    .tab__dashboard__quick-card__title {
+        font-size: 1.25rem;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    .tab__dashboard__quick-card__description {
+        max-width: 220px;
+        margin-top: .35rem;
+        font-size: .95rem;
+        line-height: 1.25;
+    }
+
+    .tab__dashboard__quick-card__footer {
+        padding-top: .65rem;
+        font-size: .95rem;
+    }
 }
 
 @media (max-width: 700px) {
