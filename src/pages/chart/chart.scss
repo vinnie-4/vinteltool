@@ -160,3 +160,14 @@
 .dashboard__chart-wrapper--ldp{height:100%;width:100%}
 
 .ldp__live-analysis{display:flex;align-items:center;gap:7px;padding:9px 11px;margin:4px 0 2px;border-radius:8px;font-size:12px;font-weight:700}.ldp__live-analysis span{font-size:16px}
+
+
+/* Live 3,000-tick LDP */
+.ldp__digit-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:12px}
+.ldp__digit-stat{padding:10px;border-radius:10px;background:var(--general-section-1);border:1px solid var(--general-hover)}
+.ldp__digit-number{font-size:18px;font-weight:800;margin-bottom:3px}.ldp__digit-stat strong{display:block;font-size:12px}.ldp__digit-stat span{display:block;color:var(--text-less-prominent);font-size:10px;margin-top:2px}
+.ldp__digit-stat--most{border-color:#10b981}.ldp__digit-stat--second-most{border-color:#3b82f6}.ldp__digit-stat--second-least{border-color:#facc15}.ldp__digit-stat--least{border-color:#ff444f}
+.ldp__digit-stat .ldp__bar{height:4px;margin-top:7px}.ldp__digit-stat--most .ldp__bar-fill{background:#10b981}.ldp__digit-stat--second-most .ldp__bar-fill{background:#3b82f6}.ldp__digit-stat--second-least .ldp__bar-fill{background:#facc15}.ldp__digit-stat--least .ldp__bar-fill{background:#ff444f}
+.ldp__ranking-row{display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--general-hover);font-size:12px}.ldp__ranking-row span{color:var(--text-less-prominent)}.ldp__ranking-row b{font-size:12px}
+.ldp__chip--most{background:#10b981}.ldp__chip--second-most{background:#3b82f6}.ldp__chip--second-least{background:#facc15;color:#111}.ldp__chip--least{background:#ff444f}.ldp__chip--normal{background:var(--text-less-prominent)}
+@media (max-width: 600px){.ldp{padding:12px}.ldp__digit-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}.ldp__digit-stat{padding:7px 5px}.ldp__digit-number{font-size:16px}.ldp__price-card strong{font-size:21px}}
