@@ -21,7 +21,7 @@
         border: 0;
         border-radius: 50%;
         background: transparent;
-        color: var(--text-general);
+        color: #14B8A6;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -29,10 +29,11 @@
         font-weight: 800;
         line-height: 1;
         cursor: pointer;
-        transition: background-color 0.15s ease, transform 0.15s ease;
+        transition: background-color 0.15s ease, transform 0.15s ease, color 0.15s ease;
 
         &:hover {
-            background: var(--general-section-1);
+            background: rgba(20, 184, 166, 0.12);
+            color: #10B981;
         }
 
         &:active {
