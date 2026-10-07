@@ -75,6 +75,8 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                                 className='dashboard-greeting-subtitle'
                                 style={{
                                     display: 'block',
+                                    width: '100%',
+                                    textAlign: 'center',
                                     marginTop: '4px',
                                     fontSize: isDesktop ? '20px' : '17px',
                                     lineHeight: '1.3',
