@@ -8,6 +8,69 @@ body {
     background: var(--general-main-1);
 }
 
+.dashboard-greeting-exclamation {
+    display: inline-block;
+    animation: dashboard-greeting-exclamation-blink 2s ease-in-out infinite;
+}
+
+.dashboard-greeting-subtitle {
+    --subtitle-duration: 6s;
+    overflow: hidden;
+}
+
+.dashboard-greeting-word {
+    display: inline-block;
+    transform-origin: center;
+    animation: dashboard-greeting-word-type var(--subtitle-duration) ease-in-out both;
+}
+
+@keyframes dashboard-greeting-exclamation-blink {
+    0%,
+    45% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50%,
+    100% {
+        opacity: 0;
+        transform: scale(0.85);
+    }
+}
+
+@keyframes dashboard-greeting-word-type {
+    0% {
+        opacity: 0;
+        transform: scaleX(0);
+        filter: blur(3px);
+    }
+
+    16% {
+        opacity: 1;
+        transform: scaleX(1);
+        filter: blur(0);
+    }
+
+    78% {
+        opacity: 1;
+        transform: scaleX(1);
+        filter: blur(0);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scaleX(0);
+        filter: blur(3px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dashboard-greeting-exclamation,
+    .dashboard-greeting-word {
+        animation: none;
+    }
+}
+
 .icon-general-fill-path {
     path {
         fill: var(--text-general);
