@@ -2,10 +2,20 @@
 // Removed IBM Plex Sans Google Font import - now using brand font from brand.config.json
 // Third-party developers can add their own font imports if needed
 
+html,
 body {
-    // Updated to use Georgia as the global brand font
-    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-family: Georgia, serif !important;
+}
+
+body {
+    // Georgia is the global brand font.
+    font-family: Georgia, serif !important;
     background: var(--general-main-1);
+}
+
+body,
+body * {
+    font-family: Georgia, serif !important;
 }
 
 .dashboard-greeting-exclamation {
