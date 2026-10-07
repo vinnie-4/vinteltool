@@ -25,7 +25,7 @@ const LDP = observer(() => {
     const { getQuotes, subscribeQuotes } = useSmartChartAdaptor();
     const [ticks, setTicks] = useState<Tick[]>([]);
     const [livePrice, setLivePrice] = useState<string>('—');
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(true);\n    const [liveTickCount, setLiveTickCount] = useState(0);
 
     useEffect(() => {
         if (!symbol) updateSymbol();
@@ -97,7 +97,7 @@ const LDP = observer(() => {
                     <div className='ldp__title'>LDP · Last Digit Prediction</div>
                     <div className='ldp__subtitle'>{symbol || 'Market'} · rolling 3,000 ticks</div>
                 </div>
-                <div className='ldp__live'><span /> LIVE TICKS</div>
+                <div className='ldp__live'><span /> LIVE · DERIV TICKS</div>
             </div>
 
             <div className='ldp__price-card'>
@@ -105,7 +105,7 @@ const LDP = observer(() => {
                 <div className='ldp__digit'><span>LAST DIGIT</span><strong>{loading ? '—' : ticks[ticks.length - 1]?.digit ?? '—'}</strong></div>
             </div>
 
-            <div className='ldp__live-analysis'><span>📊</span> LIVE · analysing the latest 3,000 ticks</div>
+            <div className='ldp__live-analysis'><span>📊</span> LIVE · Deriv WebSocket · {liveTickCount.toLocaleString()} new ticks received</div>
 
             <div className='ldp__section'>
                 <div className='ldp__section-title'>Last Digit Distribution</div>
