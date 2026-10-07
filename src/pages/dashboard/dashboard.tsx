@@ -22,6 +22,17 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
     const { active_tab, active_tour } = dashboard;
     const has_dashboard_strategies = !!dashboard_strategies?.length;
     const { isDesktop } = useDevice();
+    const [greeting, setGreeting] = React.useState('Good morning');
+
+    React.useEffect(() => {
+        const updateGreeting = () => {
+            const hour = Number(new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hour12: false, timeZone: 'Africa/Nairobi' }).format(new Date()));
+            setGreeting(hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening');
+        };
+        updateGreeting();
+        const interval = window.setInterval(updateGreeting, 60_000);
+        return () => window.clearInterval(interval);
+    }, []);
 
     return (
         <React.Fragment>
@@ -42,7 +53,7 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                                 weight='bold'
                                 style={{ fontSize: '20px', color: '#FFFFFF', fontWeight: 700 }}
                             >
-                                {activeLoginid ? <>{localize('Hello')} {activeLoginid}<span className='dashboard-greeting-exclamation'>!</span></> : <>{localize('Hello trader')}<span className='dashboard-greeting-exclamation'>!</span></>}
+                                {activeLoginid ? <>{greeting}, {activeLoginid}<span className='dashboard-greeting-exclamation'>!</span></> : <>{greeting}, trader<span className='dashboard-greeting-exclamation'>!</span></>}
                             </Text>
                         </div>
                         <div
