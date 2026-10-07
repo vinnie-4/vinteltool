@@ -8,7 +8,6 @@ body {
 }
 
 body {
-    // Georgia is the global brand font.
     font-family: Georgia, serif !important;
     background: var(--general-main-1);
 }
@@ -35,62 +34,59 @@ body * {
 }
 
 @keyframes dashboard-greeting-exclamation-blink {
-    0%,
-    45% {
-        opacity: 1;
-        transform: scale(1);
-    }
-
-    50%,
-    100% {
-        opacity: 0;
-        transform: scale(0.85);
-    }
+    0%, 45% { opacity: 1; transform: scale(1); }
+    50%, 100% { opacity: 0; transform: scale(0.85); }
 }
 
 @keyframes dashboard-greeting-word-type {
-    0% {
-        opacity: 0;
-        transform: scaleX(0);
-        filter: blur(3px);
-    }
-
-    16% {
-        opacity: 1;
-        transform: scaleX(1);
-        filter: blur(0);
-    }
-
-    78% {
-        opacity: 1;
-        transform: scaleX(1);
-        filter: blur(0);
-    }
-
-    100% {
-        opacity: 0;
-        transform: scaleX(0);
-        filter: blur(3px);
-    }
+    0% { opacity: 0; transform: scaleX(0); filter: blur(3px); }
+    16% { opacity: 1; transform: scaleX(1); filter: blur(0); }
+    78% { opacity: 1; transform: scaleX(1); filter: blur(0); }
+    100% { opacity: 0; transform: scaleX(0); filter: blur(3px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .dashboard-greeting-exclamation,
-    .dashboard-greeting-word {
-        animation: none;
-    }
+    .dashboard-greeting-word { animation: none; }
 }
 
 .icon-general-fill-path {
-    path {
-        fill: var(--text-general);
-    }
+    path { fill: var(--text-general); }
 }
 
 .icon-general-fill-g-path {
     g {
-        path {
-            fill: var(--text-general);
-        }
+        path { fill: var(--text-general); }
+    }
+}
+
+/* Dashboard greeting and quick-actions spacing */
+.tab__dashboard__header {
+    margin-bottom: 2rem;
+}
+
+.dashboard-greeting-subtitle {
+    margin-top: 1.15rem !important;
+    margin-bottom: 0 !important;
+    font-style: italic !important;
+}
+
+.tab__dashboard__quick-actions {
+    margin-top: 1.4rem;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 700px) {
+    .tab__dashboard__header {
+        margin-bottom: 1.6rem;
+    }
+
+    .tab__dashboard__quick-actions {
+        margin-top: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .dashboard-greeting-subtitle {
+        margin-top: .9rem !important;
     }
 }
