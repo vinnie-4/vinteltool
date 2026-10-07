@@ -59,7 +59,7 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                                 size={isDesktop ? 'sm' : 's'}
                                 lineHeight='xxl'
                                 weight='bold'
-                                style={{ fontSize: '20px', color: '#14B8A6', fontWeight: 700, fontFamily: '"Times New Roman", Times, serif' }}
+                                style={{ fontSize: '40px', color: '#14B8A6', fontWeight: 700, fontFamily: '"Times New Roman", Times, serif' }}
                             >
                                 {greeting}<span className='dashboard-greeting-exclamation'>!</span>
                             </Text>
