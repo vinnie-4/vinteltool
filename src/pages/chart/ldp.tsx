@@ -25,7 +25,8 @@ const LDP = observer(() => {
     const { getQuotes, subscribeQuotes } = useSmartChartAdaptor();
     const [ticks, setTicks] = useState<Tick[]>([]);
     const [livePrice, setLivePrice] = useState<string>('—');
-    const [loading, setLoading] = useState(true);\n    const [liveTickCount, setLiveTickCount] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [liveTickCount, setLiveTickCount] = useState(0);
 
     useEffect(() => {
         if (!symbol) updateSymbol();
@@ -58,6 +59,7 @@ const LDP = observer(() => {
                 if (price === undefined || price === null) return;
                 const next = toTick(price);
                 setLivePrice(next.price);
+                setLiveTickCount(current => current + 1);
                 setTicks(current => [...current, next].slice(-MAX_TICKS));
             });
         };
