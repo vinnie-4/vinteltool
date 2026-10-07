@@ -76,7 +76,7 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                                     fontSize: '40px',
                                     color: '#38BDF8',
                                     fontWeight: 700,
-                                    fontFamily: 'Georgia, "Times New Roman", Times, serif',
+                                    fontFamily: 'Georgia, serif',
                                     textShadow: '0 0 6px rgba(56, 189, 248, 0.45), 0 0 14px rgba(56, 189, 248, 0.22)',
                                 }}
                             >
@@ -92,7 +92,7 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                                     marginTop: '4px',
                                     fontSize: isDesktop ? '20px' : '17px',
                                     lineHeight: '1.3',
-                                    fontFamily: 'Georgia, "Times New Roman", Times, serif',
+                                    fontFamily: 'Georgia, serif',
                                     fontWeight: 700,
                                     color: '#8B5CF6',
                                     '--subtitle-duration': `${subtitleDuration}s`,
