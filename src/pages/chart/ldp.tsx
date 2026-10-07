@@ -94,10 +94,9 @@ const LDP = observer(() => {
         <div className='ldp'>
             <div className='ldp__header'>
                 <div>
-                    <div className='ldp__title'>LDP · Last Digit Prediction</div>
-                    <div className='ldp__subtitle'>{symbol || 'Market'} · rolling 3,000 ticks</div>
+
                 </div>
-                <div className='ldp__live'><span /> LIVE · DERIV TICKS</div>
+<div className='ldp__live'><span /> LIVE</div>
             </div>
 
             <div className='ldp__price-card'>
@@ -131,13 +130,15 @@ const LDP = observer(() => {
             </div>
 
             <div className='ldp__section'>
-                <div className='ldp__section-title'>Recent Last Digits</div>
+                <div className='ldp__section-title'>Recent Digits</div>
                 <div className='ldp__streaks'>
                     {ticks.slice(-30).map((tick, index) => (
-                        <span key={index} className={`ldp__chip ldp__chip--${rankTone(tick.digit)}`}>{tick.digit}</span>
+                        <span key={index} className={`ldp__chip ldp__chip--${tick.digit % 2 === 0 ? 'even' : 'odd'}`}>
+                            {tick.digit}<small>{tick.digit % 2 === 0 ? 'E' : 'O'}</small>
+                        </span>
                     ))}
                 </div>
-                <div className='ldp__foot'>{ticks.length.toLocaleString()} / 3,000 ticks analyzed · rolling window</div>
+                <div className='ldp__foot'>{ticks.length.toLocaleString()} / 3,000 ticks analyzed · rolling</div>
             </div>
         </div>
     );
