@@ -32,12 +32,18 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
     ];
     const [subtitleIndex, setSubtitleIndex] = React.useState(0);
 
+    const currentSubtitle = subtitles[subtitleIndex];
+    const subtitleWords = currentSubtitle.split(' ');
+    const subtitleDuration = Math.min(8, Math.max(5, 3.5 + subtitleWords.length * 0.45));
+
     React.useEffect(() => {
-        const interval = window.setInterval(() => {
+        const duration = Math.min(8000, Math.max(5000, 3500 + subtitles[subtitleIndex].split(' ').length * 450));
+        const timeout = window.setTimeout(() => {
             setSubtitleIndex(index => (index + 1) % subtitles.length);
-        }, 3000);
-        return () => window.clearInterval(interval);
-    }, []);
+        }, duration);
+
+        return () => window.clearTimeout(timeout);
+    }, [subtitleIndex]);
 
     React.useEffect(() => {
         const updateGreeting = () => {
@@ -66,7 +72,13 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                                 size={isDesktop ? 'sm' : 's'}
                                 lineHeight='xxl'
                                 weight='bold'
-                                style={{ fontSize: '40px', color: '#14B8A6', fontWeight: 700, fontFamily: '"Times New Roman", Times, serif' }}
+                                style={{
+                                    fontSize: '40px',
+                                    color: '#38BDF8',
+                                    fontWeight: 700,
+                                    fontFamily: 'Georgia, "Times New Roman", Times, serif',
+                                    textShadow: '0 0 6px rgba(56, 189, 248, 0.45), 0 0 14px rgba(56, 189, 248, 0.22)',
+                                }}
                             >
                                 {greeting}<span className='dashboard-greeting-exclamation'>!</span>
                             </Text>
@@ -80,12 +92,23 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                                     marginTop: '4px',
                                     fontSize: isDesktop ? '20px' : '17px',
                                     lineHeight: '1.3',
-                                    fontFamily: '"Times New Roman", Times, serif',
+                                    fontFamily: 'Georgia, "Times New Roman", Times, serif',
                                     fontWeight: 700,
                                     color: '#8B5CF6',
-                                }}
+                                    '--subtitle-duration': `${subtitleDuration}s`,
+                                } as React.CSSProperties}
                             >
-                                {subtitles[subtitleIndex]}
+                                {subtitleWords.map((word, index) => (
+                                    <React.Fragment key={`${subtitleIndex}-${index}`}>
+                                        <span
+                                            className='dashboard-greeting-word'
+                                            style={{ animationDelay: `${index * 0.12}s` }}
+                                        >
+                                            {word}
+                                        </span>
+                                        {index < subtitleWords.length - 1 ? ' ' : ''}
+                                    </React.Fragment>
+                                ))}
                             </div>
                         </div>
                         <div
