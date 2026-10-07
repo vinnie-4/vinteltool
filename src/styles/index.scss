@@ -3,8 +3,8 @@
 // Third-party developers can add their own font imports if needed
 
 body {
-    // Updated to use brand font variable from brand.config.json
-    font-family: 'Times New Roman', Times, serif;
+    // Updated to use Georgia as the global brand font
+    font-family: Georgia, 'Times New Roman', Times, serif;
     background: var(--general-main-1);
 }
 
