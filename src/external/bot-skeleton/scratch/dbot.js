@@ -114,35 +114,20 @@ class DBot {
                 window.Blockly.getMainWorkspace().strategy_to_load = main_xml;
                 window.Blockly.getMainWorkspace().RTL = isDbotRTL();
                 let file_name = config().default_file_name;
-                let loaded_recent_file = false;
-                let reset_to_default = false;
-                try {
-                    reset_to_default = window.sessionStorage.getItem('vinteltool-reset-to-default') === 'true';
-                    if (reset_to_default) window.sessionStorage.removeItem('vinteltool-reset-to-default');
-                } catch {
-                    reset_to_default = false;
-                }
-                if (!reset_to_default && recent_files && recent_files.length) {
+                if (recent_files && recent_files.length) {
                     const latest_file = recent_files[0];
                     window.Blockly.derivWorkspace.strategy_to_load = latest_file.xml;
                     window.Blockly.getMainWorkspace().strategy_to_load = latest_file.xml;
                     file_name = latest_file.name;
                     window.Blockly.derivWorkspace.current_strategy_id = latest_file.id;
                     window.Blockly.getMainWorkspace().current_strategy_id = latest_file.id;
-                    loaded_recent_file = true;
                 }
                 const event_group = `dbot-load${Date.now()}`;
                 window.Blockly.Events.setGroup(event_group);
                 window.Blockly.Xml.domToWorkspace(window.Blockly.utils.xml.textToDom(window.Blockly.derivWorkspace.strategy_to_load), this.workspace);
                 const { save_modal } = DBotStore.instance;
                 save_modal.updateBotName(file_name);
-                // Do not clean up the default XML layout. Its explicit x/y coordinates
-                // are the canonical default positions and must survive a Reset refresh.
-                // Only tidy a previously saved/recent strategy when it is actually
-                // being restored.
-                if (loaded_recent_file) {
-                    this.workspace.cleanUp(0, is_mobile ? 60 : 56);
-                }
+                this.workspace.cleanUp(0, is_mobile ? 60 : 56);
                 this.workspace.clearUndo();
                 window.dispatchEvent(new Event('resize'));
                 window.addEventListener('dragover', DBot.handleDragOver);
