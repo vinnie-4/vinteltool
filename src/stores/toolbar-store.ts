@@ -1,6 +1,6 @@
 // @ts-nocheck — vendored bot code with known upstream type gaps; see AGENTS.md
 import { action, makeObservable, observable } from 'mobx';
-import { config, load, runGroupedEvents } from '@/external/bot-skeleton';
+import { config, load } from '@/external/bot-skeleton';
 import RootStore from './root-store';
 
 interface IToolbarStore {
