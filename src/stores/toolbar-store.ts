@@ -64,17 +64,8 @@ export default class ToolbarStore implements IToolbarStore {
     };
 
     onResetOkButtonClick = (): void => {
-        this.setResetButtonState(true);
-        // Mark the next Bot Builder initialization as an explicit reset so the
-        // normal recent-workspace restoration cannot put old block coordinates
-        // back into the workspace after the page refreshes.
-        try {
-            window.sessionStorage.setItem('vinteltool-reset-to-default', 'true');
-        } catch {
-            // Ignore storage failures and continue with the reset.
-        }
         this.is_dialog_open = false;
-        window.location.reload();
+        void this.resetDefaultStrategy();
     };
 
     resetDefaultStrategy = async () => {
