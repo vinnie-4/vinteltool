@@ -53,7 +53,7 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                                 weight='bold'
                                 style={{ fontSize: '20px', color: '#FFFFFF', fontWeight: 700 }}
                             >
-                                {activeLoginid ? <>{greeting}, {activeLoginid}<span className='dashboard-greeting-exclamation'>!</span></> : <>{greeting}, trader<span className='dashboard-greeting-exclamation'>!</span></>}
+                                {greeting}<span className='dashboard-greeting-exclamation'>!</span>
                             </Text>
                         </div>
                         <div
