@@ -33,6 +33,13 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
     const [subtitleIndex, setSubtitleIndex] = React.useState(0);
 
     React.useEffect(() => {
+        const interval = window.setInterval(() => {
+            setSubtitleIndex(index => (index + 1) % subtitles.length);
+        }, 3000);
+        return () => window.clearInterval(interval);
+    }, []);
+
+    React.useEffect(() => {
         const updateGreeting = () => {
             const hour = Number(new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hour12: false, timeZone: 'Africa/Nairobi' }).format(new Date()));
             setGreeting(hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening');
@@ -63,6 +70,21 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                             >
                                 {greeting}<span className='dashboard-greeting-exclamation'>!</span>
                             </Text>
+                            <div
+                                key={subtitleIndex}
+                                className='dashboard-greeting-subtitle'
+                                style={{
+                                    display: 'block',
+                                    marginTop: '4px',
+                                    fontSize: isDesktop ? '20px' : '17px',
+                                    lineHeight: '1.3',
+                                    fontFamily: '"Times New Roman", Times, serif',
+                                    fontWeight: 700,
+                                    color: '#8B5CF6',
+                                }}
+                            >
+                                {subtitles[subtitleIndex]}
+                            </div>
                         </div>
                         <div
                             className={classNames('tab__dashboard__header', {
