@@ -23,6 +23,14 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
     const has_dashboard_strategies = !!dashboard_strategies?.length;
     const { isDesktop } = useDevice();
     const [greeting, setGreeting] = React.useState('Good morning');
+    const subtitles = [
+        'Build smarter. Trade with precision.',
+        'Analyze the market with confidence.',
+        'Create powerful trading strategies.',
+        'Your strategy. Your edge.',
+        'Trade smarter with VintelTool.',
+    ];
+    const [subtitleIndex, setSubtitleIndex] = React.useState(0);
 
     React.useEffect(() => {
         const updateGreeting = () => {
