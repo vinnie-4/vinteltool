@@ -22,7 +22,7 @@ const FreeBots = ({ bots = FREE_BOTS, onLoadBot }: TFreeBotsProps) => {
     const [publishedBots, setPublishedBots] = React.useState<TFreeBot[]>([]);
     React.useEffect(() => {
         let active = true;
-        fetch('/brand.config.json', { cache: 'no-store' })
+        fetch('https://raw.githubusercontent.com/DerivFX4/vinteltool/main/brand.config.json', { cache: 'no-store' })
             .then(response => response.ok ? response.json() : null)
             .then(config => {
                 const records: TPublishedBot[] = config?.studio_settings?.bot_store?.bots;
