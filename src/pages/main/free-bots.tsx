@@ -5,6 +5,7 @@ import VINTEL_UNDER_6_RECOVERY_UNDER_5_XML from '@/xml/VintelTool Under 6 Recove
 
 export type TFreeBot = { id: string; name: string; xml: string; description?: string; tags?: string[] };
 type TFreeBotsProps = { bots?: TFreeBot[]; onLoadBot: (bot: TFreeBot) => void | Promise<void> };
+type TPublishedBot = { id?: string; name?: string; description?: string; category?: string; filename?: string; xml?: string; visible?: boolean; tags?: string[] };
 
 export const FREE_BOTS: TFreeBot[] = [
     {
@@ -18,8 +19,23 @@ export const FREE_BOTS: TFreeBot[] = [
 
 const FreeBots = ({ bots = FREE_BOTS, onLoadBot }: TFreeBotsProps) => {
     const [loading_bot_id, setLoadingBotId] = React.useState<string | null>(null);
+    const [publishedBots, setPublishedBots] = React.useState<TFreeBot[]>([]);
+    React.useEffect(() => {
+        let active = true;
+        fetch('/brand.config.json', { cache: 'no-store' })
+            .then(response => response.ok ? response.json() : null)
+            .then(config => {
+                const records: TPublishedBot[] = config?.studio_settings?.bot_store?.bots;
+                if (!active || !Array.isArray(records)) return;
+                const mapped = records.filter(bot => bot && bot.visible !== false && typeof bot.xml === 'string' && /<\\s*xml\\b|<xml[\\s>]/i.test(bot.xml) && /<block\\b/i.test(bot.xml))
+                    .map(bot => ({ id: String(bot.id || bot.filename || bot.name), name: String(bot.name || 'VintelTool Free Bot'), description: [bot.description, bot.category ? 'Category: ' + bot.category : ''].filter(Boolean).join(' · '), tags: bot.tags || (bot.category ? [bot.category, 'FREE XML BOT'] : ['FREE XML BOT']), xml: bot.xml as string }));
+                setPublishedBots(mapped);
+            }).catch(error => console.warn('Could not load published Free Bots catalog:', error));
+        return () => { active = false; };
+    }, []);
+    const allBots = [...bots, ...publishedBots.filter(published => !bots.some(existing => existing.id === published.id))];
 
-    if (!bots.length) return null;
+    if (!allBots.length) return null;
 
     const handleLoad = async (bot: TFreeBot) => {
         if (loading_bot_id) return;
@@ -36,7 +52,7 @@ const FreeBots = ({ bots = FREE_BOTS, onLoadBot }: TFreeBotsProps) => {
     return (
         <section className='free-bots' id='free-bots-panel' aria-label='Free Bots'>
             <div className='free-bots__grid'>
-                {bots.map(bot => {
+                {allBots.map(bot => {
                     const is_loading = loading_bot_id === bot.id;
                     return (
                         <article className='free-bots__card' key={bot.id}>
