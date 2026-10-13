@@ -5,6 +5,7 @@ import { AuthWrapper } from './app/AuthWrapper';
 // See migrate-docs/ANALYTICS_IMPLEMENTATION_GUIDE.md for re-implementation
 import {
     applyBrandFontFromConfig,
+    applyCustomCssFromConfig,
     applyDocumentTitle,
     applyFaviconFromLogo,
     applyPrimaryColorFromConfig,
@@ -23,6 +24,7 @@ performVersionCheck();
 
 // Apply deploy-time document branding (tab title, favicon, web font, and primary color).
 applyDocumentTitle();
+applyCustomCssFromConfig();
 applyFaviconFromLogo();
 applyBrandFontFromConfig();
 applyPrimaryColorFromConfig();
