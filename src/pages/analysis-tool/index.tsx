@@ -84,7 +84,7 @@ const AnalysisTool = ({
             if (connectionId !== connectionIdRef.current || wsRef.current !== ws) return;
             try {
                 const data = JSON.parse(event.data);
-                if (data.error || Array.isArray(data.errors)) { setConnected(false); setConnectionError(data.error?.message || data.errors?.[0]?.message || 'Deriv public WebSocket rejected the request'); return; }
+                if (data.error || Array.isArray(data.errors)) { setConnected(false); setConnectionError(data.error?.message || data.errors?.[0]?.message || 'Deriv public WebSocket rejected the req[...]; }
                 const receivedPipSize = Number(data.pip_size ?? data.tick?.pip_size);
                 if (Number.isFinite(receivedPipSize) && receivedPipSize >= 0) { pipSizeRef.current = receivedPipSize; setPipSize(receivedPipSize); }
                 const decimals = Number.isFinite(receivedPipSize) && receivedPipSize >= 0 ? receivedPipSize : pipSizeRef.current;
@@ -154,7 +154,7 @@ const AnalysisTool = ({
     }, [analysisTicks]);
 
     const ranking = useMemo(() => stats.filter(item => item.rankTone !== 'normal'), [stats]);
-    const rankDescription = (tone: RankTone) => ({ most: ['Green bar', 'Most appearing digit'], 'second-most': ['Blue bar', '2nd most appearing digit'], 'second-least': ['Yellow bar', '2nd least appearing digit'], least: ['Red bar', 'Least appearing digit'], normal: ['', ''] }[tone]);
+    const rankDescription = (tone: RankTone) => ({ most: ['Green bar', 'Most appearing digit'], 'second-most': ['Blue bar', '2nd most appearing digit'], 'second-least': ['Yellow bar', '2nd least']
 
     const changeIndex = (value: string) => {
         setInternalSelectedIndex(value);
@@ -166,13 +166,12 @@ const AnalysisTool = ({
     };
 
     return <section className='dcircles'>
-        {showSubtabs && <div className='dcircles__subtabs' role='tablist'><button type='button' className={activeTab === 'dcircles' ? 'is-active' : ''} onClick={() => setActiveTab('dcircles')}>DCircles</button><button type='button' className={activeTab === 'ldp' ? 'is-active' : ''} onClick={() => setActiveTab('ldp')}>LDP Analyzer</button></div>}
-        {activeTab === 'ldp' && showSubtabs ? <div className='dcircles__placeholder'><h2>Last Digit Probability Analyzer</h2><p>LDP Analyzer is separate and will have its own analysis engine.</p></div> : <>
-            {showControls && <div className='dcircles__controls'><label>Market<select value={selectedIndex} onChange={event => changeIndex(event.target.value)}>{VOLATILITY_INDICES.map(([name]) => <option key={name}>{name}</option>)}</select></label><label>Ticks<select value={windowSize} onChange={event => changeWindow(Number(event.target.value))}>{TICK_WINDOWS.map(size => <option key={size} value={size}>{size}</option>)}</select></label><div className='dcircles__price'><span>Price</span><strong>{formatPrice(latestPrice, pipSize)}</strong></div></div>}
+        {showSubtabs && <div className='dcircles__subtabs' role='tablist'><button type='button' className={activeTab === 'dcircles' ? 'is-active' : ''} onClick={() => setActiveTab('dcircles')}>DCircles</button><button type='button' className={activeTab === 'ldp' ? 'is-active' : ''} onClick={() => setActiveTab('ldp')}>LDP</button></div>}
+        {activeTab === 'ldp' && showSubtabs ? <div className='dcircles__placeholder'><h2>Last Digit Probability Analyzer</h2><p>LDP Analyzer is separate and will have its own analysis engine.</p></div> : null}
+            {showControls && <div className='dcircles__controls'><label>Market<select value={selectedIndex} onChange={event => changeIndex(event.target.value)}>{VOLATILITY_INDICES.map(([name]) => <option key={name} value={name}>{name}</option>)}</select></label><label>Window<select value={windowSize} onChange={event => changeWindow(Number(event.target.value))}>{TICK_WINDOWS.map(w => <option key={w} value={w}>{w}</option>)}</select></label></div>}
             {!showControls && showPrice && <div className='dcircles__controls dcircles__controls--price-only'><div className='dcircles__price'><span>Price</span><strong>{formatPrice(latestPrice, pipSize)}</strong></div></div>}
-            <div className='dcircles__circle-panel'><div className='dcircles__circles'>{stats.map(item => <div className={`dcircles__digit dcircles__digit--${item.digit} dcircles__digit--rank-${item.rankTone}`} key={item.digit}><div className='dcircles__circle'><span>{item.digit}</span><b>{item.percentage.toFixed(2)}%</b>{item.digit === latestDigit && <i className='dcircles__pointer'>▲</i>}</div><div className='dcircles__digit-bar'><span /></div></div>)}</div><div className='dcircles__status'>{connected ? '● Live · Deriv' : '○ Connecting to Deriv…'} · {analysisTicks.length} / {windowSize} ticks{connectionError && <span className='dcircles__error'> · {connectionError}</span>}</div></div>
-            {showLegend && <div className='dcircles__legend'><h3>DCircles Bar Analysis</h3><p className='dcircles__legend-intro'>The bar colour identifies the digit's position in the current selected tick sample.</p>{(['most','second-most','second-least','least'] as RankTone[]).map(tone => { const [colour, meaning] = rankDescription(tone); const item = ranking.find(value => value.rankTone === tone); return <div className={`dcircles__legend-row dcircles__legend-row--${tone}`} key={tone}><span className='dcircles__legend-bar' /><div><strong>{colour}</strong><span>{meaning}{item ? ` — Digit ${item.digit} (${item.percentage.toFixed(2)}%, ${item.count} appearances)` : ''}</span></div></div>; })}</div>}
-        </>}
+            <div className='dcircles__circle-panel'><div className='dcircles__circles'>{stats.map(item => <div className={`dcircles__digit dcircles__digit--${item.digit} dcircles__digit--rank-${item.rankTone}`} key={item.digit}><span className='dcircles__digit-value'>{item.count}</span><span className='dcircles__digit-text'>{item.digit}</span><span className='dcircles__digit-percent'>{(item.percentage).toFixed(1)}%</span></div>)}</div></div>
+            {showLegend && <div className='dcircles__legend'><h3>DCircles Bar Analysis</h3><p className='dcircles__legend-intro'>The bar colour identifies the digit's position in the current selection window.</p></div>}
     </section>;
 };
 
