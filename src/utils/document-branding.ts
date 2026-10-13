@@ -11,7 +11,21 @@ import brandConfig from '../../brand.config.json';
  */
 export function applyDocumentTitle(): void {
     const name = getAppName();
-    if (name) document.title = name;
+    const configuredTitle = (brandConfig as { browser_title?: string } | undefined)?.browser_title?.trim();
+    if (configuredTitle || name) document.title = configuredTitle || name;
+}
+
+/** Applies administrator-authored custom CSS from brand.config.json at startup. */
+export function applyCustomCssFromConfig(): void {
+    const customCss = (brandConfig as { custom_css?: string } | undefined)?.custom_css;
+    if (typeof customCss !== 'string' || !customCss.trim()) return;
+    let style = document.getElementById('vinteltool-studio-custom-css') as HTMLStyleElement | null;
+    if (!style) {
+        style = document.createElement('style');
+        style.id = 'vinteltool-studio-custom-css';
+        document.head.appendChild(style);
+    }
+    style.textContent = customCss.slice(0, 20000);
 }
 
 /**
