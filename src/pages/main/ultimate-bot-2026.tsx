@@ -47,6 +47,31 @@ const buyContract = async (api: any, contractType: string, amount: number, symbo
     return buy;
 };
 
+const waitForNextMarketTick = async (api: any, symbol: string) => {
+    if (typeof api.subscribe !== 'function') throw new Error('Live tick synchronization is unavailable on this Deriv connection.');
+    const stream = await api.subscribe({ ticks: symbol });
+    return new Promise((resolve, reject) => {
+        let initialTickSeen = false;
+        let settled = false;
+        let observer: any;
+        const finish = (error?: Error, tick?: any) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeout);
+            try { observer?.unsubscribe?.(); } catch { /* already unsubscribed */ }
+            try { stream?.unsubscribe?.(); } catch { /* already unsubscribed */ }
+            if (error) reject(error); else resolve(tick);
+        };
+        const timeout = setTimeout(() => finish(new Error('Timed out waiting for the next market tick.')), 15000);
+        observer = stream.subscribe((message: any) => {
+            if (message?.error) { finish(new Error(message.error.message || 'Market tick subscription failed.')); return; }
+            if (!message?.tick) return;
+            if (!initialTickSeen) { initialTickSeen = true; return; }
+            finish(undefined, message.tick);
+        });
+    });
+};
+
 const buyContractBatch = async (api: any, contractType: string, amount: number, symbol: string, duration: number, prediction: number, count: number) => {
     const currency = api_base.account_info?.currency || 'USD';
     const proposalRequest: Record<string, unknown> = {
@@ -60,12 +85,21 @@ const buyContractBatch = async (api: any, contractType: string, amount: number, 
         if (!response?.proposal?.id || response.proposal.ask_price === undefined) throw new Error('Deriv returned an invalid bulk trade proposal.');
         return response.proposal;
     }));
-    return Promise.all(proposals.map(async proposal => {
+
+    // Wait until every quote is ready, then fire all purchases together on the same live tick.
+    await waitForNextMarketTick(api, symbol);
+    const buyResults = await Promise.allSettled(proposals.map(async proposal => {
         const response = await api.send({ buy: proposal.id, price: proposal.ask_price });
         if (response?.error) throw new Error(response.error.message || 'Unable to purchase a bulk contract.');
-        if (!response?.buy?.contract_id) throw new Error('Deriv did not confirm one of the bulk purchases.');
+        if (!response?.buy?.contract_id) throw new Error('Deriv did not confirm the purchased bulk contract.');
         return response.buy;
     }));
+    const buys = buyResults.filter((result: any) => result.status === 'fulfilled').map((result: any) => result.value);
+    if (buys.length === 0) {
+        const failed = buyResults.find((result: any) => result.status === 'rejected') as any;
+        throw new Error(failed?.reason?.message || 'Deriv did not confirm any bulk purchases.');
+    }
+    return { buys, requestedCount: count };
 };
 
 const waitForContractResult = async (api: any, contractId: string) => {
@@ -134,8 +168,10 @@ const UltimateBot2026 = () => {
             const contractType = strategy === 'Even/Odd' ? CONTRACT_TYPES[tradeType] : CONTRACT_TYPES[tradeType === 'Under' ? 'Under' : 'Over'];
             const symbol = VOLATILITY_SYMBOLS[volatility];
             const currency = api_base.account_info?.currency || 'USD';
-            const buys = await buyContractBatch(api, contractType, amount, symbol, ticks, Number(prediction), count);
+            const batch = await buyContractBatch(api, contractType, amount, symbol, ticks, Number(prediction), count);
+            const buys = batch.buys;
             setTradesPlaced(buys.length);
+            if (buys.length < batch.requestedCount) setLastError(`Only ${buys.length} of ${batch.requestedCount} contracts were confirmed by Deriv; tracking all confirmed purchases.`);
             buys.forEach(buy => {
                 transactions.pushTransaction({
                     contract_id: Number(buy.contract_id),
