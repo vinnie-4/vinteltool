@@ -3,16 +3,11 @@ import React, { useRef, useState } from 'react';
 import { Form as FormikForm, Formik, useFormikContext } from 'formik';
 import { observer } from 'mobx-react-lite';
 import * as Yup from 'yup';
-import MobileFullPageModal from '@/components/shared_ui/mobile-full-page-modal';
 import Modal from '@/components/shared_ui/modal';
 import { config as qs_config } from '@/external/bot-skeleton';
 import { useStore } from '@/hooks/useStore';
 import { localize } from '@deriv-com/translations';
-import { useDevice } from '@deriv-com/ui';
 // Removed import for rudderStackSendCloseEvent as per V2 requirements - no close events needed
-import DesktopFormWrapper from './form-wrappers/desktop-form-wrapper';
-import MobileFormWrapper from './form-wrappers/mobile-form-wrapper';
-import MobileQSFooter from './form-wrappers/mobile-qs-footer';
 import { QsSteps } from './form-wrappers/trade-constants';
 import LossThresholdWarningDialog from './parts/loss-threshold-warning-dialog';
 import { STRATEGIES } from './config';
@@ -207,7 +202,6 @@ const FormikWrapper: React.FC<TFormikWrapper> = observer(({ children }) => {
 
 const QuickStrategy = observer(() => {
     const { quick_strategy } = useStore();
-    const { isDesktop } = useDevice();
     const { is_open, setFormVisibility } = quick_strategy;
 
     const [current_step, setCurrentStep] = React.useState(QsSteps.StrategySelect);
