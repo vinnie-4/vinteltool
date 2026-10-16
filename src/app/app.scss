@@ -43,3 +43,13 @@
 strong {
     font-weight: bold;
 }
+
+/* Global VintelTool typography: use a consistent sans-serif font throughout the app. */
+html,
+body,
+#root,
+#app,
+.app-root,
+.app-root *:not([class*='icon']):not([class*='Icon']):not(i) {
+    font-family: 'IBM Plex Sans', Arial, sans-serif !important;
+}
