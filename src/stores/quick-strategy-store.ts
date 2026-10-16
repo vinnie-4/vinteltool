@@ -31,6 +31,7 @@ interface IQuickStrategyStore {
     setSelectedStrategy: (strategy: string) => void;
     setValue: (name: string, value: string) => void;
     onSubmit: (data: TFormData) => void;
+    loadConfiguredQuickBot: (configuration: Record<string, any>) => Promise<void>;
     loadFreeBotXml: (xml: string, botName?: string) => Promise<void>;
     importPendingFreeBot: () => Promise<void>;
     toggleStopBotDialog: () => void;
@@ -64,7 +65,7 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             is_contract_dialog_open: observable, is_open: observable, is_stop_bot_dialog_open: observable,
             is_options_loading: observable, pending_free_bot: observable, initializeLossThresholdWarningData: action,
             selected_strategy: observable, selected_strategy_for_notofy: observable, loss_threshold_warning_data: observable,
-            onSubmit: action, setAdditionalData: action, setCurrentDurationMinMax: action, setFormVisibility: action,
+            onSubmit: action, loadConfiguredQuickBot: action, setAdditionalData: action, setCurrentDurationMinMax: action, setFormVisibility: action,
             setSelectedStrategy: action, setLossThresholdWarningData: action, setValue: action,
             toggleStopBotDialog: action, setOptionsLoading: action, loadFreeBotXml: action, importPendingFreeBot: action,
         });
@@ -116,6 +117,83 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             } catch (error) {
                 console.error('Quick Strategy free bot load failed:', error);
             }
+        };
+        const previous = this.workspace_load_queue;
+        const current = previous.catch(() => undefined).then(runImport);
+        this.workspace_load_queue = current.then(() => undefined, () => undefined);
+        await current;
+    };
+
+    loadConfiguredQuickBot = async (configuration: Record<string, any>) => {
+        const runImport = async () => {
+            const workspace = await this.waitForWorkspace();
+            const cfg = configuration || {};
+            const tradeFamily = String(cfg.tradeFamily || 'Digits');
+            const tradeType = String(cfg.tradeType || 'Even/Odd');
+            const purchase = String(cfg.purchase || 'Trade Even');
+            const contract = String(cfg.contract || 'Both');
+            const durationType = ['t', 's', 'm'].includes(String(cfg.durationType)) ? String(cfg.durationType) : 't';
+            const duration = Math.max(1, Number(cfg.duration) || 1);
+            const stake = Math.max(0.35, Number(cfg.stake) || 1);
+            const marketGroup = String(cfg.marketGroup || 'Derived');
+            const marketType = String(cfg.marketType || 'Continuous Indices');
+            const symbol = String(cfg.symbol || 'R_10');
+            const category = tradeFamily === 'Up/Down' || tradeType === 'Rise/Fall' ? 'callput'
+                : tradeType === 'Over/Under' ? 'overunder'
+                : tradeType === 'Matches/Differs' ? 'matchdiff' : 'evenodd';
+            const purchaseMap: Record<string, string> = {
+                'Trade Even': 'EVEN', Even: 'EVEN', 'Trade Odd': 'ODD', Odd: 'ODD',
+                Over: 'DIGITOVER', Under: 'DIGITUNDER', Matches: 'DIGITMATCH', Differs: 'DIGITDIFF',
+                'Trade Rise': 'CALL', Rise: 'CALL', 'Trade Fall': 'PUT', Fall: 'PUT',
+            };
+            const contractMap: Record<string, string> = {
+                Even: 'EVEN', Odd: 'ODD', Over: 'DIGITOVER', Under: 'DIGITUNDER',
+                Rise: 'CALL', Fall: 'PUT', Matches: 'DIGITMATCH', Differs: 'DIGITDIFF',
+            };
+            const purchaseCode = contractMap[contract] || purchaseMap[purchase] || 'EVEN';
+            const marketCode = marketGroup === 'Derived' ? 'synthetic_index' : marketGroup === 'Forex' ? ' forex' : 'commodities';
+            const submarketCode = marketGroup === 'Derived'
+                ? (marketType.includes('1s') ? 'random_index' : 'random_index')
+                : marketGroup === 'Forex' ? 'major_pairs' : 'metals';
+            const safe = (value: string) => value.replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[ch] || ch));
+            const xml = `<xml xmlns="https://developers.google.com/blockly/xml">
+              <block type="trade_definition" id="vintel_qbb_trade" x="20" y="20">
+                <statement name="TRADE_OPTIONS">
+                  <block type="trade_definition_market" id="vintel_qbb_market">
+                    <field name="MARKET_LIST">${safe(marketCode.trim())}</field>
+                    <field name="SUBMARKET_LIST">${safe(submarketCode)}</field>
+                    <field name="SYMBOL_LIST">${safe(symbol)}</field>
+                    <next><block type="trade_definition_tradetype" id="vintel_qbb_trade_type">
+                      <field name="TRADETYPECAT_LIST">${category}</field>
+                      <field name="TRADETYPE_LIST">${tradeType === 'Over/Under' ? 'overunder' : tradeType === 'Matches/Differs' ? 'matchdiff' : tradeType === 'Rise/Fall' ? 'callput' : 'evenodd'}</field>
+                      <next><block type="trade_definition_contracttype" id="vintel_qbb_contract">
+                        <field name="TYPE_LIST">${purchaseCode}</field>
+                        <next><block type="trade_definition_duration" id="vintel_qbb_duration">
+                          <field name="DURATIONTYPE_LIST">${durationType}</field>
+                          <value name="DURATION"><shadow type="math_number"><field name="NUM">${duration}</field></shadow></value>
+                          <next><block type="trade_definition_amount" id="vintel_qbb_amount">
+                            <value name="AMOUNT"><shadow type="math_number"><field name="NUM">${stake}</field></shadow></value>
+                          </block></next>
+                        </block></next>
+                      </block></next>
+                    </block></next>
+                  </block>
+                </statement>
+                <statement name="SUBMARKET"><block type="trade_definition_tradetype" id="vintel_qbb_submarket_type">
+                  <field name="TRADETYPECAT_LIST">${category}</field>
+                  <field name="TRADETYPE_LIST">${tradeType === 'Over/Under' ? 'overunder' : tradeType === 'Matches/Differs' ? 'matchdiff' : tradeType === 'Rise/Fall' ? 'callput' : 'evenodd'}</field>
+                </block></statement>
+              </block>
+              <block type="before_purchase" id="vintel_qbb_before_purchase" x="20" y="420">
+                <statement name="BEFOREPURCHASE"><block type="purchase" id="vintel_qbb_purchase"><field name="PURCHASE_LIST">${purchaseCode}</field></block></statement>
+              </block>
+            </xml>`;
+            const strategyDom = window.Blockly.utils.xml.textToDom(xml);
+            const blockTypes = Array.from(strategyDom.querySelectorAll('block')).map((block: Element) => block.getAttribute('type')).filter(Boolean);
+            removeLimitedBlocks(workspace, blockTypes);
+            loadBlocks(strategyDom, null, `vintel-quick-builder-${Date.now()}`, workspace);
+            this.setAdditionalData({ quick_bot_builder_config: cfg });
+            this.setFormVisibility(false);
         };
         const previous = this.workspace_load_queue;
         const current = previous.catch(() => undefined).then(runImport);
