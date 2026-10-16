@@ -157,7 +157,7 @@ const AnalysisTool = ({
         const even = analysisTicks.filter(tick => tick.digit % 2 === 0).length;
         const odd = analysisTicks.length - even;
         const total = analysisTicks.length || 1;
-        const streak = analysisTicks.slice(-30).map(tick => tick.digit % 2 === 0 ? 'E' : 'O').join('');
+        const streak = analysisTicks.slice(-50).map(tick => tick.digit % 2 === 0 ? 'E' : 'O');
         return { even, odd, evenPercent: even / total * 100, oddPercent: odd / total * 100, streak };
     }, [analysisTicks]);
 
@@ -190,10 +190,9 @@ const AnalysisTool = ({
                 <div className='dcircles__status'>{connected ? '● Live · Deriv' : '○ Connecting to Deriv…'} · {analysisTicks.length} / {windowSize} ticks{connectionError && <span className='dcircles__error'> · {connectionError}</span>}</div>
             </div>
             {showLegend && <div className='dcircles__parity'>
-                <div className='dcircles__parity-heading'><strong>Even / Odd</strong><span>{analysisTicks.length} ticks analysed</span></div>
-                <div className='dcircles__parity-row'><span>Even <b>{parityStats.evenPercent.toFixed(1)}%</b></span><div className='dcircles__parity-track'><i style={{ width: `${parityStats.evenPercent}%` }} /></div><small>{parityStats.even}</small></div>
-                <div className='dcircles__parity-row'><span>Odd <b>{parityStats.oddPercent.toFixed(1)}%</b></span><div className='dcircles__parity-track'><i style={{ width: `${parityStats.oddPercent}%` }} /></div><small>{parityStats.odd}</small></div>
-                <div className='dcircles__streak'><strong>Last 30 digits · E/O streak</strong><div className='dcircles__streak-sequence'>{parityStats.streak || 'Waiting for ticks…'}</div><small>E = Even · O = Odd · newest tick at right</small></div>
+                <div className='dcircles__parity-row'><span>Even</span><div className='dcircles__parity-track dcircles__parity-track--even'><i style={{ width: `${parityStats.evenPercent}%` }} /></div><b className='dcircles__parity-percent'>{parityStats.evenPercent.toFixed(1)}%</b></div>
+                <div className='dcircles__parity-row'><span>Odd</span><div className='dcircles__parity-track dcircles__parity-track--odd'><i style={{ width: `${parityStats.oddPercent}%` }} /></div><b className='dcircles__parity-percent'>{parityStats.oddPercent.toFixed(1)}%</b></div>
+                <div className='dcircles__streak'><div className='dcircles__streak-sequence'>{parityStats.streak.map((value, index) => <span key={index} className={value === 'E' ? 'dcircles__streak-even' : 'dcircles__streak-odd'}>{value}</span>)}</div></div>
             </div>}
         </>}
     </section>;

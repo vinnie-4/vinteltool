@@ -44,3 +44,22 @@
 .dcircles__digit-bar{display:none!important}
 @keyframes dcircles-cursor-pulse{0%,100%{opacity:1;transform:translateX(-50%) scale(1)}50%{opacity:.55;transform:translateX(-50%) scale(1.18)}}
 @media(max-width:600px){.dcircles__parity{padding:10px 8px}.dcircles__parity-row{grid-template-columns:76px minmax(0,1fr) 28px;gap:6px}.dcircles__streak-sequence{letter-spacing:1px}}
+
+/* Compact parity panel: no explanatory copy */
+.dcircles__parity-heading{display:none!important}
+.dcircles__parity-row{grid-template-columns:48px minmax(0,1fr) 48px;gap:8px;align-items:center}
+.dcircles__parity-row>span{display:block;text-align:left;font-weight:900;color:#20262e}
+.dcircles__parity-percent{font-size:12px;text-align:right;font-weight:900;color:#15191f;font-variant-numeric:tabular-nums}
+.dcircles__parity-track--even{background:rgba(28,160,75,.13)}
+.dcircles__parity-track--even i{background:linear-gradient(90deg,#72e49b,#159447);box-shadow:0 0 8px rgba(21,148,71,.3)}
+.dcircles__parity-track--odd{background:rgba(225,55,70,.13)}
+.dcircles__parity-track--odd i{background:linear-gradient(90deg,#ff9da5,#e53949);box-shadow:0 0 8px rgba(229,57,73,.25)}
+.dcircles__streak{margin-top:10px;padding-top:8px}
+.dcircles__streak>strong,.dcircles__streak small{display:none!important}
+.dcircles__streak-sequence{display:flex;flex-wrap:wrap;gap:2px;line-height:1.5;letter-spacing:0;font-size:13px;font-weight:950;color:#15191f}
+.dcircles__streak-sequence span{display:inline-block}
+.dcircles__streak-even{color:#11823b}
+.dcircles__streak-odd{color:#d21f32}
+.dcircles__pointer{left:50%!important;bottom:-8px!important;transform:translateX(-50%)!important;color:#050505!important;font-size:21px!important;font-weight:1000!important;line-height:1!important;text-shadow:0 0 1px #000,0 1px 1px rgba(255,255,255,.8)!important;animation:none!important;z-index:5}
+.dcircles__parity-row>span b{display:none}
+@media(max-width:600px){.dcircles__parity-row{grid-template-columns:42px minmax(0,1fr) 44px;gap:6px}.dcircles__parity-percent{font-size:11px}.dcircles__streak-sequence{font-size:12px;gap:1px}}
