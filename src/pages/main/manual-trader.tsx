@@ -25,6 +25,8 @@ const CONTRACT_TYPES: Record<string, string> = {
     Odd: 'DIGITODD',
     Over: 'DIGITOVER',
     Under: 'DIGITUNDER',
+    Matches: 'DIGITMATCH',
+    Differs: 'DIGITDIFF',
 };
 
 type ManualTradeRecord = {
