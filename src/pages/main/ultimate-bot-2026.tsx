@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { api_base } from '@/external/bot-skeleton';
+import { useStore } from '@/hooks/useStore';
 import './main.scss';
 
 const VOLATILITY_OPTIONS = [
@@ -46,6 +47,27 @@ const buyContract = async (api: any, contractType: string, amount: number, symbo
     return buy;
 };
 
+const buyContractBatch = async (api: any, contractType: string, amount: number, symbol: string, duration: number, prediction: number, count: number) => {
+    const currency = api_base.account_info?.currency || 'USD';
+    const proposalRequest: Record<string, unknown> = {
+        proposal: 1, amount, basis: 'stake', contract_type: contractType,
+        currency, duration, duration_unit: 't', underlying_symbol: symbol,
+    };
+    if (contractType === 'DIGITOVER' || contractType === 'DIGITUNDER') proposalRequest.barrier = prediction;
+    const proposals = await Promise.all(Array.from({ length: count }, async () => {
+        const response = await api.send({ ...proposalRequest });
+        if (response?.error) throw new Error(response.error.message || 'Unable to create a bulk trade proposal.');
+        if (!response?.proposal?.id || response.proposal.ask_price === undefined) throw new Error('Deriv returned an invalid bulk trade proposal.');
+        return response.proposal;
+    }));
+    return Promise.all(proposals.map(async proposal => {
+        const response = await api.send({ buy: proposal.id, price: proposal.ask_price });
+        if (response?.error) throw new Error(response.error.message || 'Unable to purchase a bulk contract.');
+        if (!response?.buy?.contract_id) throw new Error('Deriv did not confirm one of the bulk purchases.');
+        return response.buy;
+    }));
+};
+
 const waitForContractResult = async (api: any, contractId: string) => {
     const started = Date.now();
     while (Date.now() - started < 120000) {
@@ -59,9 +81,10 @@ const waitForContractResult = async (api: any, contractId: string) => {
 };
 
 const UltimateBot2026 = () => {
+    const { transactions } = useStore();
     const [volatility, setVolatility] = useState('Volatility 100');
     const [strategy, setStrategy] = useState('Even/Odd');
-    const [sample, setSample] = useState('100');
+    const [sample, setSample] = useState('3000');
     const [recovery, setRecovery] = useState('Fixed Stake');
     const [stake, setStake] = useState('0.50');
     const [multiplier, setMultiplier] = useState('2');
@@ -109,37 +132,44 @@ const UltimateBot2026 = () => {
         try {
             const api = await waitForTradingApi();
             const contractType = strategy === 'Even/Odd' ? CONTRACT_TYPES[tradeType] : CONTRACT_TYPES[tradeType === 'Under' ? 'Under' : 'Over'];
-            let currentStake = amount;
-            let consecutiveLosses = 0;
-            let sessionProfit = 0;
-            let placed = 0;
-
-            while (placed < count && !stopRequestedRef.current) {
-                const buy = await buyContract(api, contractType, currentStake, VOLATILITY_SYMBOLS[volatility], ticks, Number(prediction));
+            const symbol = VOLATILITY_SYMBOLS[volatility];
+            const currency = api_base.account_info?.currency || 'USD';
+            const buys = await buyContractBatch(api, contractType, amount, symbol, ticks, Number(prediction), count);
+            setTradesPlaced(buys.length);
+            buys.forEach(buy => {
+                transactions.pushTransaction({
+                    contract_id: Number(buy.contract_id),
+                    transaction_ids: { buy: Number(buy.transaction_id) || undefined },
+                    contract_type: contractType, underlying_symbol: symbol, currency,
+                    buy_price: Number(buy.buy_price ?? amount), payout: Number(buy.payout ?? 0),
+                    profit: 0, is_completed: false, date_start: Math.floor(Date.now() / 1000),
+                });
+            });
+            const results = await Promise.all(buys.map(async buy => {
                 const result = await waitForContractResult(api, String(buy.contract_id));
-                const profit = Number(result.profit) || 0;
-                sessionProfit += profit;
-                placed += 1;
-                setTradesPlaced(placed);
-
-                if (tp > 0 && sessionProfit >= tp) break;
-                if (sl > 0 && sessionProfit <= -Math.abs(sl)) break;
-
-                const won = result.status === 'won' || profit > 0;
-                if (won) {
-                    consecutiveLosses = 0;
-                    currentStake = recovery === 'Anti-Martingale' ? amount * baseMultiplier : amount;
-                } else {
-                    consecutiveLosses += 1;
-                    if (recovery === 'Martingale' || recovery === 'Custom Multiplier') {
-                        currentStake = consecutiveLosses <= recoveryLimit ? amount * Math.pow(baseMultiplier, consecutiveLosses) : amount;
-                    } else {
-                        currentStake = amount;
-                    }
-                }
-
-                if (placed < count && !stopRequestedRef.current && Number(cooldown) > 0) await sleep(Math.max(0, Number(cooldown)) * 1000);
-            }
+                transactions.pushTransaction({
+                    ...result,
+                    contract_id: Number(result.contract_id ?? buy.contract_id),
+                    transaction_ids: {
+                        ...(result.transaction_ids || {}),
+                        buy: Number(buy.transaction_id) || result.transaction_ids?.buy || undefined,
+                        sell: Number(result.sell_transaction_id ?? result.transaction_ids?.sell) || result.transaction_ids?.sell,
+                    },
+                    contract_type: result.contract_type || contractType,
+                    underlying_symbol: result.underlying || result.underlying_symbol || symbol,
+                    currency: result.currency || currency,
+                    buy_price: Number(result.buy_price ?? buy.buy_price ?? amount),
+                    payout: Number(result.payout ?? buy.payout ?? 0),
+                    profit: Number(result.profit) || 0,
+                    entry_spot: result.entry_tick_display_value ?? result.entry_tick ?? result.entry_spot,
+                    exit_spot: result.exit_tick_display_value ?? result.exit_tick ?? result.exit_spot,
+                    is_completed: true, date_start: result.date_start || Math.floor(Date.now() / 1000),
+                });
+                return result;
+            }));
+            const sessionProfit = results.reduce((sum, result) => sum + (Number(result.profit) || 0), 0);
+            if (tp > 0 && sessionProfit >= tp) console.info('[Bulk Trader] Batch take-profit reached.');
+            if (sl > 0 && sessionProfit <= -Math.abs(sl)) console.info('[Bulk Trader] Batch stop-loss reached.');
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Trade failed.';
             setLastError(message);
@@ -154,7 +184,7 @@ const UltimateBot2026 = () => {
 
     return (
         <section className='ultimate-bot-2026'>
-            <div className='ultimate-bot-2026__hero'><div><div className='ultimate-bot-2026__eyebrow'>VINTEL TOOL</div><h2>Ultimate Bot 2026</h2><p>Advanced strategy automation with live market intelligence.</p></div><span className={`ultimate-bot-2026__status ultimate-bot-2026__status--${running ? 'running' : 'ready'}`}>{status}</span></div>
+            <div className='ultimate-bot-2026__hero'><div><div className='ultimate-bot-2026__eyebrow'>VINTEL TOOL</div><h2>Bulk Trader</h2></div><span className={`ultimate-bot-2026__status ultimate-bot-2026__status--${running ? 'running' : 'ready'}`}>{status}</span></div>
             <div className='ultimate-bot-2026__card'><h3>Strategy</h3><div className='ultimate-bot-2026__grid'>
                 <label>Strategy<select value={strategy} onChange={e => setStrategy(e.target.value)}>{STRATEGIES.map(item => <option key={item}>{item}</option>)}</select></label>
                 <label>Volatility<select value={volatility} onChange={e => setVolatility(e.target.value)}>{VOLATILITY_OPTIONS.map(item => <option key={item}>{item}</option>)}</select></label>
@@ -164,14 +194,14 @@ const UltimateBot2026 = () => {
                 {strategy === 'Over/Under' && <label>Prediction digit<input inputMode='numeric' min='0' max='9' value={prediction} onChange={e => setPrediction(e.target.value)} /></label>}
             </div>}
             <div className='ultimate-bot-2026__signal'><div><b>DCircles</b><span>Live digit signal</span></div><div className='ultimate-bot-2026__signal-values'><span className='green'>Most</span><span className='blue'>2nd</span><span className='yellow'>2nd least</span><span className='red'>Least</span></div></div>
-            <div className='ultimate-bot-2026__sample-row'><span>Analysis sample</span>{['30', '60', '100', '300', '500', '1000'].map(item => <button key={item} className={sample === item ? 'active' : ''} onClick={() => setSample(item)}>{item}</button>)}</div></div>
+            <div className='ultimate-bot-2026__sample-row'><span>Analysis sample</span>{['60', '100', '300', '500', '1000', '3000'].map(item => <button key={item} className={sample === item ? 'active' : ''} onClick={() => setSample(item)}>{item}</button>)}</div></div>
             <div className='ultimate-bot-2026__card'><h3>Trade & recovery</h3><div className='ultimate-bot-2026__inputs'>
                 <label>Initial stake<input inputMode='decimal' value={stake} onChange={e => setStake(e.target.value)} /></label><label>Recovery<select value={recovery} onChange={e => setRecovery(e.target.value)}>{RECOVERY.map(item => <option key={item}>{item}</option>)}</select></label><label>Multiplier<input inputMode='decimal' value={multiplier} onChange={e => setMultiplier(e.target.value)} /></label><label>Max recovery<input inputMode='numeric' value={maxRecovery} onChange={e => setMaxRecovery(e.target.value)} /></label><label>Max trades<input inputMode='numeric' value={maxTrades} onChange={e => setMaxTrades(e.target.value)} /></label><label>Cooldown<input inputMode='numeric' value={cooldown} onChange={e => setCooldown(e.target.value)} /></label><label>Ticks<input inputMode='numeric' value={duration} onChange={e => setDuration(e.target.value)} /></label>
             </div></div>
             <div className='ultimate-bot-2026__card'><h3>Safety limits</h3><div className='ultimate-bot-2026__inputs ultimate-bot-2026__inputs--limits'><label>Take profit<input inputMode='decimal' value={takeProfit} onChange={e => setTakeProfit(e.target.value)} /></label><label>Stop loss<input inputMode='decimal' value={stopLoss} onChange={e => setStopLoss(e.target.value)} /></label></div><div className='ultimate-bot-2026__safety'>Maximum loss • Maximum profit • Consecutive-loss protection • Emergency stop</div></div>
             <div className='ultimate-bot-2026__live'><div><span>Market</span><b>{volatility}</b></div><div><span>Strategy</span><b>{strategy} {tradeType}</b></div><div><span>Stake</span><b>{stake} USD</b></div><div><span>Trades placed</span><b>{tradesPlaced}/{maxTrades}</b></div></div>
             {lastError && <div className='ultimate-bot-2026__error'>{lastError}</div>}
-            <button className={`ultimate-bot-2026__run ${running ? 'stop' : ''}`} onClick={handleRun}>{running ? 'Stop Ultimate Bot' : 'Run Ultimate Bot'}</button>
+            <button className={`ultimate-bot-2026__run ${running ? 'stop' : ''}`} onClick={handleRun}>{running ? 'Stop Bulk Trader' : 'Run Bulk Trader'}</button>
         </section>
     );
 };
