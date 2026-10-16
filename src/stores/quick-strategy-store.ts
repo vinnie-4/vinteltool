@@ -207,8 +207,25 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
               <block type="before_purchase" id="vintel_qbb_before_purchase" x="20" y="520">
                 <statement name="BEFOREPURCHASE_STACK"><block type="purchase" id="vintel_qbb_purchase"><field name="PURCHASE_LIST">${purchaseCode}</field></block></statement>
               </block>
-              <block type="after_purchase" id="vintel_qbb_after_purchase" x="520" y="420">
-                <statement name="AFTERPURCHASE_STACK"><block type="trade_again" id="vintel_qbb_trade_again"></block></statement>
+              <block type="sell_conditions" id="vintel_qbb_sell_conditions" x="520" y="420">
+                <statement name="SELL_CONDITIONS">
+                  <block type="controls_if" id="vintel_qbb_sell_if">
+                    <value name="IF0"><block type="contract_check_result" id="vintel_qbb_sell_available"><field name="CHECK_RESULT">win</field></block></value>
+                    <statement name="DO0"><block type="sell_at_market" id="vintel_qbb_sell_market"></block></statement>
+                  </block>
+                </statement>
+              </block>
+              <block type="after_purchase" id="vintel_qbb_after_purchase" x="520" y="620">
+                <statement name="AFTERPURCHASE_STACK">
+                  <block type="controls_if" id="vintel_qbb_restart_if">
+                    <value name="IF0"><block type="contract_check_result" id="vintel_qbb_restart_win"><field name="CHECK_RESULT">win</field></block></value>
+                    <statement name="DO0"><block type="variables_set" id="vintel_qbb_reset_stake"><field name="VAR">Stake</field><value name="VALUE"><block type="math_number"><field name="NUM">${stake}</field></block></value><next><block type="trade_again" id="vintel_qbb_restart_after_win"></block></next></block></statement>
+                    <statement name="ELSE"><block type="controls_if" id="vintel_qbb_recovery_if">
+                      <value name="IF0"><block type="logic_boolean" id="vintel_qbb_recovery_enabled"><field name="BOOL">${cfg.recoveryMode ? 'TRUE' : 'FALSE'}</field></block></value>
+                      <statement name="DO0"><block type="variables_set" id="vintel_qbb_recovery_stake"><field name="VAR">Stake</field><value name="VALUE"><block type="math_arithmetic"><field name="OP">MULTIPLY</field><value name="A"><block type="variables_get"><field name="VAR">Stake</field></block></value><value name="B"><block type="variables_get"><field name="VAR">Martingale</field></block></value></block></value><next><block type="trade_again" id="vintel_qbb_restart_after_loss"></block></next></block></statement>
+                    </block></statement>
+                  </block>
+                </statement>
               </block>
             </xml>`;
             const strategyDom = window.Blockly.utils.xml.textToDom(xml);
