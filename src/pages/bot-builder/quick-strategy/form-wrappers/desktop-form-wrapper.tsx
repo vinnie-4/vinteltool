@@ -149,7 +149,7 @@ const FormWrapper = observer(
                 <div className='qs'>
                     <div className='qs__head'>
                         <div className='qs__head__title'>
-                            <Text weight='bold'>{localize('Quick Strategy')}</Text>
+                            <Text weight='bold'>{localize('Quick Bot Builder')}</Text>
                         </div>
                         <div className='qs__head__action'>
                             <span
