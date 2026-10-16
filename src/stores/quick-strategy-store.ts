@@ -188,21 +188,17 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
                   </block>
                 </statement>
               </block>
-              <block type="run_once_at_start" id="vintel_qbb_run_once" x="20" y="300">
-                <statement name="RUNONCE_STACK">
-                  <block type="variables_set" id="vintel_qbb_set_stake">
-                    <field name="VAR">Stake</field>
-                    <value name="VALUE"><block type="math_number"><field name="NUM">${stake}</field></block></value>
-                    <next><block type="variables_set" id="vintel_qbb_set_martingale">
-                      <field name="VAR">Martingale</field>
-                      <value name="VALUE"><block type="math_number"><field name="NUM">${Math.max(1, Number(cfg.multiplier) || 2)}</field></block></value>
-                      <next><block type="variables_set" id="vintel_qbb_set_prediction">
-                        <field name="VAR">Prediction</field>
-                        <value name="VALUE"><block type="math_number"><field name="NUM">${Number(cfg.prediction) || 5}</field></block></value>
-                      </next>
-                    </block></next>
-                  </block>
-                </statement>
+              <block type="variables_set" id="vintel_qbb_set_stake" x="20" y="300">
+                <field name="VAR">Stake</field>
+                <value name="VALUE"><block type="math_number"><field name="NUM">${stake}</field></block></value>
+              </block>
+              <block type="variables_set" id="vintel_qbb_set_martingale" x="20" y="390">
+                <field name="VAR">Martingale</field>
+                <value name="VALUE"><block type="math_number"><field name="NUM">${Math.max(1, Number(cfg.multiplier) || 2)}</field></block></value>
+              </block>
+              <block type="variables_set" id="vintel_qbb_set_prediction" x="20" y="480">
+                <field name="VAR">Prediction</field>
+                <value name="VALUE"><block type="math_number"><field name="NUM">${Number(cfg.prediction) || 5}</field></block></value>
               </block>
               <block type="before_purchase" id="vintel_qbb_before_purchase" x="20" y="520">
                 <statement name="BEFOREPURCHASE_STACK"><block type="purchase" id="vintel_qbb_purchase"><field name="PURCHASE_LIST">${purchaseCode}</field></block></statement>
