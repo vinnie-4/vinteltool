@@ -470,3 +470,32 @@
  .vqb-condition-action { gap:.35rem; }
  .vqb-condition-action b { font-size:.72rem; }
 }
+
+/* Keep the reference-style exit control visible and make loading state clear. */
+.vqb-header { position: sticky; top: 0; z-index: 20; }
+.vqb-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    min-width: 2.5rem;
+    border-radius: .35rem;
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    touch-action: manipulation;
+    position: relative;
+    z-index: 21;
+}
+.vqb-close:focus-visible { outline: 2px solid #10bfc4; outline-offset: 2px; }
+.vqb-load:disabled { opacity: .7; cursor: progress; }
+.vqb-load-error {
+    margin: .5rem 0;
+    padding: .7rem .85rem;
+    border: 1px solid #f0b9b9;
+    border-radius: .4rem;
+    background: #fff1f1;
+    color: #a52626;
+    font-size: .88rem;
+}
