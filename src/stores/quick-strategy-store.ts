@@ -157,7 +157,7 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             const recoveryPurchaseCode = contractMap[recoveryPurchase] || purchaseMap[recoveryPurchase] || purchaseCode;
             const prediction = Math.max(0, Math.min(9, Number(cfg.prediction ?? 5)));
             const recoveryPrediction = Math.max(0, Math.min(9, Number(cfg.recoveryPrediction ?? prediction)));
-            const recoveryEnabled = Boolean(cfg.recoveryMode || cfg.analysisEnabled || cfg.recoveryAnalysisEnabled);
+            const recoveryEnabled = Boolean(cfg.recoveryMode);
             const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <xml xmlns="http://www.w3.org/1999/xhtml" is_dbot="true" collection="false">
   <variables>
@@ -240,8 +240,8 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
                 duration: String(duration),
                 profit: String(Math.max(0, Number(cfg.profit) || 0)),
                 loss: String(Math.max(0, Number(cfg.loss) || 0)),
+                last_digit_prediction: String(prediction),
                 action: 'EDIT',
-                last_digit_prediction: Number(cfg.prediction ?? 5),
             };
             Object.entries(nativeFormData).forEach(([key, value]) => this.setValue(key, value as string));
             try {
@@ -258,8 +258,13 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
                     stake, durationType, duration,
                     takeProfit: Math.max(0, Number(cfg.profit) || 0),
                     stopLoss: Math.max(0, Number(cfg.loss) || 0),
-                    martingale: Boolean(cfg.martingale),
+                    martingale: Boolean(cfg.martingale || cfg.recoveryMode),
+                    recoveryMode: Boolean(cfg.recoveryMode),
                     martingaleMultiplier: Math.max(1, Number(cfg.multiplier) || 2),
+                    prediction,
+                    recoveryPrediction,
+                    analysisEnabled: Boolean(cfg.analysisEnabled),
+                    analysisCondition: cfg.analysisCondition ?? cfg.condition ?? null,
                 },
             });
             this.setFormVisibility(false);
