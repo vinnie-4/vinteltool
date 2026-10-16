@@ -13,8 +13,8 @@ const VOLATILITY_INDICES = [
     ['Volatility 75 (1s)', '1HZ75V'], ['Volatility 90 (1s)', '1HZ90V'], ['Volatility 100', 'R_100'],
     ['Volatility 100 (1s)', '1HZ100V'],
 ] as const;
-const TICK_WINDOWS = [1000, 500, 300, 100, 60, 30];
-const MAX_TICKS = 1000;
+const TICK_WINDOWS = [3000, 1000, 500, 300, 100, 60, 30];
+const MAX_TICKS = 3000;
 const WS_URL = 'wss://api.derivws.com/trading/v1/options/ws/public';
 
 const getLastDigit = (quote: number, pipSize = 2) => {
@@ -46,7 +46,7 @@ const AnalysisTool = ({
 }: AnalysisToolProps) => {
     const [activeTab, setActiveTab] = useState<AnalysisTab>('dcircles');
     const [internalSelectedIndex, setInternalSelectedIndex] = useState('Volatility 100 (1s)');
-    const [internalWindowSize, setInternalWindowSize] = useState(1000);
+    const [internalWindowSize, setInternalWindowSize] = useState(3000);
     const selectedIndex = controlledSelectedIndex ?? internalSelectedIndex;
     const windowSize = controlledWindowSize ?? internalWindowSize;
     const [ticks, setTicks] = useState<TickRecord[]>([]);
@@ -178,9 +178,8 @@ const AnalysisTool = ({
             </div>}
             {!showControls && showPrice && <div className='dcircles__controls dcircles__controls--price-only'><div className='dcircles__price'><span>Live price</span><strong>{formatPrice(latestPrice, pipSize)}</strong></div></div>}
             <div className='dcircles__circle-panel'>
-                <div className='dcircles__circles'>{stats.map(item => <div className={`dcircles__digit dcircles__digit--${item.digit} dcircles__digit--rank-${item.rankTone}`} key={item.digit}>
-                    <div className='dcircles__circle'><span>{item.digit}</span><b>{item.percentage.toFixed(1)}%</b>{item.digit === latestDigit && <i className='dcircles__pointer'>▲</i>}</div>
-                    <div className='dcircles__digit-bar'><span /></div>
+                <div className='dcircles__circles'>{stats.map(item => <div className={`dcircles__digit dcircles__digit--${item.digit} dcircles__digit--rank-${item.rankTone}${item.digit === latestDigit ? ' dcircles__digit--latest' : ''}`} key={item.digit}>
+                    <div className='dcircles__circle' aria-label={`Digit ${item.digit}, ${item.percentage.toFixed(1)} percent, ${item.count} appearances${item.digit === latestDigit ? ', latest tick' : ''}`}><span>{item.digit}</span><b>{item.percentage.toFixed(1)}%</b></div>
                     <strong className='dcircles__digit-count'>{item.count}</strong>
                 </div>)}</div>
                 <div className='dcircles__status'>{connected ? '● Live · Deriv' : '○ Connecting to Deriv…'} · {analysisTicks.length} / {windowSize} ticks{connectionError && <span className='dcircles__error'> · {connectionError}</span>}</div>
