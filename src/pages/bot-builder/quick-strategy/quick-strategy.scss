@@ -179,3 +179,73 @@
   .vqb-structure__flow { grid-template-columns: 1fr; gap: .4rem; }
   .vqb-structure__step { min-height: 0; }
 }
+
+/* Screenshot-inspired professional Quick Bot Builder presentation. */
+.quick-strategy__wrapper {
+    background: #eef5fa !important;
+    color: #173554;
+}
+.quick-strategy__wrapper .mobile-full-page-modal__header,
+.quick-strategy__wrapper .mobile-full-page-modal__header-wrapper {
+    background: #fff !important;
+    color: #30363d !important;
+}
+.qs__head {
+    min-height: 5.6rem;
+    padding: 0 2rem;
+    background: #fff;
+    border-bottom: 1px solid #e3e9ef;
+}
+.qs__head__title {
+    color: #30363d;
+    font-size: 1.6rem;
+    font-weight: 800;
+}
+.qs__body {
+    background: #eef5fa;
+}
+.qs__body__sidebar {
+    background: #eef5fa;
+}
+.qs__body__content {
+    background: #eef5fa;
+}
+.qs__form__container {
+    padding: 1.2rem !important;
+    box-sizing: border-box;
+}
+.qs__selected-options {
+    border: 1px solid #dbe5ee;
+    border-radius: .8rem;
+    background: #fff;
+    margin: 0 0 1rem;
+    padding: 1rem;
+}
+.qs__selected-options__item {
+    color: #173554;
+}
+.qs__body__content__footer {
+    background: #eef5fa;
+    border-top: 1px solid #dbe5ee;
+    padding: 1rem 1.2rem;
+}
+.qs__body__content__footer button {
+    min-height: 4rem;
+    border-radius: .4rem;
+    font-weight: 800;
+}
+@media (max-width: 700px) {
+    .quick-strategy__wrapper .mobile-full-page-modal__header,
+    .quick-strategy__wrapper .mobile-full-page-modal__header-wrapper {
+        min-height: 5.6rem;
+        font-weight: 800;
+    }
+    .quick-strategy__wrapper .qs__form__container {
+        padding: .8rem !important;
+        padding-bottom: 8rem !important;
+    }
+    .quick-strategy__wrapper .qs__body__content__footer {
+        background: #eef5fa;
+        box-shadow: 0 -4px 14px rgba(15, 40, 65, .08);
+    }
+}
