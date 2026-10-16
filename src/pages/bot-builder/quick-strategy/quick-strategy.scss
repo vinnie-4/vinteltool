@@ -418,3 +418,25 @@
     .vqb-bot-grid input { width: 4rem; }
     .vqb-mart input { width: 3rem !important; }
 }
+
+/* Medium-large typography pass for Quick Bot Builder controls and labels. */
+.vqb { font-family: 'IBM Plex Sans', Arial, Helvetica, sans-serif; font-size: 1rem; }
+.vqb-header h2 { font-size: 1.28rem; }
+.vqb-section-title { font-size: 1.02rem; }
+.vqb label { font-size: .9rem; }
+.vqb-select { font-size: .94rem; }
+.vqb-input { font-size: .98rem; }
+.vqb-row.vqb-inline > b { font-size: .88rem; }
+.vqb-switch-row span { font-size: .8rem; }
+.vqb-analysis { font-size: .76rem; }
+.vqb-load { font-size: 1rem; font-weight: 700; }
+@media (max-width: 430px) {
+    .vqb-header h2 { font-size: 1.22rem; }
+    .vqb-section-title { font-size: .94rem; }
+    .vqb label { font-size: .82rem; }
+    .vqb-select { font-size: .84rem; }
+    .vqb-input { font-size: .9rem; }
+    .vqb-row.vqb-inline > b { font-size: .8rem; }
+    .vqb-switch-row span { font-size: .7rem; }
+    .vqb-analysis { font-size: .69rem; }
+}
