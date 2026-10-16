@@ -203,14 +203,8 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
               <block type="before_purchase" id="vintel_qbb_before_purchase" x="20" y="520">
                 <statement name="BEFOREPURCHASE_STACK"><block type="purchase" id="vintel_qbb_purchase"><field name="PURCHASE_LIST">${purchaseCode}</field></block></statement>
               </block>
-              <block type="sell_conditions" id="vintel_qbb_sell_conditions" x="520" y="420">
-                <statement name="SELL_CONDITIONS">
-                  <block type="controls_if" id="vintel_qbb_sell_if">
-                    <value name="IF0"><block type="contract_check_result" id="vintel_qbb_sell_available"><field name="CHECK_RESULT">win</field></block></value>
-                    <statement name="DO0"><block type="sell_at_market" id="vintel_qbb_sell_market"></block></statement>
-                  </block>
-                </statement>
-              </block>
+              <!-- Sell logic is handled by the supported after_purchase flow below.
+                   Do not emit the unsupported sell_conditions block type. -->
               <block type="after_purchase" id="vintel_qbb_after_purchase" x="520" y="620">
                 <statement name="AFTERPURCHASE_STACK">
                   <block type="controls_if" id="vintel_qbb_restart_if">
