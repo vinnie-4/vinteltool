@@ -1,6 +1,6 @@
 // @ts-nocheck — vendored bot code with known upstream type gaps; see AGENTS.md
 import React, { useRef, useState } from 'react';
-import { Form as FormikForm, Formik } from 'formik';
+import { Form as FormikForm, Formik, useFormikContext } from 'formik';
 import { observer } from 'mobx-react-lite';
 import * as Yup from 'yup';
 import MobileFullPageModal from '@/components/shared_ui/mobile-full-page-modal';
@@ -235,40 +235,9 @@ const QuickStrategy = observer(() => {
         <FormikWrapper>
             <FormikForm>
                 <LossThresholdWarningDialog />
-                {isDesktop ? (
-                    <Modal className='modal--strategy' is_open={is_open} width='72rem'>
-                        <DesktopFormWrapper
-                            onClickClose={handleClose}
-                            setCurrentStep={setCurrentStep}
-                            current_step={current_step}
-                            selected_trade_type={selected_trade_type}
-                            setSelectedTradeType={setSelectedTradeType}
-                        >
-                            <Form />
-                        </DesktopFormWrapper>
-                    </Modal>
-                ) : (
-                    <>
-                        <MobileFullPageModal
-                            is_modal_open={is_open}
-                            className='quick-strategy__wrapper'
-                            // Split localize calls are intentional - these are separate translatable strings
-                            header={localize('Quick Bot Builder')}
-                            onClickClose={handleClose}
-                            height_offset='8rem'
-                        >
-                            <MobileFormWrapper
-                                setCurrentStep={setCurrentStep}
-                                current_step={current_step}
-                                selected_trade_type={selected_trade_type}
-                                setSelectedTradeType={setSelectedTradeType}
-                            >
-                                <Form />
-                            </MobileFormWrapper>
-                        </MobileFullPageModal>
-                        <MobileQSFooter setCurrentStep={setCurrentStep} current_step={current_step} />
-                    </>
-                )}
+                <Modal className='vintel-quick-builder-modal modal--strategy' is_open={is_open} width='72rem'>
+                    <VintelQuickBotBuilder onClose={handleClose} />
+                </Modal>
             </FormikForm>
         </FormikWrapper>
     );
@@ -276,7 +245,7 @@ const QuickStrategy = observer(() => {
 
 const VintelQuickBotBuilder = observer(({ onClose }: { onClose: () => void }) => {
     const { quick_strategy } = useStore();
-    const { values, setFieldValue, submitForm, isValid } = require('formik').useFormikContext();
+    const { values, setFieldValue } = useFormikContext();
     const [marketGroup, setMarketGroup] = React.useState('Derived');
     const [marketType, setMarketType] = React.useState('Continuous Indices');
     const [symbol, setSymbol] = React.useState('R_10');
