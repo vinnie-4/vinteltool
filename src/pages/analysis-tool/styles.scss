@@ -63,3 +63,9 @@
 .dcircles__pointer{left:50%!important;bottom:-8px!important;transform:translateX(-50%)!important;color:#050505!important;font-size:21px!important;font-weight:1000!important;line-height:1!important;text-shadow:0 0 1px #000,0 1px 1px rgba(255,255,255,.8)!important;animation:none!important;z-index:5}
 .dcircles__parity-row>span b{display:none}
 @media(max-width:600px){.dcircles__parity-row{grid-template-columns:42px minmax(0,1fr) 44px;gap:6px}.dcircles__parity-percent{font-size:11px}.dcircles__streak-sequence{font-size:12px;gap:1px}}
+
+/* Slightly enlarged 50-tick E/O streak */
+.dcircles__streak-sequence{font-size:15px}
+.dcircles__parity--streak-only{margin-top:8px;padding:8px 10px}
+.dcircles__parity--streak-only .dcircles__streak{margin:0;padding:0}
+@media(max-width:600px){.dcircles__streak-sequence{font-size:14px}}

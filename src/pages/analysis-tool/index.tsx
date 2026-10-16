@@ -13,7 +13,7 @@ const VOLATILITY_INDICES = [
     ['Volatility 75 (1s)', '1HZ75V'], ['Volatility 90 (1s)', '1HZ90V'], ['Volatility 100', 'R_100'],
     ['Volatility 100 (1s)', '1HZ100V'],
 ] as const;
-const TICK_WINDOWS = [3000, 1000, 500, 300, 100, 60, 30];
+const TICK_WINDOWS = [3000, 1000, 500, 300, 100, 60];
 const MAX_TICKS = 3000;
 const WS_URL = 'wss://api.derivws.com/trading/v1/options/ws/public';
 
@@ -25,6 +25,7 @@ const formatPrice = (quote: number | null, pipSize: number) => quote === null ? 
 
 type AnalysisToolProps = {
     showLegend?: boolean;
+    showStreak?: boolean;
     showSubtabs?: boolean;
     showControls?: boolean;
     showPrice?: boolean;
@@ -36,6 +37,7 @@ type AnalysisToolProps = {
 
 const AnalysisTool = ({
     showLegend = true,
+    showStreak = false,
     showSubtabs = true,
     showControls = true,
     showPrice = false,
@@ -189,10 +191,12 @@ const AnalysisTool = ({
                 </div>)}</div>
                 <div className='dcircles__status'>{connected ? '● Live · Deriv' : '○ Connecting to Deriv…'} · {analysisTicks.length} / {windowSize} ticks{connectionError && <span className='dcircles__error'> · {connectionError}</span>}</div>
             </div>
-            {showLegend && <div className='dcircles__parity'>
-                <div className='dcircles__parity-row'><span>Even</span><div className='dcircles__parity-track dcircles__parity-track--even'><i style={{ width: `${parityStats.evenPercent}%` }} /></div><b className='dcircles__parity-percent'>{parityStats.evenPercent.toFixed(1)}%</b></div>
-                <div className='dcircles__parity-row'><span>Odd</span><div className='dcircles__parity-track dcircles__parity-track--odd'><i style={{ width: `${parityStats.oddPercent}%` }} /></div><b className='dcircles__parity-percent'>{parityStats.oddPercent.toFixed(1)}%</b></div>
-                <div className='dcircles__streak'><div className='dcircles__streak-sequence'>{parityStats.streak.map((value, index) => <span key={index} className={value === 'E' ? 'dcircles__streak-even' : 'dcircles__streak-odd'}>{value}</span>)}</div></div>
+            {(showLegend || showStreak) && <div className={`dcircles__parity${showStreak && !showLegend ? ' dcircles__parity--streak-only' : ''}`}>
+                {showLegend && <>
+                    <div className='dcircles__parity-row'><span>Even</span><div className='dcircles__parity-track dcircles__parity-track--even'><i style={{ width: `${parityStats.evenPercent}%` }} /></div><b className='dcircles__parity-percent'>{parityStats.evenPercent.toFixed(1)}%</b></div>
+                    <div className='dcircles__parity-row'><span>Odd</span><div className='dcircles__parity-track dcircles__parity-track--odd'><i style={{ width: `${parityStats.oddPercent}%` }} /></div><b className='dcircles__parity-percent'>{parityStats.oddPercent.toFixed(1)}%</b></div>
+                </>}
+                {showStreak && <div className='dcircles__streak'><div className='dcircles__streak-sequence'>{parityStats.streak.map((value, index) => <span key={index} className={value === 'E' ? 'dcircles__streak-even' : 'dcircles__streak-odd'}>{value}</span>)}</div></div>}
             </div>}
         </>}
     </section>;

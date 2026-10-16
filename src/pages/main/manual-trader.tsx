@@ -217,10 +217,10 @@ const ManualTraderStructure = () => {
     return <div className='manual-trader'>
         <div className='manual-trader__top-row'>
             <div className='manual-trader__volatility'><span>Volatility</span><select value={selectedVolatility} onChange={event => setSymbol(VOLATILITY_SYMBOLS[event.target.value])}>{Object.keys(VOLATILITY_SYMBOLS).map(name => <option key={name}>{name}</option>)}</select></div>
-            <div className='manual-trader__analysis-ticks'><span>Ticks</span><select value={analysisTicks} onChange={event => setAnalysisTicks(Number(event.target.value))}>{[3000, 1000, 500, 300, 100, 60, 30].map(value => <option key={value} value={value}>{value}</option>)}</select></div>
+            <div className='manual-trader__analysis-ticks'><span>Ticks</span><select value={analysisTicks} onChange={event => setAnalysisTicks(Number(event.target.value))}>{[3000, 1000, 500, 300, 100, 60].map(value => <option key={value} value={value}>{value}</option>)}</select></div>
             <div className='manual-trader__trade-type'><span>TRADE TYPE</span><select value={tradeType} onChange={event => setTradeType(event.target.value)}><option>Even/Odd</option><option>Over/Under</option><option>Matches/Differs</option></select></div>
         </div>
-        <AnalysisTool showLegend={false} showSubtabs={false} showControls={false} showPrice selectedIndex={selectedVolatility} windowSize={analysisTicks} />
+        <AnalysisTool showLegend={false} showStreak showSubtabs={false} showControls={false} showPrice selectedIndex={selectedVolatility} windowSize={analysisTicks} />
         <div className='manual-trader__trade-inputs'>
             <label>Ticks<input type='number' min='1' step='1' value={duration} onChange={event => setDuration(Number(event.target.value))} /></label>
             <label>Stake<input type='number' min='0' step='0.01' value={stake} onChange={event => setStake(Number(event.target.value))} /></label>
