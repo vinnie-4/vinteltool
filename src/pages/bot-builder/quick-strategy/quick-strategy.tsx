@@ -274,6 +274,69 @@ const QuickStrategy = observer(() => {
     );
 });
 
+const VintelQuickBotBuilder = observer(({ onClose }: { onClose: () => void }) => {
+    const { quick_strategy } = useStore();
+    const { values, setFieldValue, submitForm, isValid } = require('formik').useFormikContext();
+    const [marketGroup, setMarketGroup] = React.useState('Derived');
+    const [marketType, setMarketType] = React.useState('Continuous Indices');
+    const [symbol, setSymbol] = React.useState('R_10');
+    const [scanAll, setScanAll] = React.useState('All Volatility Indices');
+    const [simultaneous, setSimultaneous] = React.useState(false);
+    const [alternate, setAlternate] = React.useState(false);
+    const [runs, setRuns] = React.useState('1');
+    const [tradeFamily, setTradeFamily] = React.useState('Digits');
+    const [tradeType, setTradeType] = React.useState('Even/Odd');
+    const [contract, setContract] = React.useState('Both');
+    const [multi, setMulti] = React.useState(false);
+    const [recovery, setRecovery] = React.useState(false);
+    const [hedging, setHedging] = React.useState(false);
+    const [stake, setStake] = React.useState('1');
+    const [profit, setProfit] = React.useState('10');
+    const [loss, setLoss] = React.useState('30');
+    const [martingale, setMartingale] = React.useState(true);
+    const [multiplier, setMultiplier] = React.useState('2');
+    const [durationType, setDurationType] = React.useState('t');
+    const [duration, setDuration] = React.useState('1');
+    const [purchase, setPurchase] = React.useState('Trade Even');
+    const [analysis, setAnalysis] = React.useState(false);
+    const [openSections, setOpenSections] = React.useState({ trade: true, bot: true, purchase: true });
+    const toggleSection = (key: string) => setOpenSections(old => ({ ...old, [key]: !old[key] }));
+    const toggle = (value: boolean, setter: (value: boolean) => void) => <button type='button' className={`vqb-toggle ${value ? 'is-on' : ''}`} aria-pressed={value} onClick={() => setter(!value)}><span /></button>;
+    const field = (label: string, value: string, setter: (value: string) => void, options: string[]) => <label>{label}<select className='vqb-select' value={value} onChange={e => setter(e.target.value)}>{options.map(o => <option key={o}>{o}</option>)}</select></label>;
+    const input = (label: string, value: string, setter: (value: string) => void) => <label>{label}<input className='vqb-input' type='number' min='0' value={value} onChange={e => setter(e.target.value)} /></label>;
+    const load = async () => {
+        await setFieldValue('symbol', symbol);
+        await setFieldValue('tradetype', tradeType === 'Even/Odd' ? 'DIGITEVEN' : tradeType === 'Over/Under' ? 'DIGITOVER' : tradeType);
+        await setFieldValue('type', contract.toLowerCase());
+        await setFieldValue('stake', stake);
+        await setFieldValue('profit', profit);
+        await setFieldValue('loss', loss);
+        await setFieldValue('durationtype', durationType);
+        await setFieldValue('duration', duration);
+        await setFieldValue('action', 'EDIT');
+        const payload = { ...values, symbol, tradetype: tradeType === 'Even/Odd' ? 'DIGITEVEN' : tradeType === 'Over/Under' ? 'DIGITOVER' : tradeType, type: contract.toLowerCase(), stake, profit, loss, durationtype: durationType, duration, action: 'EDIT' };
+        quick_strategy.onSubmit(payload);
+    };
+    return <div className='vqb'>
+        <header className='vqb-header'><div><h2>Quick Bot Builder</h2></div><button type='button' className='vqb-close' aria-label='Close Quick Bot Builder' onClick={onClose}>×</button></header>
+        <main className='vqb-body'>
+            <section className='vqb-section'><button type='button' className='vqb-section-title' onClick={() => toggleSection('trade')}>TRADE PARAMETERS <span className='vqb-section-arrow'>{openSections.trade ? '−' : '+'}</span></button>
+            {openSections.trade && <div className='vqb-section-content'>
+                <div className='vqb-market-grid'>{field('Market',marketGroup,setMarketGroup,['Derived','Forex','Commodities'])}{field('Index type',marketType,setMarketType,['Continuous Indices','Continuous Indices 1s'])}{field('Market symbol',symbol,setSymbol,['R_10','R_25','R_50','R_75','R_100','1HZ10V','1HZ25V','1HZ50V','1HZ75V','1HZ100V'])}</div>
+                <div className='vqb-row vqb-inline'><b>Alternate markets (Continuous Indices only):</b>{toggle(alternate,setAlternate)}<span>every</span><input className='vqb-input' type='number' value={runs} onChange={e=>setRuns(e.target.value)} /><span>run(s)</span></div>
+                <div className='vqb-row vqb-inline'><b>Scan</b><select className='vqb-select' value={scanAll} onChange={e=>setScanAll(e.target.value)}><option>All Volatility Indices</option><option>Selected market only</option></select><b>simultaneously</b>{toggle(simultaneous,setSimultaneous)}</div>
+                <div className='vqb-row vqb-inline'><b>Trade type:</b>{field('',tradeFamily,setTradeFamily,['Digits','Up/Down'])}{field('',tradeType,setTradeType,['Even/Odd','Over/Under','Matches/Differs','Rise/Fall'])}</div>
+                <div className='vqb-row vqb-inline'><b>Contract type:</b>{field('',contract,setContract,['Both','Even','Odd','Over','Under','Rise','Fall'])}</div>
+                <div className='vqb-switch-row'><span><b>Multi type:</b>{toggle(multi,setMulti)}</span><span><b>Recovery Mode</b>{toggle(recovery,setRecovery)}</span><span><b>Hedging:</b>{toggle(hedging,setHedging)}</span></div>
+            </div>}</section>
+            <section className='vqb-section'><button type='button' className='vqb-section-title' onClick={() => toggleSection('bot')}>BOT PARAMETERS <span className='vqb-section-arrow'>{openSections.bot ? '−' : '+'}</span></button>
+            {openSections.bot && <div className='vqb-section-content'><div className='vqb-bot-grid'>{input('Stake:',stake,setStake)}{input('Take profit:',profit,setProfit)}{input('Stop loss:',loss,setLoss)}<label className='vqb-mart'>Martingale {toggle(martingale,setMartingale)}<b>x</b><input type='number' value={multiplier} onChange={e=>setMultiplier(e.target.value)} disabled={!martingale}/></label><label className='vqb-duration'>Duration: <select className='vqb-select' value={durationType} onChange={e=>setDurationType(e.target.value)}><option value='t'>Ticks</option><option value='s'>Seconds</option><option value='m'>Minutes</option></select><input type='number' value={duration} onChange={e=>setDuration(e.target.value)} /></label></div></div>}</section>
+            <section className='vqb-section'><div className='vqb-section-title vqb-section-title-static'>INITIAL PURCHASE <span className='vqb-analysis'>ENABLE ANALYSIS {toggle(analysis,setAnalysis)}</span></div><div className='vqb-section-content'><div className='vqb-row vqb-inline'><b>Purchase</b>{field('',purchase,setPurchase,['Trade Even','Trade Odd','Over','Under','Matches','Differs'])}</div></div></section>
+            <button type='button' className='vqb-load' onClick={load}>LOAD</button>
+        </main>
+    </div>;
+});
+
 export default QuickStrategy;
 
 // Vercel redeploy trigger: 2026-10-02T12:41:40.101Z
