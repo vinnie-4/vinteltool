@@ -499,3 +499,70 @@
     color: #a52626;
     font-size: .88rem;
 }
+
+/* Keep Quick Bot Builder inside the app viewport, below the account header
+   and main navigation tabs, instead of covering the top navigation. */
+.dc-modal__container_vintel-quick-builder-modal {
+    position: fixed !important;
+    inset-block-start: 7.2rem !important;
+    inset-inline: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: auto !important;
+    max-height: none !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    z-index: 1000 !important;
+}
+.dc-modal__container_vintel-quick-builder-modal > .vqb {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    width: 100%;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+}
+.dc-modal__container_vintel-quick-builder-modal .vqb-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    flex: 0 0 auto;
+    min-height: 4.3rem;
+}
+.dc-modal__container_vintel-quick-builder-modal .vqb-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+}
+@media (max-width: 700px) {
+    .dc-modal__container_vintel-quick-builder-modal {
+        inset-block-start: 4.2rem !important;
+        bottom: 0 !important;
+    }
+    .dc-modal__container_vintel-quick-builder-modal .vqb-header {
+        min-height: 4.3rem;
+        padding-inline: 1rem;
+    }
+    .dc-modal__container_vintel-quick-builder-modal .vqb-close {
+        flex: 0 0 2.75rem;
+        width: 2.75rem;
+        height: 2.75rem;
+        font-size: 2.25rem;
+        touch-action: manipulation;
+    }
+    .dc-modal__container_vintel-quick-builder-modal .vqb-body {
+        padding: .7rem .65rem max(1rem, env(safe-area-inset-bottom));
+    }
+}
