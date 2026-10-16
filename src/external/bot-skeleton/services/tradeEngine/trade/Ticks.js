@@ -57,9 +57,20 @@ export default Engine =>
         }
 
         addFastTickListener(listener) {
-            if (!this.fastTickListeners || typeof listener !== 'function') return () => {};
+            if (typeof listener !== 'function') return () => {};
+
+            // Initialize lazily. Previously this method returned a no-op
+            // whenever no Set had been created, so FAST listeners could never
+            // register and the advertised fast-tick subscription was inert.
+            if (!this.fastTickListeners) this.fastTickListeners = new Set();
             this.fastTickListeners.add(listener);
-            return () => this.fastTickListeners.delete(listener);
+
+            let subscribed = true;
+            return () => {
+                if (!subscribed) return;
+                subscribed = false;
+                this.fastTickListeners?.delete(listener);
+            };
         }
 
         checkTicksPromiseExists() {
