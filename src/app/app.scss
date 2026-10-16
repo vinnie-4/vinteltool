@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700;800&display=swap');
+
 .bot {
     --bot-content-height: calc(100dvh - 10.4rem);
     --bot-content-width: calc(100vw - 366px);
@@ -44,12 +46,23 @@ strong {
     font-weight: bold;
 }
 
-/* Global VintelTool typography: use a consistent sans-serif font throughout the app. */
+/* Global typography must include modal portals, overlays, inputs and app content. */
+:root {
+    --vintel-font-family: 'IBM Plex Sans', Arial, Helvetica, sans-serif;
+}
 html,
 body,
 #root,
 #app,
 .app-root,
-.app-root *:not([class*='icon']):not([class*='Icon']):not(i) {
-    font-family: 'IBM Plex Sans', Arial, sans-serif !important;
+.modal-root,
+[role='dialog'],
+input,
+textarea,
+select,
+button {
+    font-family: var(--vintel-font-family) !important;
+}
+body *:not(i):not([class*='icon']):not([class*='Icon']):not(svg):not(path):not(use) {
+    font-family: var(--vintel-font-family) !important;
 }
