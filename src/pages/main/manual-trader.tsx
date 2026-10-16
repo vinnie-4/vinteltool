@@ -50,7 +50,7 @@ const buyContract = async (api: any, contractType: string, amount: number, symbo
         duration_unit: 't',
         underlying_symbol: symbol,
     };
-    if (contractType === 'DIGITOVER' || contractType === 'DIGITUNDER') request.barrier = prediction;
+    if (['DIGITOVER', 'DIGITUNDER', 'DIGITMATCH', 'DIGITDIFF'].includes(contractType)) request.barrier = prediction;
 
     const proposalResponse = await api.send(request);
     if (proposalResponse?.error) throw new Error(proposalResponse.error.message || 'Unable to create trade proposal.');
@@ -67,7 +67,7 @@ const buyContract = async (api: any, contractType: string, amount: number, symbo
 const ManualTraderStructure = () => {
     const [tradeType, setTradeType] = useState('Even/Odd');
     const [symbol, setSymbol] = useState('1HZ100V');
-    const [analysisTicks, setAnalysisTicks] = useState(1000);
+    const [analysisTicks, setAnalysisTicks] = useState(3000);
     const [duration, setDuration] = useState(1);
     const [stake, setStake] = useState(0.5);
     const [bulkTrades, setBulkTrades] = useState(1);
@@ -77,14 +77,14 @@ const ManualTraderStructure = () => {
 
     const selectedVolatility = Object.keys(VOLATILITY_SYMBOLS).find(name => VOLATILITY_SYMBOLS[name] === symbol) || 'Volatility 100 (1s)';
 
-    const handleTrade = async (selection: 'Even' | 'Odd' | 'Over' | 'Under') => {
+    const handleTrade = async (selection: 'Even' | 'Odd' | 'Over' | 'Under' | 'Matches' | 'Differs') => {
         if (tradeLockRef.current) return;
         const count = Math.max(1, Math.floor(Number(bulkTrades) || 1));
         const amount = Number(stake);
         const ticks = Math.max(1, Math.floor(Number(duration) || 1));
 
         if (!Number.isFinite(amount) || amount <= 0) { window.alert('Enter a valid stake greater than 0.'); return; }
-        if ((selection === 'Over' || selection === 'Under') && (!Number.isInteger(Number(prediction)) || Number(prediction) < 0 || Number(prediction) > 9)) { window.alert('Prediction must be a digit from 0 to 9.'); return; }
+        if (['Over', 'Under', 'Matches', 'Differs'].includes(selection) && (!Number.isInteger(Number(prediction)) || Number(prediction) < 0 || Number(prediction) > 9)) { window.alert('Prediction must be a digit from 0 to 9.'); return; }
 
         tradeLockRef.current = true;
         setIsTrading(true);
@@ -108,18 +108,18 @@ const ManualTraderStructure = () => {
     return <div className='manual-trader'>
         <div className='manual-trader__top-row'>
             <div className='manual-trader__volatility'><span>Volatility</span><select value={selectedVolatility} onChange={event => setSymbol(VOLATILITY_SYMBOLS[event.target.value])}>{Object.keys(VOLATILITY_SYMBOLS).map(name => <option key={name}>{name}</option>)}</select></div>
-            <div className='manual-trader__analysis-ticks'><span>Ticks</span><select value={analysisTicks} onChange={event => setAnalysisTicks(Number(event.target.value))}>{[1000, 500, 300, 100, 60, 30].map(value => <option key={value} value={value}>{value}</option>)}</select></div>
-            <div className='manual-trader__trade-type'><span>TRADE TYPE</span><select value={tradeType} onChange={event => setTradeType(event.target.value)}><option>Even/Odd</option><option>Over/Under</option></select></div>
+            <div className='manual-trader__analysis-ticks'><span>Ticks</span><select value={analysisTicks} onChange={event => setAnalysisTicks(Number(event.target.value))}>{[3000, 1000, 500, 300, 100, 60, 30].map(value => <option key={value} value={value}>{value}</option>)}</select></div>
+            <div className='manual-trader__trade-type'><span>TRADE TYPE</span><select value={tradeType} onChange={event => setTradeType(event.target.value)}><option>Even/Odd</option><option>Over/Under</option><option>Matches/Differs</option></select></div>
         </div>
         <AnalysisTool showLegend={false} showSubtabs={false} showControls={false} showPrice selectedIndex={selectedVolatility} windowSize={analysisTicks} />
         <div className='manual-trader__trade-inputs'>
             <label>Ticks<input type='number' min='1' step='1' value={duration} onChange={event => setDuration(Number(event.target.value))} /></label>
             <label>Stake<input type='number' min='0' step='0.01' value={stake} onChange={event => setStake(Number(event.target.value))} /></label>
             <label>No. of Bulk Trades<input type='number' min='1' step='1' value={bulkTrades} onChange={event => setBulkTrades(Number(event.target.value))} /></label>
-            {tradeType === 'Over/Under' && <label>Prediction<input type='number' min='0' max='9' step='1' value={prediction} onChange={event => setPrediction(Number(event.target.value))} /></label>}
+            {tradeType !== 'Even/Odd' && <label>{tradeType === 'Matches/Differs' ? 'Prediction digit' : 'Barrier digit'}<input type='number' min='0' max='9' step='1' value={prediction} onChange={event => setPrediction(Number(event.target.value))} /></label>}
         </div>
         <div className='manual-trader__trade-buttons'>
-            {tradeType === 'Even/Odd' ? <><button type='button' className='manual-trader__even' disabled={isTrading} onClick={() => handleTrade('Even')}>Even</button><button type='button' className='manual-trader__odd' disabled={isTrading} onClick={() => handleTrade('Odd')}>Odd</button></> : <><button type='button' className='manual-trader__over' disabled={isTrading} onClick={() => handleTrade('Over')}>Over</button><button type='button' className='manual-trader__under' disabled={isTrading} onClick={() => handleTrade('Under')}>Under</button></>}
+            {tradeType === 'Even/Odd' ? <><button type='button' className='manual-trader__even' disabled={isTrading} onClick={() => handleTrade('Even')}>Even</button><button type='button' className='manual-trader__odd' disabled={isTrading} onClick={() => handleTrade('Odd')}>Odd</button></>  : tradeType === 'Over/Under' ? <><button type='button' className='manual-trader__over' disabled={isTrading} onClick={() => handleTrade('Over')}>Over</button><button type='button' className='manual-trader__under' disabled={isTrading} onClick={() => handleTrade('Under')}>Under</button></> : <><button type='button' className='manual-trader__over' disabled={isTrading} onClick={() => handleTrade('Matches')}>Matches</button><button type='button' className='manual-trader__under' disabled={isTrading} onClick={() => handleTrade('Differs')}>Differs</button></>}
         </div>
     </div>;
 };

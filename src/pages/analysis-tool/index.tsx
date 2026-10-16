@@ -153,8 +153,13 @@ const AnalysisTool = ({
         return DIGITS.map((digit, index) => ({ digit, count: counts[index], percentage: total ? counts[index] / total * 100 : 0, rankTone: tones.get(digit) || 'normal' as RankTone }));
     }, [analysisTicks]);
 
-    const ranking = useMemo(() => stats.filter(item => item.rankTone !== 'normal'), [stats]);
-    const rankDescription = (tone: RankTone): [string, string] => ({ most: ['Green bar', 'Most appearing digit'], 'second-most': ['Blue bar', '2nd most appearing digit'], 'second-least': ['Yellow bar', '2nd least appearing digit'], least: ['Red bar', 'Least appearing digit'], normal: ['', ''] }[tone]);
+    const parityStats = useMemo(() => {
+        const even = analysisTicks.filter(tick => tick.digit % 2 === 0).length;
+        const odd = analysisTicks.length - even;
+        const total = analysisTicks.length || 1;
+        const streak = analysisTicks.slice(-30).map(tick => tick.digit % 2 === 0 ? 'E' : 'O').join('');
+        return { even, odd, evenPercent: even / total * 100, oddPercent: odd / total * 100, streak };
+    }, [analysisTicks]);
 
     const changeIndex = (value: string) => {
         setInternalSelectedIndex(value);
@@ -179,13 +184,16 @@ const AnalysisTool = ({
             {!showControls && showPrice && <div className='dcircles__controls dcircles__controls--price-only'><div className='dcircles__price'><span>Live price</span><strong>{formatPrice(latestPrice, pipSize)}</strong></div></div>}
             <div className='dcircles__circle-panel'>
                 <div className='dcircles__circles'>{stats.map(item => <div className={`dcircles__digit dcircles__digit--${item.digit} dcircles__digit--rank-${item.rankTone}${item.digit === latestDigit ? ' dcircles__digit--latest' : ''}`} key={item.digit}>
-                    <div className='dcircles__circle' aria-label={`Digit ${item.digit}, ${item.percentage.toFixed(1)} percent, ${item.count} appearances${item.digit === latestDigit ? ', latest tick' : ''}`}><span>{item.digit}</span><b>{item.percentage.toFixed(1)}%</b></div>
+                    <div className='dcircles__circle' aria-label={`Digit ${item.digit}, ${item.percentage.toFixed(1)} percent, ${item.count} appearances${item.digit === latestDigit ? ', latest tick' : ''}`}><span>{item.digit}</span><b>{item.percentage.toFixed(1)}%</b>{item.digit === latestDigit && <i className='dcircles__pointer' aria-label='Latest tick cursor'>▲</i>}</div>
                     <strong className='dcircles__digit-count'>{item.count}</strong>
                 </div>)}</div>
                 <div className='dcircles__status'>{connected ? '● Live · Deriv' : '○ Connecting to Deriv…'} · {analysisTicks.length} / {windowSize} ticks{connectionError && <span className='dcircles__error'> · {connectionError}</span>}</div>
             </div>
-            {showLegend && <div className='dcircles__legend'><h3>DCircles Bar Analysis</h3><p className='dcircles__legend-intro'>The bar colour identifies each digit's rank in the selected live tick window.</p>
-                {(['most', 'second-most', 'second-least', 'least'] as RankTone[]).map(tone => { const [colour, meaning] = rankDescription(tone); const item = ranking.find(value => value.rankTone === tone); return <div className={`dcircles__legend-row dcircles__legend-row--${tone}`} key={tone}><span className='dcircles__legend-bar' /><div><strong>{colour}</strong><span>{meaning}{item ? ` — Digit ${item.digit} (${item.percentage.toFixed(2)}%, ${item.count} appearances)` : ''}</span></div></div>; })}
+            {showLegend && <div className='dcircles__parity'>
+                <div className='dcircles__parity-heading'><strong>Even / Odd</strong><span>{analysisTicks.length} ticks analysed</span></div>
+                <div className='dcircles__parity-row'><span>Even <b>{parityStats.evenPercent.toFixed(1)}%</b></span><div className='dcircles__parity-track'><i style={{ width: `${parityStats.evenPercent}%` }} /></div><small>{parityStats.even}</small></div>
+                <div className='dcircles__parity-row'><span>Odd <b>{parityStats.oddPercent.toFixed(1)}%</b></span><div className='dcircles__parity-track'><i style={{ width: `${parityStats.oddPercent}%` }} /></div><small>{parityStats.odd}</small></div>
+                <div className='dcircles__streak'><strong>Last 30 digits · E/O streak</strong><div className='dcircles__streak-sequence'>{parityStats.streak || 'Waiting for ticks…'}</div><small>E = Even · O = Odd · newest tick at right</small></div>
             </div>}
         </>}
     </section>;
