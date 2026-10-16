@@ -206,8 +206,8 @@ const FormikWrapper: React.FC<TFormikWrapper> = observer(({ children }) => {
 });
 
 const QuickStrategyStructure = () => (
-    <div className='vqb-structure' aria-label='Quick Strategy structure'>
-        <div className='vqb-structure__title'>VINTELTOOL QUICK STRATEGY</div>
+    <div className='vqb-structure' aria-label='Quick Bot Builder structure'>
+        <div className='vqb-structure__title'>VINTELTOOL QUICK BOT BUILDER</div>
         <div className='vqb-structure__subtitle'>Configure → Load → Native Blockly Bot Builder</div>
         <div className='vqb-structure__flow'>
             <div className='vqb-structure__step'><b>1. Strategy Template</b><span>Choose the strategy and template.</span></div>
