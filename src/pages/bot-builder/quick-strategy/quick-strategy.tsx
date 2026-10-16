@@ -271,21 +271,80 @@ const VintelQuickBotBuilder = observer(({ onClose }: { onClose: () => void }) =>
     const toggle = (value: boolean, setter: (value: boolean) => void) => <button type='button' className={`vqb-toggle ${value ? 'is-on' : ''}`} aria-pressed={value} onClick={() => setter(!value)}><span /></button>;
     const field = (label: string, value: string, setter: (value: string) => void, options: string[]) => <label>{label}<select className='vqb-select' value={value} onChange={e => setter(e.target.value)}>{options.map(o => <option key={o}>{o}</option>)}</select></label>;
     const input = (label: string, value: string, setter: (value: string) => void) => <label>{label}<input className='vqb-input' type='number' min='0' value={value} onChange={e => setter(e.target.value)} /></label>;
+    const [isLoading, setIsLoading] = React.useState(false);
+    const [loadError, setLoadError] = React.useState('');
+    const getContractCode = () => {
+        const purchaseCodes: Record<string, string> = {
+            'Trade Even': 'DIGITEVEN',
+            'Trade Odd': 'DIGITODD',
+            Over: 'DIGITOVER',
+            Under: 'DIGITUNDER',
+            Matches: 'DIGITMATCH',
+            Differs: 'DIGITDIFF',
+            'Trade Rise': 'CALL',
+            'Trade Fall': 'PUT',
+            Rise: 'CALL',
+            Fall: 'PUT',
+        };
+        const contractCodes: Record<string, string> = {
+            Even: 'DIGITEVEN', Odd: 'DIGITODD', Over: 'DIGITOVER', Under: 'DIGITUNDER',
+            Rise: 'CALL', Fall: 'PUT', Matches: 'DIGITMATCH', Differs: 'DIGITDIFF',
+        };
+        return contractCodes[contract] || purchaseCodes[purchase] || 'DIGITEVEN';
+    };
     const load = async () => {
-        await setFieldValue('symbol', symbol);
-        await setFieldValue('tradetype', tradeType === 'Even/Odd' ? 'DIGITEVEN' : tradeType === 'Over/Under' ? 'DIGITOVER' : tradeType);
-        await setFieldValue('type', contract.toLowerCase());
-        await setFieldValue('stake', stake);
-        await setFieldValue('profit', profit);
-        await setFieldValue('loss', loss);
-        await setFieldValue('durationtype', durationType);
-        await setFieldValue('duration', duration);
-        await setFieldValue('action', 'EDIT');
-        const payload = { ...values, symbol, tradetype: tradeType === 'Even/Odd' ? 'DIGITEVEN' : tradeType === 'Over/Under' ? 'DIGITOVER' : tradeType, type: contract.toLowerCase(), stake, profit, loss, durationtype: durationType, duration, action: 'EDIT' };
-        quick_strategy.onSubmit(payload);
+        if (isLoading) return;
+        setIsLoading(true);
+        setLoadError('');
+        const contractCode = getContractCode();
+        const safeStake = Math.max(0.35, Number(stake) || 1);
+        const safeDuration = Math.max(1, Number(duration) || 1);
+        const configuration = {
+            symbol, marketGroup, marketType, scanAll, simultaneous, alternate, runs,
+            tradeFamily, tradeType, contract, multi, recovery, hedging, stake: safeStake,
+            profit: Math.max(0, Number(profit) || 0), loss: Math.max(0, Number(loss) || 0),
+            martingale, multiplier: Math.max(1, Number(multiplier) || 2), durationType,
+            duration: safeDuration, purchase, analysis, recoveryAnalysis, analysisTiming,
+            conditions, recoveryPurchase,
+        };
+        try {
+            const payload = {
+                ...values,
+                symbol,
+                tradetype: contractCode,
+                type: contractCode,
+                stake: String(safeStake),
+                profit: String(configuration.profit),
+                loss: String(configuration.loss),
+                durationtype: durationType,
+                duration: String(safeDuration),
+                action: 'EDIT',
+            };
+            await Promise.all([
+                setFieldValue('symbol', payload.symbol),
+                setFieldValue('tradetype', payload.tradetype),
+                setFieldValue('type', payload.type),
+                setFieldValue('stake', payload.stake),
+                setFieldValue('profit', payload.profit),
+                setFieldValue('loss', payload.loss),
+                setFieldValue('durationtype', payload.durationtype),
+                setFieldValue('duration', payload.duration),
+                setFieldValue('action', 'EDIT'),
+            ]);
+            localStorage.setItem('vintel-quick-bot-builder-config', JSON.stringify(configuration));
+            quick_strategy.setAdditionalData({ quick_bot_builder_config: configuration });
+            // Uses the existing Deriv contracts_for metadata and native Blockly XML loader.
+            // EDIT loads the configured template into the workspace without starting trades.
+            await quick_strategy.onSubmit(payload);
+        } catch (error) {
+            console.error('Quick Bot Builder load failed:', error);
+            setLoadError(error instanceof Error ? error.message : 'Unable to load this configuration. Check the connection and try again.');
+        } finally {
+            setIsLoading(false);
+        }
     };
     return <div className='vqb'>
-        <header className='vqb-header'><div><h2>Quick Bot Builder</h2></div><button type='button' className='vqb-close' aria-label='Close Quick Bot Builder' onClick={onClose}>×</button></header>
+        <header className='vqb-header'><div><h2>Quick Bot Builder</h2></div><button type='button' className='vqb-close' aria-label='Close Quick Bot Builder' title='Close Quick Bot Builder' onClick={onClose}>×</button></header>
         <main className='vqb-body'>
             <section className='vqb-section'><button type='button' className='vqb-section-title' onClick={() => toggleSection('trade')}>TRADE PARAMETERS <span className='vqb-section-arrow'>{openSections.trade ? '−' : '+'}</span></button>
             {openSections.trade && <div className='vqb-section-content'>
@@ -311,7 +370,7 @@ const VintelQuickBotBuilder = observer(({ onClose }: { onClose: () => void }) =>
             {recovery && <section className='vqb-section'><div className='vqb-section-title vqb-section-title-static'>RECOVERY PURCHASE <span className='vqb-analysis'>ENABLE ANALYSIS {toggle(recoveryAnalysis,setRecoveryAnalysis)}</span></div><div className='vqb-section-content'><div className='vqb-row vqb-inline'><b>Purchase</b>{field('',recoveryPurchase,setRecoveryPurchase,['Trade Even','Trade Odd','Trade Rise','Trade Fall','Over','Under','Matches','Differs'])}</div>
                 {recoveryAnalysis && <div className='vqb-analysis-builder'><label className='vqb-analysis-timing'>When to check:<select className='vqb-select' value={analysisTiming} onChange={e=>setAnalysisTiming(e.target.value)}><option>On the first trade only</option><option>Before every trade</option><option>After a loss</option></select></label>{conditions.map((condition,index)=><div className='vqb-condition-card' key={'recovery-'+index}><div className='vqb-condition-top'><span className='vqb-if-pill'>IF</span><select className='vqb-select' value={condition.metric} onChange={e=>setConditions(old=>old.map((row,i)=>i===index?{...row,metric:e.target.value}:row))}><option>Digit streak</option><option>Last digit</option><option>Even/Odd streak</option><option>Over/Under streak</option></select><span className='vqb-muted'>last</span><input className='vqb-input vqb-count' type='number' min='1' value={condition.count} onChange={e=>setConditions(old=>old.map((row,i)=>i===index?{...row,count:e.target.value}:row))}/><span className='vqb-muted'>digits are</span><select className='vqb-select vqb-condition-match' value={condition.match} onChange={e=>setConditions(old=>old.map((row,i)=>i===index?{...row,match:e.target.value}:row))}><option>all even</option><option>all odd</option><option>over 4</option><option>under 5</option></select></div><div className='vqb-condition-action'><span className='vqb-plus-dot'>+</span><b>THEN PURCHASE</b><select className='vqb-select' value={condition.action} onChange={e=>setConditions(old=>old.map((row,i)=>i===index?{...row,action:e.target.value}:row))}><option>Odd</option><option>Even</option><option>Over</option><option>Under</option><option>Rise</option><option>Fall</option></select></div></div>)}<button type='button' className='vqb-add-condition' onClick={()=>setConditions(old=>[...old,{metric:'Digit streak',count:'3',match:'all even',action:'Odd'}])}>+ Add IF row</button></div>}
             </div></section>}
-            <button type='button' className='vqb-load' onClick={load}>LOAD</button>
+            {loadError && <div className='vqb-load-error' role='alert'>{loadError}</div>}<button type='button' className='vqb-load' onClick={load} disabled={isLoading}>{isLoading ? 'LOADING BOT BUILDER…' : 'LOAD'}</button>
         </main>
     </div>;
 });
