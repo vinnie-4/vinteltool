@@ -270,9 +270,7 @@ const QuickStrategy = observer(() => {
                             is_modal_open={is_open}
                             className='quick-strategy__wrapper'
                             // Split localize calls are intentional - these are separate translatable strings
-                            header={`${localize('Step {{current_step}}/2:', {
-                                current_step: current_step === QsSteps.StrategyCompleted ? 2 : 1,
-                            })} ${localize('Choose your strategy')}`}
+                            header={localize('Quick Bot Builder')}
                             onClickClose={handleClose}
                             height_offset='8rem'
                         >
