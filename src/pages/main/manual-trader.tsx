@@ -198,7 +198,7 @@ const ManualTraderStructure = () => {
                 <span>{tradeRecords.length} trades</span>
             </div>
             <div className='manual-trader__summary'>
-                <div><span>Realised P/L</span><strong className={tradeRecords.reduce((sum, trade) => sum + (trade.profit ?? 0), 0) >= 0 ? 'is-positive' : 'is-negative'}>{tradeRecords.some(trade => trade.profit !== null) ? `${tradeRecords.reduce((sum, trade) => sum + (trade.profit ?? 0), 0).toFixed(2)} ${tradeRecords[0]?.currency || ''}` : '—'}</strong></div>
+                <div><span>Realised P/L</span><strong className={tradeRecords.filter(trade => ['won', 'lost', 'sold', 'expired'].includes(trade.status.toLowerCase())).reduce((sum, trade) => sum + (trade.profit ?? 0), 0) >= 0 ? 'is-positive' : 'is-negative'}>{tradeRecords.some(trade => trade.profit !== null && ['won', 'lost', 'sold', 'expired'].includes(trade.status.toLowerCase())) ? `${tradeRecords.filter(trade => ['won', 'lost', 'sold', 'expired'].includes(trade.status.toLowerCase())).reduce((sum, trade) => sum + (trade.profit ?? 0), 0).toFixed(2)} ${tradeRecords[0]?.currency || ''}` : '—'}</strong></div>
                 <div><span>Open trades</span><strong>{tradeRecords.filter(trade => ['open', 'pending'].includes(trade.status.toLowerCase())).length}</strong></div>
             </div>
             {tradeRecords.length === 0 ? <div className='manual-trader__transactions-empty'>Your executed manual trades will appear here.</div> : <div className='manual-trader__transactions-scroll'><table className='manual-trader__transactions-table'>
