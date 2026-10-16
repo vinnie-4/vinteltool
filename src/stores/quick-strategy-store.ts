@@ -138,9 +138,8 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             const marketGroup = String(cfg.marketGroup || 'Derived');
             const marketType = String(cfg.marketType || 'Continuous Indices');
             const symbol = String(cfg.symbol || 'R_10');
-            const category = tradeFamily === 'Up/Down' || tradeType === 'Rise/Fall' ? 'callput'
-                : tradeType === 'Over/Under' ? 'overunder'
-                : tradeType === 'Matches/Differs' ? 'matchdiff' : 'evenodd';
+            const category = tradeFamily === 'Up/Down' || tradeType === 'Rise/Fall' ? 'callput' : 'digits';
+            const tradeTypeCode = tradeType === 'Over/Under' ? 'overunder' : tradeType === 'Matches/Differs' ? 'matchdiff' : tradeType === 'Rise/Fall' ? 'callput' : 'evenodd';
             const purchaseMap: Record<string, string> = {
                 'Trade Even': 'EVEN', Even: 'EVEN', 'Trade Odd': 'ODD', Odd: 'ODD',
                 Over: 'DIGITOVER', Under: 'DIGITUNDER', Matches: 'DIGITMATCH', Differs: 'DIGITDIFF',
@@ -151,41 +150,49 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
                 Rise: 'CALL', Fall: 'PUT', Matches: 'DIGITMATCH', Differs: 'DIGITDIFF',
             };
             const purchaseCode = contractMap[contract] || purchaseMap[purchase] || 'EVEN';
-            const marketCode = marketGroup === 'Derived' ? 'synthetic_index' : marketGroup === 'Forex' ? ' forex' : 'commodities';
-            const submarketCode = marketGroup === 'Derived'
-                ? (marketType.includes('1s') ? 'random_index' : 'random_index')
-                : marketGroup === 'Forex' ? 'major_pairs' : 'metals';
+            const marketCode = marketGroup === 'Derived' ? 'synthetic_index' : marketGroup === 'Forex' ? 'forex' : 'commodities';
+            const submarketCode = marketGroup === 'Derived' ? 'random_index' : marketGroup === 'Forex' ? 'major_pairs' : 'metals';
             const safe = (value: string) => value.replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[ch] || ch));
             const xml = `<xml xmlns="https://developers.google.com/blockly/xml">
               <block type="trade_definition" id="vintel_qbb_trade" x="20" y="20">
                 <statement name="TRADE_OPTIONS">
                   <block type="trade_definition_market" id="vintel_qbb_market">
-                    <field name="MARKET_LIST">${safe(marketCode.trim())}</field>
+                    <field name="MARKET_LIST">${safe(marketCode)}</field>
                     <field name="SUBMARKET_LIST">${safe(submarketCode)}</field>
                     <field name="SYMBOL_LIST">${safe(symbol)}</field>
                     <next><block type="trade_definition_tradetype" id="vintel_qbb_trade_type">
                       <field name="TRADETYPECAT_LIST">${category}</field>
-                      <field name="TRADETYPE_LIST">${tradeType === 'Over/Under' ? 'overunder' : tradeType === 'Matches/Differs' ? 'matchdiff' : tradeType === 'Rise/Fall' ? 'callput' : 'evenodd'}</field>
+                      <field name="TRADETYPE_LIST">${tradeTypeCode}</field>
                       <next><block type="trade_definition_contracttype" id="vintel_qbb_contract">
                         <field name="TYPE_LIST">${purchaseCode}</field>
-                        <next><block type="trade_definition_duration" id="vintel_qbb_duration">
-                          <field name="DURATIONTYPE_LIST">${durationType}</field>
-                          <value name="DURATION"><shadow type="math_number"><field name="NUM">${duration}</field></shadow></value>
-                          <next><block type="trade_definition_amount" id="vintel_qbb_amount">
-                            <value name="AMOUNT"><shadow type="math_number"><field name="NUM">${stake}</field></shadow></value>
+                        <next><block type="trade_definition_candleinterval" id="vintel_qbb_candle">
+                          <field name="CANDLEINTERVAL_LIST">60</field>
+                          <next><block type="trade_definition_restartbuysell" id="vintel_qbb_restart">
+                            <field name="TIME_MACHINE_ENABLED">FALSE</field>
+                            <next><block type="trade_definition_restartonerror" id="vintel_qbb_error">
+                              <field name="RESTARTONERROR">FALSE</field>
+                            </block></next>
                           </block></next>
                         </block></next>
                       </block></next>
                     </block></next>
                   </block>
                 </statement>
-                <statement name="SUBMARKET"><block type="trade_definition_tradetype" id="vintel_qbb_submarket_type">
-                  <field name="TRADETYPECAT_LIST">${category}</field>
-                  <field name="TRADETYPE_LIST">${tradeType === 'Over/Under' ? 'overunder' : tradeType === 'Matches/Differs' ? 'matchdiff' : tradeType === 'Rise/Fall' ? 'callput' : 'evenodd'}</field>
-                </block></statement>
+                <statement name="SUBMARKET">
+                  <block type="trade_definition_tradeoptions" id="vintel_qbb_options">
+                    <mutation has_first_barrier="false" has_second_barrier="false" has_prediction="${['Over/Under','Matches/Differs'].includes(tradeType) ? 'true' : 'false'}"></mutation>
+                    <field name="DURATIONTYPE_LIST">${durationType}</field>
+                    <value name="DURATION"><shadow type="math_number"><field name="NUM">${duration}</field></shadow></value>
+                    <value name="AMOUNT"><shadow type="math_number"><field name="NUM">${stake}</field></shadow></value>
+                    ${['Over/Under','Matches/Differs'].includes(tradeType) ? `<value name="PREDICTION"><shadow type="math_number_positive"><field name="NUM">5</field></shadow></value>` : ''}
+                  </block>
+                </statement>
               </block>
               <block type="before_purchase" id="vintel_qbb_before_purchase" x="20" y="420">
-                <statement name="BEFOREPURCHASE"><block type="purchase" id="vintel_qbb_purchase"><field name="PURCHASE_LIST">${purchaseCode}</field></block></statement>
+                <statement name="BEFOREPURCHASE_STACK"><block type="purchase" id="vintel_qbb_purchase"><field name="PURCHASE_LIST">${purchaseCode}</field></block></statement>
+              </block>
+              <block type="after_purchase" id="vintel_qbb_after_purchase" x="520" y="420">
+                <statement name="AFTERPURCHASE_STACK"><block type="trade_again" id="vintel_qbb_trade_again"></block></statement>
               </block>
             </xml>`;
             const strategyDom = window.Blockly.utils.xml.textToDom(xml);
