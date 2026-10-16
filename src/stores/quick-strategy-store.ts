@@ -199,7 +199,40 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             const blockTypes = Array.from(strategyDom.querySelectorAll('block')).map((block: Element) => block.getAttribute('type')).filter(Boolean);
             removeLimitedBlocks(workspace, blockTypes);
             loadBlocks(strategyDom, null, `vintel-quick-builder-${Date.now()}`, workspace);
-            this.setAdditionalData({ quick_bot_builder_config: cfg });
+            // Keep the same values in the native Quick Strategy form state used by
+            // Bot Builder/Run, not only in the Quick Bot Builder component.
+            const nativeFormData = {
+                ...this.form_data,
+                symbol,
+                tradetype: tradeTypeCode,
+                type: purchaseCode,
+                stake: String(stake),
+                durationtype: durationType,
+                duration: String(duration),
+                profit: String(Math.max(0, Number(cfg.profit) || 0)),
+                loss: String(Math.max(0, Number(cfg.loss) || 0)),
+                action: 'EDIT',
+                last_digit_prediction: Number(cfg.prediction ?? 5),
+            };
+            Object.entries(nativeFormData).forEach(([key, value]) => this.setValue(key, value as string));
+            try {
+                const saved = JSON.parse(localStorage.getItem('qs-fields') || '{}');
+                localStorage.setItem('qs-fields', JSON.stringify({ ...saved, ...nativeFormData }));
+                localStorage.setItem('vintel-quick-bot-builder-config', JSON.stringify(cfg));
+            } catch (error) {
+                console.warn('Could not persist Quick Bot Builder parameters:', error);
+            }
+            this.setAdditionalData({
+                quick_bot_builder_config: cfg,
+                quick_bot_builder_parameters: {
+                    symbol, tradeType: tradeTypeCode, contractType: purchaseCode,
+                    stake, durationType, duration,
+                    takeProfit: Math.max(0, Number(cfg.profit) || 0),
+                    stopLoss: Math.max(0, Number(cfg.loss) || 0),
+                    martingale: Boolean(cfg.martingale),
+                    martingaleMultiplier: Math.max(1, Number(cfg.multiplier) || 2),
+                },
+            });
             this.setFormVisibility(false);
         };
         const previous = this.workspace_load_queue;
