@@ -333,9 +333,9 @@ const VintelQuickBotBuilder = observer(({ onClose }: { onClose: () => void }) =>
             ]);
             localStorage.setItem('vintel-quick-bot-builder-config', JSON.stringify(configuration));
             quick_strategy.setAdditionalData({ quick_bot_builder_config: configuration });
-            // Uses the existing Deriv contracts_for metadata and native Blockly XML loader.
-            // EDIT loads the configured template into the workspace without starting trades.
-            await quick_strategy.onSubmit(payload);
+            // Load the selected configuration as native, visible Blockly trade blocks.
+            // This does not start trading; the user must press Run in Bot Builder.
+            await quick_strategy.loadConfiguredQuickBot(configuration);
         } catch (error) {
             console.error('Quick Bot Builder load failed:', error);
             setLoadError(error instanceof Error ? error.message : 'Unable to load this configuration. Check the connection and try again.');
