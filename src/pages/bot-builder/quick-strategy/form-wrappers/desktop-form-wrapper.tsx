@@ -12,6 +12,8 @@ import { localize } from '@deriv-com/translations';
 import { STRATEGIES } from '../config';
 import { TFormData, TFormValues } from '../types';
 import QSStepper from './qs-stepper';
+import QuickStrategyStructure from '../quick-strategy-structure';
+import QuickStrategyStructure from '../quick-strategy-structure';
 import StrategyTabContent from './strategy-tab-content';
 import StrategyTemplatePicker from './strategy-template-picker';
 import { QsSteps } from './trade-constants';
@@ -181,6 +183,7 @@ const FormWrapper = observer(
                                 autohide={false}
                                 refSetter={scroll_ref}
                             >
+                                <QuickStrategyStructure />
                                 {renderContent()}
                             </ThemedScrollbars>
                             {!is_selected_strategy_step && (
