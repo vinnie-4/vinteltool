@@ -423,3 +423,27 @@
 .manual-trader .dcircles__pointer{display:block!important}
 .manual-trader .dcircles__parity{margin-top:8px}
 .manual-trader .dcircles__streak-sequence{white-space:normal}
+
+.manual-trader__transactions{margin-top:16px;padding:13px;border:1px solid #dfe5ed;border-radius:14px;background:linear-gradient(145deg,#fff,#f5f8fc);box-shadow:0 5px 18px rgba(20,40,70,.06);color:#202b3b}
+.manual-trader__transactions-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.manual-trader__transactions-heading h3{font-size:15px;margin:0 0 3px;font-weight:900}
+.manual-trader__transactions-heading p{font-size:11px;color:#788496;margin:0}
+.manual-trader__transactions-heading>span{padding:5px 8px;border-radius:999px;background:#e9f1fb;color:#245b9e;font-size:10px;font-weight:900;white-space:nowrap}
+.manual-trader__summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.manual-trader__summary>div{padding:10px;border-radius:10px;background:#f1f5f9;border:1px solid #e1e8f0;display:flex;flex-direction:column;gap:5px}
+.manual-trader__summary span{font-size:10px;color:#7a8697;font-weight:800}
+.manual-trader__summary strong{font-size:17px;font-weight:900;color:#27374a}
+.manual-trader__transactions .is-positive{color:#139447!important}
+.manual-trader__transactions .is-negative{color:#e23b4b!important}
+.manual-trader__transactions-empty{padding:22px 10px;text-align:center;color:#8993a1;font-size:12px}
+.manual-trader__transactions-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #e4e9ef;border-radius:10px}
+.manual-trader__transactions-table{width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap}
+.manual-trader__transactions-table th{background:#edf2f8;color:#627086;text-align:left;font-size:10px;padding:10px 9px;font-weight:900}
+.manual-trader__transactions-table td{padding:10px 9px;border-top:1px solid #e9edf2;color:#344256;vertical-align:top}
+.manual-trader__transactions-table td small{display:block;margin-top:3px;font-size:9px;color:#8290a2}
+.manual-trader__trade-status{display:inline-block;padding:4px 7px;border-radius:999px;background:#e7edf4;color:#657386;font-size:9px;font-weight:900}
+.manual-trader__trade-status--open{background:#fff2d6;color:#9a6900}
+.manual-trader__trade-status--won{background:#dcf8e7;color:#137a3a}
+.manual-trader__trade-status--lost{background:#ffe3e6;color:#b82435}
+.manual-trader__trade-status--sold{background:#dcecff;color:#205ca5}
+@media(max-width:600px){.manual-trader__transactions{padding:9px;margin-top:12px}.manual-trader__transactions-heading h3{font-size:13px}.manual-trader__transactions-table th,.manual-trader__transactions-table td{padding:9px 7px}.manual-trader__summary strong{font-size:15px}}

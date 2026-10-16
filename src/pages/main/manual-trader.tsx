@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { api_base } from '@/external/bot-skeleton';
 import AnalysisTool from '../analysis-tool';
 import './main.scss';
@@ -24,6 +24,12 @@ const CONTRACT_TYPES: Record<string, string> = {
     Odd: 'DIGITODD',
     Over: 'DIGITOVER',
     Under: 'DIGITUNDER',
+};
+
+type ManualTradeRecord = {
+    contractId: string; buyTransactionId: string; sellTransactionId: string;
+    contractType: string; symbol: string; stake: number; buyPrice: number;
+    profit: number | null; exitSpot: string; status: string; currency: string; purchasedAt: string;
 };
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -73,7 +79,53 @@ const ManualTraderStructure = () => {
     const [bulkTrades, setBulkTrades] = useState(1);
     const [prediction, setPrediction] = useState(1);
     const [isTrading, setIsTrading] = useState(false);
+    const [tradeRecords, setTradeRecords] = useState<ManualTradeRecord[]>([]);
     const tradeLockRef = useRef(false);
+    const messageSubscriptionRef = useRef<any>(null);
+    const recordsByContractRef = useRef<Record<string, ManualTradeRecord>>({});
+
+    const updateTradeRecord = (contractId: string, patch: Partial<ManualTradeRecord>) => {
+        const current = recordsByContractRef.current[contractId];
+        if (!current) return;
+        const updated = { ...current, ...patch };
+        recordsByContractRef.current[contractId] = updated;
+        setTradeRecords(previous => [updated, ...previous.filter(record => record.contractId !== contractId)].slice(0, 50));
+    };
+
+    const applyOpenContract = (contract: any) => {
+        if (!contract?.contract_id) return;
+        const contractId = String(contract.contract_id);
+        const exitValue = contract.exit_tick_display_value ?? contract.exit_tick ?? contract.exit_spot;
+        const sellTransactionId = contract.sell_transaction_id ?? contract.transaction_ids?.sell;
+        const profitValue = contract.profit;
+        const isClosed = contract.is_sold === 1 || contract.is_sold === true ||
+            ['won', 'lost', 'sold', 'expired'].includes(String(contract.status || '').toLowerCase());
+        updateTradeRecord(contractId, {
+            ...(exitValue !== undefined && exitValue !== null ? { exitSpot: String(exitValue) } : {}),
+            ...(profitValue !== undefined && profitValue !== null ? { profit: Number(profitValue) } : {}),
+            ...(sellTransactionId ? { sellTransactionId: String(sellTransactionId) } : {}),
+            ...(contract.status ? { status: String(contract.status) } : {}),
+            ...(isClosed ? { status: String(contract.status || 'Closed') } : {}),
+        });
+    };
+
+    const ensureTradeMessageListener = (api: any) => {
+        if (messageSubscriptionRef.current || typeof api.onMessage !== 'function') return;
+        const stream = api.onMessage();
+        if (stream && typeof stream.subscribe === 'function') {
+            messageSubscriptionRef.current = stream.subscribe((message: any) => {
+                const data = message?.data ?? message;
+                if (data?.msg_type === 'proposal_open_contract' || data?.proposal_open_contract) {
+                    applyOpenContract(data.proposal_open_contract ?? data);
+                }
+            });
+        }
+    };
+
+    useEffect(() => () => {
+        messageSubscriptionRef.current?.unsubscribe?.();
+        messageSubscriptionRef.current = null;
+    }, []);
 
     const selectedVolatility = Object.keys(VOLATILITY_SYMBOLS).find(name => VOLATILITY_SYMBOLS[name] === symbol) || 'Volatility 100 (1s)';
 
@@ -90,10 +142,29 @@ const ManualTraderStructure = () => {
         setIsTrading(true);
         try {
             const api = await waitForTradingApi();
-            // Sequential execution keeps each requested transaction on the authenticated
-            // Deriv connection and prevents parallel bulk calls from creating duplicates.
+            ensureTradeMessageListener(api);
+            const currency = api_base.account_info?.currency || 'USD';
+            // Execute sequentially so bulk purchases do not race each other.
             for (let index = 0; index < count; index += 1) {
-                await buyContract(api, CONTRACT_TYPES[selection], amount, symbol, ticks, Number(prediction));
+                const buy = await buyContract(api, CONTRACT_TYPES[selection], amount, symbol, ticks, Number(prediction));
+                const contractId = String(buy.contract_id);
+                const record: ManualTradeRecord = {
+                    contractId,
+                    buyTransactionId: String(buy.transaction_id ?? buy.transaction_ids?.buy ?? '—'),
+                    sellTransactionId: '—', contractType: selection, symbol, stake: amount,
+                    buyPrice: Number(buy.buy_price ?? amount), profit: null, exitSpot: 'Pending',
+                    status: 'Open', currency, purchasedAt: new Date().toLocaleTimeString(),
+                };
+                recordsByContractRef.current[contractId] = record;
+                setTradeRecords(previous => [record, ...previous.filter(item => item.contractId !== contractId)].slice(0, 50));
+                try {
+                    const openResponse = await api.send({ proposal_open_contract: 1, contract_id: Number(contractId), subscribe: 1 });
+                    if (openResponse?.error) updateTradeRecord(contractId, { status: 'Tracking unavailable' });
+                    else if (openResponse?.proposal_open_contract) applyOpenContract(openResponse.proposal_open_contract);
+                } catch (trackingError) {
+                    console.warn('[Manual Trader] Unable to subscribe to contract updates:', trackingError);
+                    updateTradeRecord(contractId, { status: 'Tracking unavailable' });
+                }
             }
             console.info(`[Manual Trader] ${count} ${selection} transaction(s) purchased.`);
         } catch (error) {
@@ -121,6 +192,25 @@ const ManualTraderStructure = () => {
         <div className='manual-trader__trade-buttons'>
             {tradeType === 'Even/Odd' ? <><button type='button' className='manual-trader__even' disabled={isTrading} onClick={() => handleTrade('Even')}>Even</button><button type='button' className='manual-trader__odd' disabled={isTrading} onClick={() => handleTrade('Odd')}>Odd</button></>  : tradeType === 'Over/Under' ? <><button type='button' className='manual-trader__over' disabled={isTrading} onClick={() => handleTrade('Over')}>Over</button><button type='button' className='manual-trader__under' disabled={isTrading} onClick={() => handleTrade('Under')}>Under</button></> : <><button type='button' className='manual-trader__over' disabled={isTrading} onClick={() => handleTrade('Matches')}>Matches</button><button type='button' className='manual-trader__under' disabled={isTrading} onClick={() => handleTrade('Differs')}>Differs</button></>}
         </div>
+        <section className='manual-trader__transactions' aria-live='polite'>
+            <div className='manual-trader__transactions-heading'>
+                <div><h3>Manual Trade Transactions</h3><p>Live contract status, exit spot and realised profit/loss</p></div>
+                <span>{tradeRecords.length} trades</span>
+            </div>
+            <div className='manual-trader__summary'>
+                <div><span>Realised P/L</span><strong className={tradeRecords.reduce((sum, trade) => sum + (trade.profit ?? 0), 0) >= 0 ? 'is-positive' : 'is-negative'}>{tradeRecords.some(trade => trade.profit !== null) ? `${tradeRecords.reduce((sum, trade) => sum + (trade.profit ?? 0), 0).toFixed(2)} ${tradeRecords[0]?.currency || ''}` : '—'}</strong></div>
+                <div><span>Open trades</span><strong>{tradeRecords.filter(trade => ['open', 'pending'].includes(trade.status.toLowerCase())).length}</strong></div>
+            </div>
+            {tradeRecords.length === 0 ? <div className='manual-trader__transactions-empty'>Your executed manual trades will appear here.</div> : <div className='manual-trader__transactions-scroll'><table className='manual-trader__transactions-table'>
+                <thead><tr><th>Time</th><th>Contract</th><th>Contract ID</th><th>Buy transaction</th><th>Exit spot</th><th>P/L</th><th>Status</th></tr></thead>
+                <tbody>{tradeRecords.map(trade => <tr key={trade.contractId}>
+                    <td>{trade.purchasedAt}</td><td>{trade.contractType}<small>{trade.symbol}</small></td>
+                    <td>{trade.contractId}</td><td>{trade.buyTransactionId}</td><td>{trade.exitSpot}</td>
+                    <td className={trade.profit === null ? '' : trade.profit >= 0 ? 'is-positive' : 'is-negative'}>{trade.profit === null ? '—' : `${trade.profit.toFixed(2)} ${trade.currency}`}</td>
+                    <td><span className={`manual-trader__trade-status manual-trader__trade-status--${trade.status.toLowerCase().replace(/[^a-z]+/g, '-')}`}>{trade.status}</span>{trade.sellTransactionId !== '—' && <small>Sell TX: {trade.sellTransactionId}</small>}</td>
+                </tr>)}</tbody>
+            </table></div>}
+        </section>
     </div>;
 };
 
