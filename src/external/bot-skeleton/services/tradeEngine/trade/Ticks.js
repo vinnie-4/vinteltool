@@ -8,6 +8,7 @@ import { api_base } from '../../api/api-base';
 import { getDirection, getLastDigit } from '../utils/helpers';
 import { expectPositiveInteger } from '../utils/sanitize';
 import * as constants from './state/constants';
+import { isFastExecution } from '../execution/execution-mode';
 
 let tickListenerKey;
 
@@ -33,13 +34,19 @@ export default Engine =>
                     // callback, before Redux dispatch and its subscribers. This
                     // keeps the normal event-driven stream but removes the
                     // avoidable state-notification hop from the hot path.
-                    this.fastTickListeners?.forEach(listener => {
-                        try {
-                            listener(epoch);
-                        } catch (error) {
-                            globalObserver.emit('execution.fast.listener_error', error);
-                        }
-                    });
+                    if (isFastExecution()) {
+                        // Notify fast-mode consumers synchronously for every real tick,
+                        // before Redux work. Never synthesize ticks or place a trade here:
+                        // the Blockly purchase state/conditions remain authoritative.
+                        this.fastTickListeners?.forEach(listener => {
+                            try {
+                                listener(lastTick);
+                            } catch (error) {
+                                globalObserver.emit('execution.fast.listener_error', error);
+                            }
+                        });
+                        globalObserver.emit('execution.fast.tick', lastTick);
+                    }
 
                     this.store.dispatch({ type: constants.NEW_TICK, payload: epoch });
                 };
