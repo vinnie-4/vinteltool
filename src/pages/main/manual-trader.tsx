@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { api_base } from '@/external/bot-skeleton';
 import AnalysisTool from '../analysis-tool';
+import { useStore } from '@/hooks/useStore';
 import './main.scss';
 
 const VOLATILITY_SYMBOLS: Record<string, string> = {
@@ -71,6 +72,7 @@ const buyContract = async (api: any, contractType: string, amount: number, symbo
 };
 
 const ManualTraderStructure = () => {
+    const { transactions } = useStore();
     const [tradeType, setTradeType] = useState('Even/Odd');
     const [symbol, setSymbol] = useState('1HZ100V');
     const [analysisTicks, setAnalysisTicks] = useState(3000);
@@ -100,12 +102,34 @@ const ManualTraderStructure = () => {
         const profitValue = contract.profit;
         const isClosed = contract.is_sold === 1 || contract.is_sold === true ||
             ['won', 'lost', 'sold', 'expired'].includes(String(contract.status || '').toLowerCase());
-        updateTradeRecord(contractId, {
+        const currentRecord = recordsByContractRef.current[contractId];
+        const updatedRecord = {
+            ...(currentRecord || {}),
             ...(exitValue !== undefined && exitValue !== null ? { exitSpot: String(exitValue) } : {}),
             ...(profitValue !== undefined && profitValue !== null ? { profit: Number(profitValue) } : {}),
             ...(sellTransactionId ? { sellTransactionId: String(sellTransactionId) } : {}),
             ...(contract.status ? { status: String(contract.status) } : {}),
             ...(isClosed ? { status: String(contract.status || 'Closed') } : {}),
+        } as ManualTradeRecord;
+        updateTradeRecord(contractId, updatedRecord);
+        // Feed the same contract into DBot's native Transactions run-panel store.
+        transactions.pushTransaction({
+            ...contract,
+            contract_id: Number(contractId),
+            transaction_ids: {
+                ...(contract.transaction_ids || {}),
+                buy: Number(currentRecord?.buyTransactionId) || contract.transaction_ids?.buy || Number(contract.transaction_id) || undefined,
+                sell: sellTransactionId ? Number(sellTransactionId) || sellTransactionId : contract.transaction_ids?.sell,
+            },
+            contract_type: contract.contract_type || CONTRACT_TYPES[currentRecord?.contractType || ''] || '',
+            underlying_symbol: contract.underlying_symbol || currentRecord?.symbol,
+            currency: contract.currency || currentRecord?.currency || api_base.account_info?.currency || 'USD',
+            buy_price: Number(contract.buy_price ?? currentRecord?.buyPrice ?? currentRecord?.stake ?? 0),
+            profit: profitValue !== undefined && profitValue !== null ? Number(profitValue) : 0,
+            entry_spot: contract.entry_tick_display_value ?? contract.entry_tick ?? contract.entry_spot,
+            exit_spot: exitValue !== undefined && exitValue !== null ? exitValue : contract.exit_spot,
+            is_completed: isClosed,
+            date_start: contract.date_start || Math.floor(Date.now() / 1000),
         });
     };
 
@@ -157,6 +181,18 @@ const ManualTraderStructure = () => {
                 };
                 recordsByContractRef.current[contractId] = record;
                 setTradeRecords(previous => [record, ...previous.filter(item => item.contractId !== contractId)].slice(0, 50));
+                transactions.pushTransaction({
+                    contract_id: Number(contractId),
+                    transaction_ids: { buy: Number(record.buyTransactionId) || buy.transaction_id || undefined },
+                    contract_type: CONTRACT_TYPES[selection] || selection,
+                    underlying_symbol: symbol,
+                    currency,
+                    buy_price: record.buyPrice,
+                    payout: Number(buy.payout ?? 0),
+                    profit: 0,
+                    is_completed: false,
+                    date_start: Math.floor(Date.now() / 1000),
+                });
                 try {
                     const openResponse = await api.send({ proposal_open_contract: 1, contract_id: Number(contractId), subscribe: 1 });
                     if (openResponse?.error) updateTradeRecord(contractId, { status: 'Tracking unavailable' });
