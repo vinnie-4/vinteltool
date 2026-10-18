@@ -36,6 +36,8 @@ type AnalysisToolProps = {
     showContractProbabilities?: boolean;
     contractMode?: 'Even/Odd' | 'Over/Under' | 'Matches/Differs';
     predictionDigit?: number;
+    onDigitSelect?: (digit: number) => void;
+    selectedBarrierDigit?: number;
 };
 
 const AnalysisTool = ({
@@ -51,6 +53,8 @@ const AnalysisTool = ({
     showContractProbabilities = true,
     contractMode = 'Even/Odd',
     predictionDigit = 1,
+    onDigitSelect,
+    selectedBarrierDigit,
 }: AnalysisToolProps) => {
     const [activeTab, setActiveTab] = useState<AnalysisTab>('dcircles');
     const [internalSelectedIndex, setInternalSelectedIndex] = useState('Volatility 100 (1s)');
@@ -210,14 +214,14 @@ const AnalysisTool = ({
             </div>}
             {!showControls && showPrice && <div className='dcircles__controls dcircles__controls--price-only'><div className='dcircles__price'><span>Live price</span><strong>{formatPrice(latestPrice, pipSize)}</strong></div></div>}
             <div className='dcircles__circle-panel'>
-                <div className='dcircles__circles'>{stats.map(item => <div className={`dcircles__digit dcircles__digit--${item.digit} dcircles__digit--rank-${item.rankTone}${item.digit === latestDigit ? ' dcircles__digit--latest' : ''}`} key={item.digit}>
-                    <div className='dcircles__circle' aria-label={`Digit ${item.digit}, ${item.percentage.toFixed(1)} percent, ${item.count} appearances${item.digit === latestDigit ? ', latest tick' : ''}`}><span>{item.digit}</span><b>{item.percentage.toFixed(1)}%</b>{item.digit === latestDigit && <i className='dcircles__pointer' aria-label='Latest tick cursor'>▲</i>}</div>
+                <div className='dcircles__circles'>{stats.map(item => <div className={`dcircles__digit dcircles__digit--${item.digit} dcircles__digit--rank-${item.rankTone}${item.digit === latestDigit ? ' dcircles__digit--latest' : ''}${item.digit === selectedBarrierDigit ? ' dcircles__digit--selected-barrier' : ''}`} key={item.digit}>
+                    <button type='button' className='dcircles__circle' onClick={() => onDigitSelect?.(item.digit)} aria-pressed={item.digit === selectedBarrierDigit} aria-label={`Select barrier digit ${item.digit}; ${item.percentage.toFixed(1)} percent, ${item.count} appearances${item.digit === latestDigit ? ', latest tick' : ''}`}><span>{item.digit}</span><b>{item.percentage.toFixed(1)}%</b>{item.digit === latestDigit && <i className='dcircles__pointer' aria-label='Latest tick cursor'>▲</i>}</button>
                     <strong className='dcircles__digit-count'>{item.count}</strong>
                 </div>)}</div>
                 <div className='dcircles__status'>{connected ? '● Live · Deriv' : '○ Connecting to Deriv…'} · {analysisTicks.length} / {windowSize} ticks{connectionError && <span className='dcircles__error'> · {connectionError}</span>}</div>
             </div>
             {(showLegend || showStreak) && <div className={`dcircles__parity${showStreak && !showLegend ? ' dcircles__parity--streak-only' : ''}`}>
-                {showLegend && <>
+                {showLegend && contractMode !== 'Even/Odd' && <>
                     <div className='dcircles__parity-row'><span>Even</span><div className='dcircles__parity-track dcircles__parity-track--even'><i style={{ width: `${parityStats.evenPercent}%` }} /></div><b className='dcircles__parity-percent'>{parityStats.evenPercent.toFixed(1)}%</b></div>
                     <div className='dcircles__parity-row'><span>Odd</span><div className='dcircles__parity-track dcircles__parity-track--odd'><i style={{ width: `${parityStats.oddPercent}%` }} /></div><b className='dcircles__parity-percent'>{parityStats.oddPercent.toFixed(1)}%</b></div>
                 </>}
