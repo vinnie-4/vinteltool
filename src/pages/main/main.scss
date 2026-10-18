@@ -447,3 +447,5 @@
 .manual-trader__trade-status--lost{background:#ffe3e6;color:#b82435}
 .manual-trader__trade-status--sold{background:#dcecff;color:#205ca5}
 @media(max-width:600px){.manual-trader__transactions{padding:9px;margin-top:12px}.manual-trader__transactions-heading h3{font-size:13px}.manual-trader__transactions-table th,.manual-trader__transactions-table td{padding:9px 7px}.manual-trader__summary strong{font-size:15px}}
+
+.manual-trader__selected-barrier{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin: -5px 0 8px;padding:7px 10px;border:1px solid rgba(245,158,11,.35);border-radius:9px;background:rgba(245,158,11,.08);font-size:12px;font-weight:700;color:#334155}.manual-trader__selected-barrier strong{font-size:16px;color:#b45309}.manual-trader__selected-barrier span{font-size:10px;font-weight:500;color:#64748b;margin-left:auto}.manual-trader__trade-inputs{margin-top:4px!important}
