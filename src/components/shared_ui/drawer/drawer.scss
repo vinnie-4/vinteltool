@@ -124,3 +124,19 @@
         }
     }
 }
+
+
+/* Mobile/tablet: align the transaction drawer chevron to the far right,
+   directly above the bottom Run/Execution strip (to the right of Stop). */
+@media (max-width: 767px) {
+    .dc-drawer__toggle {
+        justify-content: flex-end !important;
+        padding-right: 24px;
+        box-sizing: border-box;
+    }
+
+    .dc-drawer__toggle .dc-drawer__toggle-icon {
+        margin-left: auto;
+        margin-right: 0;
+    }
+}
