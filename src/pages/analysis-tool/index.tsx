@@ -90,7 +90,7 @@ const AnalysisTool = ({
             setConnected(true);
             setConnectionError('');
             // Load the full requested window first; start the live subscription after history arrives.
-            ws.send(JSON.stringify({ ticks_history: selectedSymbol, count: MAX_TICKS, end: 'latest', style: 'ticks', req_id: 1 }));
+            ws.send(JSON.stringify({ ticks_history: selectedSymbol, count: windowSize, end: 'latest', style: 'ticks', req_id: 1 }));
         };
         ws.onmessage = event => {
             if (connectionId !== connectionIdRef.current || wsRef.current !== ws) return;
@@ -102,7 +102,7 @@ const AnalysisTool = ({
                 const decimals = Number.isFinite(receivedPipSize) && receivedPipSize >= 0 ? receivedPipSize : pipSizeRef.current;
                 if (data.msg_type === 'history' && Array.isArray(data.history?.prices)) {
                     const prices = data.history.prices.map(Number).filter(Number.isFinite);
-                    const historyTicks = prices.map(quote => ({ quote, digit: getLastDigit(quote, decimals) })).slice(-MAX_TICKS);
+                    const historyTicks = prices.map(quote => ({ quote, digit: getLastDigit(quote, decimals) })).slice(-windowSize);
                     setTicks(historyTicks);
                     const last = historyTicks[historyTicks.length - 1];
                     if (last) { setLatestPrice(last.quote); setLatestDigit(last.digit); }
@@ -119,7 +119,7 @@ const AnalysisTool = ({
                     if (!Number.isFinite(quote)) return;
                     const digit = getLastDigit(quote, decimals);
                     setLatestPrice(quote); setLatestDigit(digit);
-                    setTicks(previousTicks => [...previousTicks, { quote, digit }].slice(-MAX_TICKS));
+                    setTicks(previousTicks => [...previousTicks, { quote, digit }].slice(-windowSize));
                     setConnected(true); setConnectionError('');
                 }
             } catch { setConnected(false); setConnectionError('Invalid response received from Deriv'); }
@@ -222,7 +222,7 @@ const AnalysisTool = ({
                     <button type='button' className='dcircles__circle' onClick={() => onDigitSelect?.(item.digit)} aria-pressed={item.digit === selectedBarrierDigit} aria-label={`Select barrier digit ${item.digit}; ${item.percentage.toFixed(1)} percent, ${item.count} appearances${item.digit === latestDigit ? ', latest tick' : ''}`}><span>{item.digit}</span><b>{item.percentage.toFixed(1)}%</b>{item.digit === latestDigit && <i className='dcircles__pointer' aria-label='Latest tick cursor'>▲</i>}</button>
                     <strong className='dcircles__digit-count'>{item.count}</strong>
                 </div>)}</div>
-                <div className='dcircles__status'>{analysisTicks.length >= windowSize ? '● Live' : connected ? '◌ Loading history' : '○ Connecting'} · {Math.min(analysisTicks.length, windowSize)} / {windowSize}{analysisTicks.length < windowSize && !connectionError ? ' ticks loaded' : ''}{connectionError && <span className='dcircles__error'> · {connectionError}</span>}</div>
+                <div className='dcircles__status'>{connected ? '● Live' : '○ Connecting'} · {Math.min(analysisTicks.length, windowSize)} / {windowSize}{connectionError && <span className='dcircles__error'> · {connectionError}</span>}</div>
                 <div className='dcircles__recent-digits' aria-label='Last ten digits'>{analysisTicks.slice(-10).map((tick, index, recent) => <span key={index} className={tick.digit % 2 === 0 ? 'is-even' : 'is-odd'} aria-label={tick.digit % 2 === 0 ? 'Even' : 'Odd'}>{tick.digit % 2 === 0 ? 'E' : 'O'}</span>)}</div>
             </div>
             {showContractProbabilities && <div className='dcircles__contract-probabilities' aria-live='polite'>
