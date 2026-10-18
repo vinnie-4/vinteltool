@@ -168,7 +168,7 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
     };
 
     return (
-        <div className={classNames('animation__wrapper', className)}>
+        <div className={classNames('animation__wrapper', active_tab === 'dashboard' && 'animation__wrapper--dashboard', className)}>
             {should_show_tooltip ? (
                 <div className='run__button_wrapper'>
                     <Tooltip alignment={determineTooltipAlignment()} message={localize('The Run button is disabled because no Bot has been created yet.')} icon='info' className='qs__tooltip' />
