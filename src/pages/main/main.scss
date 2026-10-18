@@ -453,3 +453,45 @@
 /* Keep Manual Trader proposals/controls prominent and compact on mobile and desktop */
 .manual-trader__top-row,.manual-trader__trade-inputs,.manual-trader__trade-buttons{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}.manual-trader__trade-inputs{margin-top:8px!important;padding:10px;border:1px solid #e1e5e9;border-radius:12px;background:#fff}.manual-trader__trade-inputs label{flex:1 1 110px;min-width:0}.manual-trader__trade-inputs input,.manual-trader__top-row select{width:100%;box-sizing:border-box}.manual-trader__trade-buttons{margin:8px 0 14px}.manual-trader__trade-buttons button{flex:1;min-height:42px;font-weight:800}
 @media(max-width:600px){.manual-trader__top-row{gap:6px}.manual-trader__top-row>div{flex:1 1 29%;min-width:0}.manual-trader__top-row select{font-size:12px}.manual-trader__trade-inputs{gap:7px;padding:8px}.manual-trader__trade-inputs label{flex:1 1 42%}.manual-trader__transactions-heading p{display:none}}
+
+
+/* Manual Trader Android one-screen layout: remove vertical gaps between sections */
+@media (max-width: 600px) {
+  .manual-trader { margin: 0 !important; padding: 0 !important; gap: 0 !important; }
+  .manual-trader > *, .manual-trader__top-row, .manual-trader__trade-inputs,
+  .manual-trader__trade-buttons, .manual-trader__transactions,
+  .manual-trader__selected-barrier { margin-top: 0 !important; margin-bottom: 0 !important; }
+  .manual-trader__top-row, .manual-trader__trade-inputs, .manual-trader__trade-buttons { gap: 0 !important; }
+  .manual-trader__top-row { padding: 0 !important; }
+  .manual-trader__selected-barrier { padding: 2px 4px !important; min-height: 0 !important; line-height: 1.15 !important; }
+  .manual-trader__trade-inputs { padding: 2px !important; border-radius: 4px !important; }
+  .manual-trader__trade-inputs label { margin: 0 !important; gap: 0 !important; }
+  .manual-trader__trade-inputs label > * { margin-top: 0 !important; margin-bottom: 0 !important; }
+  .manual-trader__trade-inputs input, .manual-trader__top-row select { min-height: 30px !important; height: 30px !important; padding: 2px 4px !important; }
+  .manual-trader__trade-buttons { margin: 0 !important; }
+  .manual-trader__trade-buttons button { min-height: 32px !important; height: 32px !important; padding: 2px 4px !important; border-radius: 4px !important; }
+  .manual-trader__transactions { margin: 0 !important; padding: 3px !important; border-radius: 4px !important; box-shadow: none !important; }
+  .manual-trader__transactions-heading { margin: 0 !important; gap: 0 !important; }
+  .manual-trader__transactions-heading h3 { margin: 0 !important; line-height: 1.15 !important; }
+  .manual-trader__summary { gap: 2px !important; margin: 0 !important; }
+  .manual-trader__summary > div { padding: 3px !important; gap: 0 !important; border-radius: 3px !important; }
+  .manual-trader__transactions-scroll { max-height: 72px; overflow: auto; }
+  .manual-trader__transactions-table th, .manual-trader__transactions-table td { padding: 3px 4px !important; }
+  .dcircles { padding: 0 !important; margin: 0 !important; }
+  .dcircles__controls { gap: 0 !important; padding: 0 !important; margin: 0 !important; }
+  .dcircles__circle-panel { margin: 0 !important; padding: 2px !important; border-radius: 5px !important; }
+  .dcircles__market-heading { margin: 0 !important; padding: 0 !important; gap: 2px !important; min-height: 18px; }
+  .dcircles__circles { gap: 1px !important; margin: 0 !important; }
+  .dcircles__circle { width: min(100%, 43px) !important; }
+  .dcircles__circle span { font-size: 15px !important; }
+  .dcircles__circle b { font-size: 7px !important; }
+  .dcircles__recent-digits { gap: 1px !important; margin: 0 !important; }
+  .dcircles__recent-digits span { min-height: 22px !important; padding: 0 !important; font-size: 10px !important; }
+  .dcircles__status { margin: 0 !important; padding: 0 !important; line-height: 1.1 !important; }
+  .dcircles__parity, .dcircles__contract-probabilities { margin: 0 !important; padding: 2px !important; border-radius: 4px !important; box-shadow: none !important; }
+  .dcircles__parity-row, .dcircles__contract-row { margin: 0 !important; gap: 2px !important; }
+  .dcircles__parity-track, .dcircles__contract-track { height: 4px !important; }
+  .dcircles__streak { margin: 0 !important; padding: 0 !important; }
+  .dcircles__streak-sequence { gap: 1px !important; line-height: 1.1 !important; font-size: 10px !important; }
+  .dcircles__market-heading { border-bottom: 0 !important; }
+}
