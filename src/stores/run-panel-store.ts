@@ -28,11 +28,11 @@ export default class RunPanelStore {
 
     constructor(root_store: RootStore, core: TStores) {
         makeObservable(this, {
-            active_index: observable, contract_stage: observable, dialog_options: observable, has_open_contract: observable,
+            active_index: observable, contract_stage: observable, manual_contract_result: observable, dialog_options: observable, has_open_contract: observable,
             is_running: observable, is_paused: observable, is_statistics_info_modal_open: observable, is_drawer_open: observable, is_dialog_open: observable,
             is_sell_requested: observable, run_id: observable, error_type: observable, show_bot_stop_message: observable,
             is_stop_button_visible: computed, is_stop_button_disabled: computed, is_clear_stat_disabled: computed,
-            toggleDrawer: action, onBotSellEvent: action, setContractStage: action, setHasOpenContract: action, setIsRunning: action, setIsPaused: action,
+            toggleDrawer: action, onBotSellEvent: action, setContractStage: action, setManualContractResult: action, setHasOpenContract: action, setIsRunning: action, setIsPaused: action,
             onRunButtonClick: action, onPauseResumeButtonClick: action, is_contract_buying_in_progress: observable, SetpurchaseInProgress: action, onStopButtonClick: action,
             onClearStatClick: action, clearStat: action, toggleStatisticsInfoModal: action, setActiveTabIndex: action, onCloseDialog: action,
             stopMyBot: action, closeMultiplierContract: action, showStopMultiplierContractDialog: action, showLoginDialog: action,
@@ -45,7 +45,7 @@ export default class RunPanelStore {
         this.root_store = root_store; this.dbot = this.root_store.dbot; this.core = core; this.disposeReactionsFn = this.registerReactions(); this.timer = null;
     }
 
-    active_index = 0; contract_stage: TContractStage = contract_stages.NOT_RUNNING; dialog_options = {}; has_open_contract = false;
+    active_index = 0; contract_stage: TContractStage = contract_stages.NOT_RUNNING; manual_contract_result: 'bought' | 'won' | 'lost' | '' = ''; dialog_options = {}; has_open_contract = false;
     is_running = false; is_paused = false; is_statistics_info_modal_open = false; is_drawer_open = true; is_dialog_open = false; is_sell_requested = false;
     show_bot_stop_message = false; is_contract_buying_in_progress = false; run_id = '';
     onOkButtonClick: (() => void) | null = null; onCancelButtonClick: (() => void) | null = null;
@@ -170,6 +170,7 @@ export default class RunPanelStore {
     switchToJournal = () => { const { journal } = this.root_store; journal.journal_filters.push(MessageTypes.ERROR); this.setActiveTabIndex(run_panel.JOURNAL); this.toggleDrawer(true); };
     unregisterBotListeners = () => { observer.unregisterAll('bot.running'); observer.unregisterAll('bot.stop'); observer.unregisterAll('bot.click_stop'); observer.unregisterAll('bot.stop_button_click'); observer.unregisterAll('bot.trade_again'); observer.unregisterAll('contract.status'); observer.unregisterAll('bot.contract'); observer.unregisterAll('Error'); observer.unregisterAll('bot.setPurchaseInProgress'); };
     setContractStage = (contract_stage: TContractStage) => { this.contract_stage = contract_stage; };
+    setManualContractResult = (result: 'bought' | 'won' | 'lost' | '') => { this.manual_contract_result = result; };
     setHasOpenContract = (has_open_contract: boolean) => { this.has_open_contract = has_open_contract; };
     setIsRunning = (is_running: boolean) => { this.is_running = is_running; };
     setIsPaused = (is_paused: boolean) => { this.is_paused = is_paused; };
