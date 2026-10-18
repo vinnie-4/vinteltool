@@ -84,6 +84,7 @@ const ManualTraderStructure = () => {
     const [prediction, setPrediction] = useState(1);
     const [isTrading, setIsTrading] = useState(false);
     const [tradeRecords, setTradeRecords] = useState<ManualTradeRecord[]>([]);
+    const [runEvents, setRunEvents] = useState<Array<{ id: string; message: string; status: 'open' | 'won' | 'lost' | 'info'; time: string }>>([]);
     const tradeLockRef = useRef(false);
     const messageSubscriptionRef = useRef<any>(null);
     const recordsByContractRef = useRef<Record<string, ManualTradeRecord>>({});
@@ -94,6 +95,11 @@ const ManualTraderStructure = () => {
         const updated = { ...current, ...patch };
         recordsByContractRef.current[contractId] = updated;
         setTradeRecords(previous => [updated, ...previous.filter(record => record.contractId !== contractId)].slice(0, 50));
+        const previousStatus = String(current.status || '').toLowerCase();
+        const nextStatus = String(updated.status || '').toLowerCase();
+        if (['won', 'lost'].includes(nextStatus) && previousStatus !== nextStatus) {
+            setRunEvents(previous => [{ id: `${contractId}-${nextStatus}-${Date.now()}`, message: `Contract ${nextStatus.toUpperCase()} · #${contractId}${updated.profit !== null ? ` · ${updated.profit >= 0 ? '+' : ''}${updated.profit.toFixed(2)} ${updated.currency}` : ''}`, status: nextStatus as 'won' | 'lost', time: new Date().toLocaleTimeString() }, ...previous].slice(0, 8));
+        }
     };
 
     const applyOpenContract = (contract: any) => {
@@ -183,6 +189,7 @@ const ManualTraderStructure = () => {
                 };
                 recordsByContractRef.current[contractId] = record;
                 setTradeRecords(previous => [record, ...previous.filter(item => item.contractId !== contractId)].slice(0, 50));
+                setRunEvents(previous => [{ id: `${contractId}-bought`, message: `Contract BOUGHT · ${selection} · #${contractId} · ${record.buyPrice.toFixed(2)} ${currency}`, status: 'open', time: record.purchasedAt }, ...previous].slice(0, 8));
                 transactions.pushTransaction({
                     contract_id: Number(contractId),
                     transaction_ids: { buy: Number(record.buyTransactionId) || buy.transaction_id || undefined },
@@ -231,6 +238,10 @@ const ManualTraderStructure = () => {
         <div className='manual-trader__trade-buttons'>
             {tradeType === 'Even/Odd' ? <><button type='button' className='manual-trader__even' disabled={isTrading} onClick={() => handleTrade('Even')}>Even</button><button type='button' className='manual-trader__odd' disabled={isTrading} onClick={() => handleTrade('Odd')}>Odd</button></>  : tradeType === 'Over/Under' ? <><button type='button' className='manual-trader__over' disabled={isTrading} onClick={() => handleTrade('Over')}>Over</button><button type='button' className='manual-trader__under' disabled={isTrading} onClick={() => handleTrade('Under')}>Under</button></> : <><button type='button' className='manual-trader__over' disabled={isTrading} onClick={() => handleTrade('Matches')}>Matches</button><button type='button' className='manual-trader__under' disabled={isTrading} onClick={() => handleTrade('Differs')}>Differs</button></>}
         </div>
+        <section className='manual-trader__run-activity' aria-live='polite' aria-label='Manual trade run activity'>
+            <div className='manual-trader__transactions-heading'><h3>Run activity</h3><span>{runEvents.length} events</span></div>
+            {runEvents.length === 0 ? <div className='manual-trader__transactions-empty'>Bought, won and lost contract events will appear here while trading.</div> : <ul className='manual-trader__run-events'>{runEvents.map(event => <li key={event.id} className={`manual-trader__run-event manual-trader__run-event--${event.status}`}><span>{event.message}</span><time>{event.time}</time></li>)}</ul>}
+        </section>
         <section className='manual-trader__transactions' aria-live='polite'>
             <div className='manual-trader__transactions-heading'>
                 <div><h3>Manual Trade Transactions</h3></div>
