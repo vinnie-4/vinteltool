@@ -419,3 +419,25 @@
         padding-inline: 8px !important;
     }
 }
+
+
+/* Desktop: keep the same Run/Execution strip centered at the bottom of the dashboard.
+   Mobile keeps the full-width, left-aligned layout above. */
+@media (min-width: 768px) {
+    .animation__wrapper {
+        left: 50% !important;
+        right: auto !important;
+        bottom: 0 !important;
+        width: min(920px, calc(100vw - 48px)) !important;
+        transform: translateX(-50%) !important;
+        margin: 0 !important;
+        gap: 0 !important;
+    }
+
+    .animation__wrapper > #db-animation__run-button,
+    .animation__wrapper > .run__button_wrapper,
+    .animation__wrapper > .animation__pause-resume-button,
+    .animation__wrapper > #db-animation__stop-button {
+        min-width: 148px;
+    }
+}
