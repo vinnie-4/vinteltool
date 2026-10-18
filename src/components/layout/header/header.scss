@@ -309,3 +309,25 @@
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
 }
+
+
+/* Dashboard header auth buttons: screenshot-inspired rounded navy gradient,
+   white text, consistent on mobile and desktop. */
+.app-header .auth-actions button,
+.app-header .auth-actions [role='button'] {
+    color: #fff !important;
+    background: linear-gradient(115deg, #071b43 0%, #174a9b 58%, #397df0 100%) !important;
+    border: 1px solid rgba(132, 181, 255, .55) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 2px 8px rgba(0, 35, 100, .18);
+}
+.app-header .auth-actions button span,
+.app-header .auth-actions [role='button'] span {
+    color: #fff !important;
+}
+@media (max-width: 700px) {
+    .app-header .auth-actions button,
+    .app-header .auth-actions [role='button'] {
+        border-radius: 9px !important;
+    }
+}
