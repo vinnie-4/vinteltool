@@ -345,3 +345,75 @@ svg.dcircles__outcome-symbol {
   white-space: nowrap;
   gap: 3px !important;
 }
+
+
+/* Analysis Tool readability: slightly larger text without changing layout geometry */
+.dcircles {
+  font-size: 13px;
+}
+.dcircles__controls,
+.dcircles__controls button,
+.dcircles__controls select,
+.dcircles__controls input {
+  font-size: 12px;
+}
+.dcircles__market-heading {
+  font-size: 13px;
+}
+.dcircles__market-heading strong,
+.dcircles__market-heading span {
+  font-size: 13px;
+}
+.dcircles__status {
+  font-size: 11px;
+}
+.dcircles__contract-heading,
+.dcircles__contract-label,
+.dcircles__contract-streak {
+  font-size: 12px;
+}
+.dcircles__contract-label b {
+  font-size: 12px;
+}
+.dcircles__recent-digits span {
+  font-size: 12px;
+}
+@media (max-width: 767px) {
+  .dcircles { font-size: 12px; }
+  .dcircles__controls,
+  .dcircles__controls button,
+  .dcircles__controls select,
+  .dcircles__controls input { font-size: 11px; }
+  .dcircles__market-heading,
+  .dcircles__market-heading strong,
+  .dcircles__market-heading span { font-size: 12px; }
+  .dcircles__status { font-size: 10px; }
+  .dcircles__contract-heading,
+  .dcircles__contract-label,
+  .dcircles__contract-streak,
+  .dcircles__contract-label b { font-size: 11px; }
+  .dcircles__recent-digits span { font-size: 11px; }
+}
+
+/* Probabilities row: trade type first, horizontal bar immediately after it */
+.dcircles__contract-row {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 2px !important;
+}
+.dcircles__contract-label {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  grid-column: auto !important;
+  grid-row: auto !important;
+}
+.dcircles__contract-track {
+  display: block !important;
+  width: calc(100% + 2.5px) !important;
+  grid-column: auto !important;
+  grid-row: auto !important;
+  margin: 0 !important;
+}
