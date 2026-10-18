@@ -719,3 +719,29 @@
     background-image: none !important;
     box-shadow: revert !important;
 }
+
+
+/* Brief handshake greeting beside the dashboard title. */
+.dashboard-greeting-hand {
+    display: inline-block;
+    margin-left: .3em;
+    opacity: 0;
+    transform-origin: 50% 80%;
+    pointer-events: none;
+}
+.dashboard-greeting-hand--visible {
+    opacity: 1;
+    animation: dashboard-handshake 1.8s ease-in-out both;
+}
+@keyframes dashboard-handshake {
+    0% { opacity: 0; transform: translateY(5px) rotate(-16deg) scale(.8); }
+    18% { opacity: 1; transform: translateY(0) rotate(12deg) scale(1.08); }
+    34% { transform: rotate(-12deg) scale(1); }
+    50% { transform: rotate(10deg); }
+    66% { transform: rotate(-8deg); }
+    82% { transform: rotate(5deg); }
+    100% { opacity: 1; transform: rotate(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .dashboard-greeting-hand--visible { animation: none; opacity: 1; }
+}
