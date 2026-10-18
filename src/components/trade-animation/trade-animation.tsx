@@ -29,7 +29,7 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
     const { has_active_bot, has_saved_bots } = blockly_store;
     const { isMobile } = useDevice();
     const { is_contract_completed, profit } = summary_card;
-    const { contract_stage, is_stop_button_visible, is_stop_button_disabled, is_running, onRunButtonClick, stopBot } = run_panel;
+    const { contract_stage, manual_contract_result, is_stop_button_visible, is_stop_button_disabled, is_running, onRunButtonClick, stopBot } = run_panel;
     const [shouldDisable, setShouldDisable] = React.useState(false);
     const [is_pause_resume_visual, setIsPauseResumeVisual] = React.useState(false);
     const is_unavailable_for_payment_agent = false;
@@ -180,7 +180,7 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
                     <div className='animation__container'>
                         <ExecutionControl />
                         {show_overlay && <ContractResultOverlay profit={profit} />}
-                        <span className='animation__text'><ContractStageText contract_stage={contract_stage} /></span>
+                        <span className='animation__text'><ContractStageText contract_stage={contract_stage} manual_contract_result={manual_contract_result} /></span>
                         <div className='animation__progress'>
                             <div className='animation__progress-line'><div className={`animation__progress-bar animation__progress-${contract_stage}`} /></div>
                             {status_classes.map((status_class, i) => <CircularWrapper key={`status_class-${status_class}-${i}`} className={status_class} />)}
