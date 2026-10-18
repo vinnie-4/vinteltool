@@ -34,19 +34,24 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
         'Stay focused. Trade with purpose.',
         'Precision starts with analysis.',
         'Your next strategy starts here.',
+        'Protect your capital first; consistent decisions matter more than chasing every move.',
+        'A strong trading plan turns market uncertainty into decisions you can manage with discipline.',
+        'Wait for your setup, respect your risk limits, and let patience do its work.',
     ];
     const [subtitleIndex, setSubtitleIndex] = React.useState(0);
 
     const currentSubtitle = subtitles[subtitleIndex];
     const subtitleWords = currentSubtitle.split(' ');
-    const subtitleDuration = Math.min(8, Math.max(5, 3.5 + subtitleWords.length * 0.45));
+    // Leave enough time to read each sentence, plus time for the word-by-word reveal.
+    const typingDurationMs = subtitleWords.length * 120;
+    const readingDurationMs = Math.max(2600, currentSubtitle.length * 65);
+    const subtitleDuration = (typingDurationMs + readingDurationMs + 900) / 1000;
 
     React.useEffect(() => {
-        const duration = Math.min(8000, Math.max(5000, 3500 + subtitles[subtitleIndex].split(' ').length * 450));
+        const duration = subtitleWords.length * 120 + Math.max(2600, subtitles[subtitleIndex].length * 65) + 900;
         const timeout = window.setTimeout(() => {
             setSubtitleIndex(index => (index + 1) % subtitles.length);
         }, duration);
-
         return () => window.clearTimeout(timeout);
     }, [subtitleIndex]);
 
