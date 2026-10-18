@@ -662,3 +662,45 @@
 .tab__dashboard__content > * {
     z-index: 1;
 }
+
+
+/* Readable, centered quote animation: quotes fade with the sentence and
+   the sentence remains visible long enough to read. */
+.dashboard-greeting-subtitle {
+    text-align: center;
+    padding-bottom: 3px;
+    animation: dashboard-subtitle-fade var(--subtitle-duration, 7s) ease both;
+}
+.dashboard-greeting-word {
+    display: inline-block;
+    opacity: 0;
+    animation: dashboard-word-reveal .22s ease-out forwards;
+}
+.dashboard-greeting-quote {
+    display: inline-block;
+    opacity: 0;
+    animation: dashboard-quote-reveal .35s ease-out forwards;
+}
+.dashboard-greeting-quote--open { margin-right: .12em; animation-delay: 0s; }
+.dashboard-greeting-quote--close { margin-left: .12em; animation-delay: calc(var(--subtitle-duration, 7s) - .65s); }
+@keyframes dashboard-word-reveal {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes dashboard-quote-reveal {
+    from { opacity: 0; transform: scale(.86); }
+    to { opacity: 1; transform: scale(1); }
+}
+@keyframes dashboard-subtitle-fade {
+    0%, 8% { opacity: 0; }
+    18%, 82% { opacity: 1; }
+    100% { opacity: 0; }
+}
+.tab__dashboard__header .dashboard-greeting-subtitle { margin-bottom: 3px; }
+@media (prefers-reduced-motion: reduce) {
+    .dashboard-greeting-subtitle, .dashboard-greeting-word, .dashboard-greeting-quote {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+}
