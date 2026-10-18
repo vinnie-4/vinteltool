@@ -92,7 +92,7 @@ const buyContract = async (api: any, contractType: string, amount: number, symbo
 };
 
 const ManualTraderStructure = () => {
-    const { transactions } = useStore();
+    const { transactions, run_panel } = useStore();
     const [tradeType, setTradeType] = useState('Even/Odd');
     const [symbol, setSymbol] = useState('1HZ100V');
     const [analysisTicks, setAnalysisTicks] = useState(3000);
@@ -104,6 +104,7 @@ const ManualTraderStructure = () => {
     const [tradeRecords, setTradeRecords] = useState<ManualTradeRecord[]>([]);
     const [runEvents, setRunEvents] = useState<Array<{ id: string; message: string; status: 'open' | 'won' | 'lost' | 'info'; time: string }>>([]);
     const tradeLockRef = useRef(false);
+    const manualRunIdRef = useRef<string>('');
     const messageSubscriptionRef = useRef<any>(null);
     const recordsByContractRef = useRef<Record<string, ManualTradeRecord>>({});
 
@@ -113,11 +114,6 @@ const ManualTraderStructure = () => {
         const updated = { ...current, ...patch };
         recordsByContractRef.current[contractId] = updated;
         setTradeRecords(previous => [updated, ...previous.filter(record => record.contractId !== contractId)].slice(0, 50));
-        const previousStatus = String(current.status || '').toLowerCase();
-        const nextStatus = String(updated.status || '').toLowerCase();
-        if (['won', 'lost'].includes(nextStatus) && previousStatus !== nextStatus) {
-            setRunEvents(previous => [{ id: `${contractId}-${nextStatus}-${Date.now()}`, message: `Contract ${nextStatus.toUpperCase()} · #${contractId}${updated.profit !== null ? ` · ${updated.profit >= 0 ? '+' : ''}${updated.profit.toFixed(2)} ${updated.currency}` : ''}`, status: nextStatus as 'won' | 'lost', time: new Date().toLocaleTimeString() }, ...previous].slice(0, 8));
-        }
     };
 
     const applyOpenContract = (contract: any) => {
@@ -152,6 +148,8 @@ const ManualTraderStructure = () => {
             currency: contract.currency || currentRecord?.currency || api_base.account_info?.currency || 'USD',
             buy_price: Number(contract.buy_price ?? currentRecord?.buyPrice ?? currentRecord?.stake ?? 0),
             profit: profitValue !== undefined && profitValue !== null ? Number(profitValue) : 0,
+            status: contract.status || (isClosed ? (Number(profitValue) > 0 ? 'won' : 'lost') : 'open'),
+            is_sold: isClosed ? 1 : 0,
             entry_spot: contract.entry_tick_display_value ?? contract.entry_tick ?? contract.entry_spot,
             exit_spot: exitValue !== undefined && exitValue !== null ? exitValue : contract.exit_spot,
             is_completed: isClosed,
@@ -194,6 +192,13 @@ const ManualTraderStructure = () => {
             const api = await waitForTradingApi();
             ensureTradeMessageListener(api);
             const currency = api_base.account_info?.currency || 'USD';
+            // Route manual contracts through DBot's native Run panel Transactions tab.
+            if (!run_panel.is_running && !run_panel.run_id) {
+                if (!manualRunIdRef.current) manualRunIdRef.current = `manual-${Date.now()}`;
+                run_panel.run_id = manualRunIdRef.current;
+            }
+            run_panel.setActiveTabIndex(1);
+            run_panel.toggleDrawer(true);
             // Execute sequentially so bulk purchases do not race each other.
             for (let index = 0; index < count; index += 1) {
                 const buy = await buyContract(api, CONTRACT_TYPES[selection], amount, symbol, ticks, Number(prediction));
@@ -207,7 +212,6 @@ const ManualTraderStructure = () => {
                 };
                 recordsByContractRef.current[contractId] = record;
                 setTradeRecords(previous => [record, ...previous.filter(item => item.contractId !== contractId)].slice(0, 50));
-                setRunEvents(previous => [{ id: `${contractId}-bought`, message: `Contract BOUGHT · ${selection} · #${contractId} · ${record.buyPrice.toFixed(2)} ${currency}`, status: 'open', time: record.purchasedAt }, ...previous].slice(0, 8));
                 transactions.pushTransaction({
                     contract_id: Number(contractId),
                     transaction_ids: { buy: Number(record.buyTransactionId) || buy.transaction_id || undefined },
@@ -218,6 +222,8 @@ const ManualTraderStructure = () => {
                     payout: Number(buy.payout ?? 0),
                     profit: 0,
                     is_completed: false,
+                    is_sold: 0,
+                    status: 'open',
                     date_start: Math.floor(Date.now() / 1000),
                 });
                 try {
@@ -256,10 +262,6 @@ const ManualTraderStructure = () => {
         <div className='manual-trader__trade-buttons'>
             {tradeType === 'Even/Odd' ? <><button type='button' className='manual-trader__even' disabled={isTrading} onClick={() => handleTrade('Even')}><DerivTradeTypeIcon type='even' />Even</button><button type='button' className='manual-trader__odd' disabled={isTrading} onClick={() => handleTrade('Odd')}><DerivTradeTypeIcon type='odd' />Odd</button></>  : tradeType === 'Over/Under' ? <><button type='button' className='manual-trader__over' disabled={isTrading} onClick={() => handleTrade('Over')}><DerivTradeTypeIcon type='over' />Over</button><button type='button' className='manual-trader__under' disabled={isTrading} onClick={() => handleTrade('Under')}><DerivTradeTypeIcon type='under' />Under</button></> : <><button type='button' className='manual-trader__over' disabled={isTrading} onClick={() => handleTrade('Matches')}><DerivTradeTypeIcon type='matches' />Matches</button><button type='button' className='manual-trader__under' disabled={isTrading} onClick={() => handleTrade('Differs')}><DerivTradeTypeIcon type='differs' />Differs</button></>}
         </div>
-        <section className='manual-trader__run-activity' aria-live='polite' aria-label='Manual trade run activity'>
-            <div className='manual-trader__transactions-heading'><h3>Run activity</h3><span>{runEvents.length} events</span></div>
-            {runEvents.length === 0 ? <div className='manual-trader__transactions-empty'>Bought, won and lost contract events will appear here while trading.</div> : <ul className='manual-trader__run-events'>{runEvents.map(event => <li key={event.id} className={`manual-trader__run-event manual-trader__run-event--${event.status}`}><span>{event.message}</span><time>{event.time}</time></li>)}</ul>}
-        </section>
         <section className='manual-trader__transactions' aria-live='polite'>
             <div className='manual-trader__transactions-heading'>
                 <div><h3>Manual Trade Transactions</h3></div>
