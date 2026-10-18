@@ -624,3 +624,48 @@ svg.deriv-contract-symbol {
   width: 100%;
   height: 100%;
 }
+
+
+/* Manual Trader proposal buttons: compact, content-sized controls */
+.manual-trader__trade-buttons {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 5px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 4px 0 !important;
+}
+.manual-trader__trade-buttons button {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 32px !important;
+  height: 32px !important;
+  box-sizing: border-box !important;
+  padding: 4px 7px !important;
+  gap: 4px !important;
+  border-radius: 4px !important;
+  font-size: 12px !important;
+  line-height: 1.1 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+.manual-trader__trade-buttons .deriv-contract-symbol {
+  width: 13px !important;
+  height: 13px !important;
+  min-width: 13px !important;
+  margin: 0 !important;
+  flex: 0 0 13px !important;
+}
+@media (max-width: 767px) {
+  .manual-trader__trade-buttons {
+    gap: 4px !important;
+    margin: 2px 0 !important;
+  }
+  .manual-trader__trade-buttons button {
+    min-height: 30px !important;
+    height: 30px !important;
+    padding: 3px 5px !important;
+    font-size: 11px !important;
+  }
+}
