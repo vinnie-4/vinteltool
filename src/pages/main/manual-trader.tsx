@@ -93,6 +93,7 @@ const buyContract = async (api: any, contractType: string, amount: number, symbo
 
 const ManualTraderStructure = () => {
     const { transactions, run_panel } = useStore();
+    useEffect(() => { document.body.classList.add('manual-trader-active'); return () => document.body.classList.remove('manual-trader-active'); }, []);
     const [tradeType, setTradeType] = useState('Even/Odd');
     const [symbol, setSymbol] = useState('1HZ100V');
     const [analysisTicks, setAnalysisTicks] = useState(3000);
@@ -136,6 +137,7 @@ const ManualTraderStructure = () => {
         // Update the compact Execution Run panel (not the Transactions drawer).
         // DBot's existing stage renderer displays "Contract bought" and then Won/Lost.
         if (isClosed) {
+            run_panel.setManualContractResult(Number(updatedRecord.profit ?? 0) > 0 ? 'won' : 'lost');
             run_panel.setContractStage(6);
             run_panel.setHasOpenContract(false);
         } else {
@@ -205,6 +207,7 @@ const ManualTraderStructure = () => {
                 if (!manualRunIdRef.current) manualRunIdRef.current = `manual-${Date.now()}`;
                 run_panel.run_id = manualRunIdRef.current;
             }
+            run_panel.setManualContractResult('bought');
             run_panel.setContractStage(3);
             // Execute sequentially so bulk purchases do not race each other.
             for (let index = 0; index < count; index += 1) {
