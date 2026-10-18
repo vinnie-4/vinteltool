@@ -93,7 +93,7 @@ const buyContract = async (api: any, contractType: string, amount: number, symbo
 
 const ManualTraderStructure = () => {
     const { transactions, run_panel } = useStore();
-    useEffect(() => { document.body.classList.add('manual-trader-active'); return () => document.body.classList.remove('manual-trader-active'); }, []);
+    useEffect(() => () => document.body.classList.remove('manual-trade-in-progress'), []);
     const [tradeType, setTradeType] = useState('Even/Odd');
     const [symbol, setSymbol] = useState('1HZ100V');
     const [analysisTicks, setAnalysisTicks] = useState(3000);
@@ -137,10 +137,15 @@ const ManualTraderStructure = () => {
         // Update the compact Execution Run panel (not the Transactions drawer).
         // DBot's existing stage renderer displays "Contract bought" and then Won/Lost.
         if (isClosed) {
-            run_panel.setManualContractResult(Number(updatedRecord.profit ?? 0) > 0 ? 'won' : 'lost');
+            document.body.classList.remove('manual-trade-in-progress');
+            const normalizedStatus = String(contract.status || '').toLowerCase();
+            const outcome = ['won', 'lost'].includes(normalizedStatus) ? normalizedStatus : Number(updatedRecord.profit ?? 0) > 0 ? 'won' : 'lost';
+            run_panel.setManualContractResult(outcome as 'won' | 'lost');
             run_panel.setContractStage(6);
             run_panel.setHasOpenContract(false);
         } else {
+            document.body.classList.add('manual-trade-in-progress');
+            run_panel.setManualContractResult('bought');
             run_panel.setContractStage(4);
             run_panel.setHasOpenContract(true);
         }
@@ -207,6 +212,7 @@ const ManualTraderStructure = () => {
                 if (!manualRunIdRef.current) manualRunIdRef.current = `manual-${Date.now()}`;
                 run_panel.run_id = manualRunIdRef.current;
             }
+            document.body.classList.add('manual-trade-in-progress');
             run_panel.setManualContractResult('bought');
             run_panel.setContractStage(3);
             // Execute sequentially so bulk purchases do not race each other.
