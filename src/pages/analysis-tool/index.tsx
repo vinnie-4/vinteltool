@@ -1,5 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import * as DerivTradeTypeIcons from '@deriv/quill-icons/TradeTypes';
 import './styles.scss';
+
+
+type DerivTradeIconType = 'even' | 'odd' | 'over' | 'under' | 'matches' | 'differs';
+const DERIV_TRADE_ICON_TERMS: Record<DerivTradeIconType, string[]> = {
+    even: ['even'], odd: ['odd'], over: ['over'], under: ['under'], matches: ['match'], differs: ['differ'],
+};
+const DerivTradeTypeIcon = ({ type, className = '' }: { type: DerivTradeIconType; className?: string }) => {
+    const match = Object.entries(DerivTradeTypeIcons).find(([name]) => {
+        const normalized = name.toLowerCase();
+        return normalized.endsWith('icon') && DERIV_TRADE_ICON_TERMS[type].some(term => normalized.includes(term));
+    });
+    const Icon = match?.[1] as React.ElementType | undefined;
+    return Icon ? <Icon aria-hidden='true' className={className} /> : null;
+};
 
 type AnalysisTab = 'dcircles' | 'ldp';
 type TickRecord = { quote: number; digit: number };
@@ -279,7 +294,7 @@ const AnalysisTool = ({
             {showContractProbabilities && <div className='dcircles__contract-probabilities' aria-live='polite'>
                 <div className='dcircles__contract-heading'><strong>Probabilities</strong><span>{Math.min(analysisTicks.length, windowSize)} / {windowSize}</span></div>
                 {[{ name: contractProbabilities.firstName, percent: contractProbabilities.firstPercent, tone: 'first' }, { name: contractProbabilities.secondName, percent: contractProbabilities.secondPercent, tone: 'second' }].map(item => <div className='dcircles__contract-row' key={item.name}>
-                    <div className='dcircles__contract-label'><span><i className={'dcircles__outcome-symbol dcircles__outcome-symbol--' + item.tone} aria-hidden='true'>{contractMode === 'Even/Odd' ? (item.tone === 'first' ? '▪▪' : '▲▲▲') : contractMode === 'Over/Under' ? (item.tone === 'first' ? '▲' : '▼') : (item.tone === 'first' ? '◎' : '⊗')}</i>{item.name}</span><b>{analysisTicks.length ? item.percent.toFixed(1) + '%' : '—'}</b></div>
+                    <div className='dcircles__contract-label'><span><DerivTradeTypeIcon type={contractMode === 'Even/Odd' ? (item.tone === 'first' ? 'even' : 'odd') : contractMode === 'Over/Under' ? (item.tone === 'first' ? 'over' : 'under') : (item.tone === 'first' ? 'matches' : 'differs')} className={'dcircles__outcome-symbol dcircles__outcome-symbol--' + item.tone} />{item.name}</span><b>{analysisTicks.length ? item.percent.toFixed(1) + '%' : '—'}</b></div>
                     <div className='dcircles__contract-track'><i className={'dcircles__contract-fill dcircles__contract-fill--' + item.tone} style={{ width: item.percent + '%' }} /></div>
                 </div>)}
                 <div className='dcircles__contract-streak'>Current {contractProbabilities.lastClass === 'first' ? contractProbabilities.firstName : contractProbabilities.lastClass === 'second' ? contractProbabilities.secondName : 'outcome'} streak: <strong>{analysisTicks.length ? contractProbabilities.streak : 0}</strong></div>
