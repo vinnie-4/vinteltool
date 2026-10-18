@@ -630,3 +630,35 @@
         background-size: 100% 22px, 34px 100%;
     }
 }
+
+
+/* Stronger navy atmosphere and visible floor grid; keep content above effects. */
+.tab__dashboard,
+.tab__dashboard__content {
+    background-color: #020817 !important;
+}
+.tab__dashboard__content {
+    overflow: hidden;
+    background-image:
+        radial-gradient(ellipse at 50% 92%, rgba(0, 111, 255, .20), transparent 46%),
+        linear-gradient(180deg, #020817 0%, #03132b 60%, #020817 100%) !important;
+}
+.tab__dashboard__content::before {
+    z-index: 0 !important;
+    background: linear-gradient(180deg, rgba(2, 8, 23, .05), rgba(2, 8, 23, .18)) !important;
+}
+.tab__dashboard__content::after {
+    z-index: 0 !important;
+    bottom: 0 !important;
+    height: 42% !important;
+    opacity: .88 !important;
+    background-image:
+        linear-gradient(rgba(0, 145, 255, .26) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 145, 255, .26) 1px, transparent 1px) !important;
+    background-size: 100% 25px, 40px 100% !important;
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 25%, #000 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 25%, #000 100%);
+}
+.tab__dashboard__content > * {
+    z-index: 1;
+}
