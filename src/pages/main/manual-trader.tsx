@@ -220,7 +220,8 @@ const ManualTraderStructure = () => {
             <div className='manual-trader__analysis-ticks'><span>Ticks</span><select value={analysisTicks} onChange={event => setAnalysisTicks(Number(event.target.value))}>{[3000, 1000, 500, 300, 100, 60].map(value => <option key={value} value={value}>{value}</option>)}</select></div>
             <div className='manual-trader__trade-type'><span>TRADE TYPE</span><select value={tradeType} onChange={event => setTradeType(event.target.value)}><option>Even/Odd</option><option>Over/Under</option><option>Matches/Differs</option></select></div>
         </div>
-        <AnalysisTool showLegend={false} showStreak showSubtabs={false} showControls={false} showPrice showContractProbabilities contractMode={tradeType as 'Even/Odd' | 'Over/Under' | 'Matches/Differs'} predictionDigit={prediction} selectedIndex={selectedVolatility} windowSize={analysisTicks} />
+        <AnalysisTool showLegend={false} showStreak showSubtabs={false} showControls={false} showPrice showContractProbabilities contractMode={tradeType as 'Even/Odd' | 'Over/Under' | 'Matches/Differs'} predictionDigit={prediction} selectedBarrierDigit={tradeType === 'Even/Odd' ? undefined : prediction} onDigitSelect={digit => { if (tradeType !== 'Even/Odd') setPrediction(digit); }} selectedIndex={selectedVolatility} windowSize={analysisTicks} />
+        {tradeType !== 'Even/Odd' && <div className='manual-trader__selected-barrier' aria-live='polite'>Selected barrier digit: <strong>{prediction}</strong><span>Tap any digit above to change it</span></div>}
         <div className='manual-trader__trade-inputs'>
             <label>Ticks<input type='number' min='1' step='1' value={duration} onChange={event => setDuration(Number(event.target.value))} /></label>
             <label>Stake<input type='number' min='0' step='0.01' value={stake} onChange={event => setStake(Number(event.target.value))} /></label>
