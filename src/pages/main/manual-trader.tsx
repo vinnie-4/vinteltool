@@ -1,8 +1,26 @@
 import React, { useEffect, useRef, useState } from 'react';
+import * as DerivTradeTypeIcons from '@deriv/quill-icons/TradeTypes';
 import { api_base } from '@/external/bot-skeleton';
 import AnalysisTool from '../analysis-tool';
 import { useStore } from '@/hooks/useStore';
 import './main.scss';
+
+
+// Resolve the official Deriv TradeTypes exports by their exported names, so this stays
+// compatible with the icon package's generated component naming.
+type DerivTradeIconType = 'even' | 'odd' | 'over' | 'under' | 'matches' | 'differs';
+const DERIV_TRADE_ICON_TERMS: Record<DerivTradeIconType, string[]> = {
+    even: ['even'], odd: ['odd'], over: ['over'], under: ['under'], matches: ['match'], differs: ['differ'],
+};
+const DerivTradeTypeIcon = ({ type }: { type: DerivTradeIconType }) => {
+    const entries = Object.entries(DerivTradeTypeIcons);
+    const match = entries.find(([name]) => {
+        const normalized = name.toLowerCase();
+        return normalized.endsWith('icon') && DERIV_TRADE_ICON_TERMS[type].some(term => normalized.includes(term));
+    });
+    const Icon = match?.[1] as React.ElementType | undefined;
+    return Icon ? <Icon aria-hidden='true' className={'deriv-contract-symbol deriv-contract-symbol--' + type} /> : null;
+};
 
 const VOLATILITY_SYMBOLS: Record<string, string> = {
     'Volatility 10': 'R_10',
@@ -236,7 +254,7 @@ const ManualTraderStructure = () => {
             {tradeType !== 'Even/Odd' && <label>Barrier<input type='number' min='0' max='9' step='1' value={prediction} onChange={event => setPrediction(Number(event.target.value))} /></label>}
         </div>
         <div className='manual-trader__trade-buttons'>
-            {tradeType === 'Even/Odd' ? <><button type='button' className='manual-trader__even' disabled={isTrading} onClick={() => handleTrade('Even')}><span className='deriv-contract-symbol deriv-contract-symbol--even' aria-hidden='true'>▪▪<br/>▪▪</span>Even</button><button type='button' className='manual-trader__odd' disabled={isTrading} onClick={() => handleTrade('Odd')}><span className='deriv-contract-symbol deriv-contract-symbol--odd' aria-hidden='true'>▲<br/>▲ ▲</span>Odd</button></>  : tradeType === 'Over/Under' ? <><button type='button' className='manual-trader__over' disabled={isTrading} onClick={() => handleTrade('Over')}><span className='deriv-contract-symbol deriv-contract-symbol--over' aria-hidden='true'>▲</span>Over</button><button type='button' className='manual-trader__under' disabled={isTrading} onClick={() => handleTrade('Under')}><span className='deriv-contract-symbol deriv-contract-symbol--under' aria-hidden='true'>▼</span>Under</button></> : <><button type='button' className='manual-trader__over' disabled={isTrading} onClick={() => handleTrade('Matches')}><span className='deriv-contract-symbol deriv-contract-symbol--matches' aria-hidden='true'>◎</span>Matches</button><button type='button' className='manual-trader__under' disabled={isTrading} onClick={() => handleTrade('Differs')}><span className='deriv-contract-symbol deriv-contract-symbol--differs' aria-hidden='true'>⊗</span>Differs</button></>}
+            {tradeType === 'Even/Odd' ? <><button type='button' className='manual-trader__even' disabled={isTrading} onClick={() => handleTrade('Even')}><DerivTradeTypeIcon type='even' />Even</button><button type='button' className='manual-trader__odd' disabled={isTrading} onClick={() => handleTrade('Odd')}><DerivTradeTypeIcon type='odd' />Odd</button></>  : tradeType === 'Over/Under' ? <><button type='button' className='manual-trader__over' disabled={isTrading} onClick={() => handleTrade('Over')}><DerivTradeTypeIcon type='over' />Over</button><button type='button' className='manual-trader__under' disabled={isTrading} onClick={() => handleTrade('Under')}><DerivTradeTypeIcon type='under' />Under</button></> : <><button type='button' className='manual-trader__over' disabled={isTrading} onClick={() => handleTrade('Matches')}><DerivTradeTypeIcon type='matches' />Matches</button><button type='button' className='manual-trader__under' disabled={isTrading} onClick={() => handleTrade('Differs')}><DerivTradeTypeIcon type='differs' />Differs</button></>}
         </div>
         <section className='manual-trader__run-activity' aria-live='polite' aria-label='Manual trade run activity'>
             <div className='manual-trader__transactions-heading'><h3>Run activity</h3><span>{runEvents.length} events</span></div>
