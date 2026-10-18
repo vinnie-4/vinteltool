@@ -687,3 +687,45 @@ body.manual-trade-in-progress .animation__wrapper .animation__container {
   width: 100% !important;
   min-width: 0 !important;
 }
+
+
+/* Blue primary action buttons with white text, including execution controls. */
+#db-animation__run-button,
+#db-animation__stop-button,
+#db-animation__pause-button,
+#db-animation__resume-button,
+button[id*="download"],
+button[class*="download"],
+button[id*="reset"],
+button[class*="reset"],
+.dc-btn--primary {
+    color: #fff !important;
+    background: linear-gradient(110deg, #1760d4 0%, #347ff0 100%) !important;
+    border-color: #347ff0 !important;
+}
+#db-animation__run-button *,
+#db-animation__stop-button *,
+#db-animation__pause-button *,
+#db-animation__resume-button *,
+button[id*="download"] *,
+button[class*="download"] *,
+button[id*="reset"] *,
+button[class*="reset"] *,
+.dc-btn--primary * {
+    color: #fff !important;
+}
+/* Transaction expand/collapse strip blends from white into dashboard navy. */
+.animation__wrapper,
+.animation__wrapper .animation__container,
+.animation__wrapper .animation__container > *,
+.dc-drawer__toggle,
+.dc-drawer__toggle-container {
+    border-color: rgba(70, 143, 211, .32) !important;
+}
+.animation__wrapper .animation__container {
+    background: linear-gradient(180deg, #f4f9ff 0%, #c9e3f8 28%, #5889bd 65%, #071b38 100%) !important;
+}
+.dc-drawer__toggle,
+.dc-drawer__toggle-container {
+    background: linear-gradient(180deg, #edf6ff 0%, #c6e0f7 35%, #356ba4 72%, #061a36 100%) !important;
+}
