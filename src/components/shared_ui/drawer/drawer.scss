@@ -124,33 +124,3 @@
         }
     }
 }
-
-
-/* On the collapsed dashboard drawer, place the up-chevron at the far right
-   of the bottom execution strip. When expanded, preserve the centered toggle. */
-@media (max-width: 767px) {
-    .dc-drawer:not(.dc-drawer--open) .dc-drawer__toggle {
-        position: fixed !important;
-        right: 0 !important;
-        left: auto !important;
-        bottom: 0 !important;
-        top: auto !important;
-        width: 58px !important;
-        height: 40px !important;
-        padding: 0 !important;
-        justify-content: center !important;
-        border-top: 1px solid var(--general-section-1);
-        border-left: 1px solid var(--border-disabled);
-        border-right: 0;
-        z-index: 1002;
-        background: var(--general-main-1) !important;
-    }
-
-    .dc-drawer.dc-drawer--open .dc-drawer__toggle {
-        position: unset !important;
-        width: 100% !important;
-        height: 3.6rem !important;
-        justify-content: center !important;
-        padding: 0 !important;
-    }
-}
