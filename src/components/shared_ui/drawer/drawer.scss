@@ -124,29 +124,3 @@
         }
     }
 }
-
-
-/* Dashboard only: keep the transaction drawer toggle at the far right of
-   the bottom execution strip. Other tabs keep the standard drawer toggle. */
-@media (max-width: 767px) {
-    .run-panel--dashboard:not(.dc-drawer--open) .dc-drawer__toggle {
-        position: fixed !important;
-        right: 0 !important;
-        left: auto !important;
-        bottom: 0 !important;
-        top: auto !important;
-        width: 188px !important;
-        height: 3.6rem !important;
-        justify-content: center !important;
-        background: var(--general-main-1) !important;
-        border-top: 1px solid var(--general-section-1) !important;
-        z-index: 1003;
-    }
-
-    .run-panel--dashboard.dc-drawer--open .dc-drawer__toggle {
-        position: unset !important;
-        width: 100% !important;
-        height: 3.6rem !important;
-        justify-content: center !important;
-    }
-}
