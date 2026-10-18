@@ -704,3 +704,18 @@
         transform: none !important;
     }
 }
+
+
+/* Restore native account balance and Demo/Real wallet colours.
+   Keep the dashboard navy background scoped to the dashboard canvas only. */
+.app-header .deriv-account-switcher,
+.app-header .deriv-account-switcher__balance,
+.app-header .deriv-account-switcher__balance *,
+.app-header .wallets,
+.app-header .wallets *,
+.app-header [class*='wallet'],
+.app-header [class*='account-switcher'] {
+    background-color: revert !important;
+    background-image: none !important;
+    box-shadow: revert !important;
+}
