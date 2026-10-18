@@ -210,17 +210,15 @@ const AnalysisTool = ({
             {showControls && <div className='dcircles__controls'>
                 <label>Market<select value={selectedIndex} onChange={event => changeIndex(event.target.value)}>{VOLATILITY_INDICES.map(([name]) => <option key={name} value={name}>{name}</option>)}</select></label>
                 <label>Ticks<select value={windowSize} onChange={event => changeWindow(Number(event.target.value))}>{TICK_WINDOWS.map(size => <option key={size} value={size}>{size}</option>)}</select></label>
-                <div className='dcircles__price'><span>Live price</span><strong>{formatPrice(latestPrice, pipSize)}</strong></div>
             </div>}
-            {!showControls && showPrice && <div className='dcircles__controls dcircles__controls--price-only'><div className='dcircles__price'><span>Live price</span><strong>{formatPrice(latestPrice, pipSize)}</strong></div></div>}
             <div className='dcircles__circle-panel'>
+                <div className='dcircles__market-heading'><span>{formatPrice(latestPrice, pipSize)}</span><strong>{selectedIndex} Index</strong></div>
                 <div className='dcircles__circles'>{stats.map(item => <div className={`dcircles__digit dcircles__digit--${item.digit} dcircles__digit--rank-${item.rankTone}${item.digit === latestDigit ? ' dcircles__digit--latest' : ''}${item.digit === selectedBarrierDigit ? ' dcircles__digit--selected-barrier' : ''}`} key={item.digit}>
                     <button type='button' className='dcircles__circle' onClick={() => onDigitSelect?.(item.digit)} aria-pressed={item.digit === selectedBarrierDigit} aria-label={`Select barrier digit ${item.digit}; ${item.percentage.toFixed(1)} percent, ${item.count} appearances${item.digit === latestDigit ? ', latest tick' : ''}`}><span>{item.digit}</span><b>{item.percentage.toFixed(1)}%</b>{item.digit === latestDigit && <i className='dcircles__pointer' aria-label='Latest tick cursor'>▲</i>}</button>
                     <strong className='dcircles__digit-count'>{item.count}</strong>
                 </div>)}</div>
                 <div className='dcircles__status'>{connected ? '● Live' : '○ Connecting'} · {Math.min(analysisTicks.length, windowSize)} / {windowSize}{connectionError && <span className='dcircles__error'> · {connectionError}</span>}</div>
                 <div className='dcircles__recent-digits' aria-label='Last ten digits'>{analysisTicks.slice(-10).map((tick, index, recent) => <span key={index} className={tick.digit % 2 === 0 ? 'is-even' : 'is-odd'} aria-label={tick.digit % 2 === 0 ? 'Even' : 'Odd'}>{tick.digit % 2 === 0 ? 'E' : 'O'}</span>)}</div>
-                <div className='dcircles__market-heading'><strong>{selectedIndex} Index</strong><span>{formatPrice(latestPrice, pipSize)}</span></div>
             </div>
             {showContractProbabilities && <div className='dcircles__contract-probabilities' aria-live='polite'>
                 <div className='dcircles__contract-heading'><strong>Probabilities</strong><span>{Math.min(analysisTicks.length, windowSize)} / {windowSize}</span></div>
