@@ -89,8 +89,8 @@ const AnalysisTool = ({
             if (stoppedRef.current || connectionId !== connectionIdRef.current || wsRef.current !== ws) return;
             setConnected(true);
             setConnectionError('');
+            // Load the full requested window first; start the live subscription after history arrives.
             ws.send(JSON.stringify({ ticks_history: selectedSymbol, count: MAX_TICKS, end: 'latest', style: 'ticks', req_id: 1 }));
-            ws.send(JSON.stringify({ ticks: selectedSymbol, subscribe: 1, req_id: 2 }));
         };
         ws.onmessage = event => {
             if (connectionId !== connectionIdRef.current || wsRef.current !== ws) return;
@@ -107,6 +107,11 @@ const AnalysisTool = ({
                     const last = historyTicks[historyTicks.length - 1];
                     if (last) { setLatestPrice(last.quote); setLatestDigit(last.digit); }
                     setConnected(true); setConnectionError('');
+                    // Subscribe only after the historical snapshot is installed, preventing a late history response
+                    // from overwriting newer live ticks and making the count appear to restart.
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({ ticks: selectedSymbol, subscribe: 1, req_id: 2 }));
+                    }
                     return;
                 }
                 if (data.msg_type === 'tick' && data.tick?.quote !== undefined) {
@@ -217,7 +222,7 @@ const AnalysisTool = ({
                     <button type='button' className='dcircles__circle' onClick={() => onDigitSelect?.(item.digit)} aria-pressed={item.digit === selectedBarrierDigit} aria-label={`Select barrier digit ${item.digit}; ${item.percentage.toFixed(1)} percent, ${item.count} appearances${item.digit === latestDigit ? ', latest tick' : ''}`}><span>{item.digit}</span><b>{item.percentage.toFixed(1)}%</b>{item.digit === latestDigit && <i className='dcircles__pointer' aria-label='Latest tick cursor'>▲</i>}</button>
                     <strong className='dcircles__digit-count'>{item.count}</strong>
                 </div>)}</div>
-                <div className='dcircles__status'>{connected ? '● Live' : '○ Connecting'} · {Math.min(analysisTicks.length, windowSize)} / {windowSize}{connectionError && <span className='dcircles__error'> · {connectionError}</span>}</div>
+                <div className='dcircles__status'>{analysisTicks.length >= windowSize ? '● Live' : connected ? '◌ Loading history' : '○ Connecting'} · {Math.min(analysisTicks.length, windowSize)} / {windowSize}{analysisTicks.length < windowSize && !connectionError ? ' ticks loaded' : ''}{connectionError && <span className='dcircles__error'> · {connectionError}</span>}</div>
                 <div className='dcircles__recent-digits' aria-label='Last ten digits'>{analysisTicks.slice(-10).map((tick, index, recent) => <span key={index} className={tick.digit % 2 === 0 ? 'is-even' : 'is-odd'} aria-label={tick.digit % 2 === 0 ? 'Even' : 'Odd'}>{tick.digit % 2 === 0 ? 'E' : 'O'}</span>)}</div>
             </div>
             {showContractProbabilities && <div className='dcircles__contract-probabilities' aria-live='polite'>
