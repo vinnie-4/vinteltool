@@ -223,7 +223,24 @@ const AnalysisTool = ({
                     <strong className='dcircles__digit-count'>{item.count}</strong>
                 </div>)}</div>
                 <div className='dcircles__status'>{connected ? '● Live' : '○ Connecting'} · {Math.min(analysisTicks.length, windowSize)} / {windowSize}{connectionError && <span className='dcircles__error'> · {connectionError}</span>}</div>
-                <div className='dcircles__recent-digits' aria-label='Last ten digits'>{analysisTicks.slice(-10).map((tick, index, recent) => <span key={index} className={tick.digit % 2 === 0 ? 'is-even' : 'is-odd'} aria-label={tick.digit % 2 === 0 ? 'Even' : 'Odd'}>{tick.digit % 2 === 0 ? 'E' : 'O'}</span>)}</div>
+                <div className='dcircles__recent-digits' aria-label='Recent outcomes for selected trade type'>{analysisTicks.slice(-10).map((tick, index) => {
+                    const outcome = contractMode === 'Even/Odd'
+                        ? (tick.digit % 2 === 0 ? 'E' : 'O')
+                        : contractMode === 'Over/Under'
+                            ? (tick.digit > 4 ? 'O' : 'U')
+                            : (tick.digit === predictionDigit ? 'M' : 'D');
+                    const tone = contractMode === 'Even/Odd'
+                        ? (tick.digit % 2 === 0 ? 'is-even' : 'is-odd')
+                        : contractMode === 'Over/Under'
+                            ? (tick.digit > 4 ? 'is-over' : 'is-under')
+                            : (tick.digit === predictionDigit ? 'is-match' : 'is-differs');
+                    const description = contractMode === 'Even/Odd'
+                        ? (outcome === 'E' ? 'Even' : 'Odd')
+                        : contractMode === 'Over/Under'
+                            ? (outcome === 'O' ? 'Over 4' : 'Under 5')
+                            : (outcome === 'M' ? 'Matches ' + predictionDigit : 'Differs ' + predictionDigit);
+                    return <span key={index} className={tone} aria-label={description}>{outcome}</span>;
+                })}</div>
             </div>
             {showContractProbabilities && <div className='dcircles__contract-probabilities' aria-live='polite'>
                 <div className='dcircles__contract-heading'><strong>Probabilities</strong><span>{Math.min(analysisTicks.length, windowSize)} / {windowSize}</span></div>
