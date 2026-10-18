@@ -242,3 +242,28 @@
 .dcircles__digit--rank-most .dcircles__circle {
   border-color: #00A6A6 !important;
 }
+
+
+/* Pure teal for trade-type probability indicators and compact recent-outcome strip */
+.dcircles__contract-fill--first,
+.dcircles__recent-digits .is-even,
+.dcircles__recent-digits .is-over,
+.dcircles__recent-digits .is-match {
+  background-color: #00A6A6 !important;
+}
+.dcircles__contract-heading span,
+.dcircles__contract-label b,
+.dcircles__contract-row:first-of-type .dcircles__contract-label span {
+  color: #00A6A6 !important;
+}
+.dcircles__contract-probabilities {
+  margin-top: 2px !important;
+}
+.dcircles__circle-panel > .dcircles__recent-digits {
+  margin-bottom: 0 !important;
+}
+.dcircles__recent-digits .is-odd,
+.dcircles__recent-digits .is-under,
+.dcircles__recent-digits .is-differs {
+  background-color: #ef3f43 !important;
+}
