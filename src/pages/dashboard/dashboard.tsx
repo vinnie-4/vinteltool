@@ -24,11 +24,16 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
     const { isDesktop } = useDevice();
     const [greeting, setGreeting] = React.useState('Good morning');
     const subtitles = [
+        'Trade with confidence.',
         'Build smarter. Trade with precision.',
-        'Analyze the market with confidence.',
-        'Create powerful trading strategies.',
+        'Analyze every tick with confidence.',
         'Your strategy. Your edge.',
+        'Make every decision count.',
         'Trade smarter with VintelTool.',
+        'Turn market insights into strategy.',
+        'Stay focused. Trade with purpose.',
+        'Precision starts with analysis.',
+        'Your next strategy starts here.',
     ];
     const [subtitleIndex, setSubtitleIndex] = React.useState(0);
 
@@ -80,7 +85,7 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                                     textShadow: '0 0 6px rgba(56, 189, 248, 0.45), 0 0 14px rgba(56, 189, 248, 0.22)',
                                 }}
                             >
-                                {greeting}<span className='dashboard-greeting-exclamation'>!</span>
+                                {greeting}
                             </Text>
                             <div
                                 key={subtitleIndex}
@@ -99,7 +104,7 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                                     '--subtitle-duration': `${subtitleDuration}s`,
                                 } as React.CSSProperties}
                             >
-                                {subtitleWords.map((word, index) => (
+                                {'\"'}{subtitleWords.map((word, index) => (
                                     <React.Fragment key={`${subtitleIndex}-${index}`}>
                                         <span
                                             className='dashboard-greeting-word'
@@ -109,7 +114,7 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                                         </span>
                                         {index < subtitleWords.length - 1 ? ' ' : ''}
                                     </React.Fragment>
-                                ))}
+                                ))}{'\"'}
                             </div>
                         </div>
                         <div
