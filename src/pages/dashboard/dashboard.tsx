@@ -24,21 +24,32 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
     const { isDesktop } = useDevice();
     const [greeting, setGreeting] = React.useState('Good morning');
     const subtitles = [
-        'Trade with confidence.',
-        'Build smarter. Trade with precision.',
-        'Analyze every tick with confidence.',
-        'Your strategy. Your edge.',
-        'Make every decision count.',
-        'Trade smarter with VintelTool.',
-        'Turn market insights into strategy.',
-        'Stay focused. Trade with purpose.',
-        'Precision starts with analysis.',
-        'Your next strategy starts here.',
-        'Protect your capital first; consistent decisions matter more than chasing every move.',
-        'A strong trading plan turns market uncertainty into decisions you can manage with discipline.',
-        'Wait for your setup, respect your risk limits, and let patience do its work.',
+        '🤝 Trade with confidence, stay patient through uncertainty, and let a clear plan guide every decision.',
+        '📊 Build smarter strategies, analyze every tick carefully, and trade with precision instead of emotion.',
+        '🎯 Your strategy is your edge; wait for the right setup and act only when your rules agree.',
+        '🛡️ Protect your capital first, respect your risk limits, and remember that consistency matters more than chasing every move.',
+        '💡 Turn market insights into thoughtful decisions, learn from every result, and keep improving your approach.',
+        '📈 Stay focused on the process, manage each position with discipline, and give good setups time to develop.',
+        '🔍 Analyze the market before you act, trust your tested rules, and never let impatience choose your next trade.',
+        '🌱 Progress comes from preparation and patience; build habits that support long-term discipline, not quick emotions.',
+        '⚖️ Balance opportunity with risk, keep your goals realistic, and trade only what your plan allows.',
+        '🚀 Keep learning, refine your strategy with evidence, and make every decision count with VintelTool.',
     ];
     const [subtitleIndex, setSubtitleIndex] = React.useState(0);
+    const [showGreetingHand, setShowGreetingHand] = React.useState(false);
+
+    React.useEffect(() => {
+        let hideTimer: number | undefined;
+        const showHand = () => {
+            setShowGreetingHand(true);
+            hideTimer = window.setTimeout(() => setShowGreetingHand(false), 2000);
+        };
+        const interval = window.setInterval(showHand, 45_000);
+        return () => {
+            window.clearInterval(interval);
+            if (hideTimer) window.clearTimeout(hideTimer);
+        };
+    }, []);
 
     const currentSubtitle = subtitles[subtitleIndex];
     const subtitleWords = currentSubtitle.split(' ');
@@ -91,6 +102,7 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                                 }}
                             >
                                 {greeting}
+                                <span className={classNames('dashboard-greeting-hand', { 'dashboard-greeting-hand--visible': showGreetingHand })} aria-hidden='true'>🫱🏽‍🫲🏾</span>
                             </Text>
                             <div
                                 key={subtitleIndex}
