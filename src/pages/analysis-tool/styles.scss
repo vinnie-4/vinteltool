@@ -292,3 +292,24 @@
 }
 .dcircles__outcome-symbol--first { color: #00A6A6 !important; }
 .dcircles__outcome-symbol--second { color: #EF3F43 !important; }
+
+
+/* Official Deriv TradeTypes icon SVGs in the live probability rows */
+.dcircles__outcome-symbol {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  min-width: 14px;
+  margin-right: 5px;
+  vertical-align: middle;
+  font-style: normal;
+}
+svg.dcircles__outcome-symbol {
+  width: 14px;
+  height: 14px;
+}
+.dcircles__contract-label > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
