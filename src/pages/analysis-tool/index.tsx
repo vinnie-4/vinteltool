@@ -33,6 +33,9 @@ type AnalysisToolProps = {
     onSelectedIndexChange?: (value: string) => void;
     windowSize?: number;
     onWindowSizeChange?: (value: number) => void;
+    showContractProbabilities?: boolean;
+    contractMode?: 'Even/Odd' | 'Over/Under' | 'Matches/Differs';
+    predictionDigit?: number;
 };
 
 const AnalysisTool = ({
@@ -45,6 +48,9 @@ const AnalysisTool = ({
     onSelectedIndexChange,
     windowSize: controlledWindowSize,
     onWindowSizeChange,
+    showContractProbabilities = false,
+    contractMode = 'Even/Odd',
+    predictionDigit = 1,
 }: AnalysisToolProps) => {
     const [activeTab, setActiveTab] = useState<AnalysisTab>('dcircles');
     const [internalSelectedIndex, setInternalSelectedIndex] = useState('Volatility 100 (1s)');
@@ -163,6 +169,25 @@ const AnalysisTool = ({
         return { even, odd, evenPercent: even / total * 100, oddPercent: odd / total * 100, streak };
     }, [analysisTicks]);
 
+    const contractProbabilities = useMemo(() => {
+        const digits = analysisTicks.map(tick => tick.digit);
+        const total = digits.length;
+        const matchCount = digits.filter(digit => digit === predictionDigit).length;
+        const underCount = digits.filter(digit => digit < 5).length;
+        const evenCount = digits.filter(digit => digit % 2 === 0).length;
+        const classify = (digit: number) => contractMode === 'Even/Odd'
+            ? (digit % 2 === 0 ? 'first' : 'second')
+            : contractMode === 'Over/Under' ? (digit < 5 ? 'first' : 'second')
+            : (digit === predictionDigit ? 'first' : 'second');
+        const lastClass = digits.length ? classify(digits[digits.length - 1]) : null;
+        let streak = 0;
+        for (let i = digits.length - 1; i >= 0 && classify(digits[i]) === lastClass; i--) streak++;
+        const firstCount = contractMode === 'Even/Odd' ? evenCount : contractMode === 'Over/Under' ? underCount : matchCount;
+        const firstName = contractMode === 'Even/Odd' ? 'Even' : contractMode === 'Over/Under' ? 'Under 5' : 'Matches ' + predictionDigit;
+        const secondName = contractMode === 'Even/Odd' ? 'Odd' : contractMode === 'Over/Under' ? 'Over 4' : 'Differs ' + predictionDigit;
+        return { total, streak, lastClass, firstName, secondName, firstPercent: total ? firstCount / total * 100 : 0, secondPercent: total ? (total - firstCount) / total * 100 : 0 };
+    }, [analysisTicks, contractMode, predictionDigit]);
+
     const changeIndex = (value: string) => {
         setInternalSelectedIndex(value);
         onSelectedIndexChange?.(value);
@@ -198,8 +223,19 @@ const AnalysisTool = ({
                 </>}
                 {showStreak && <div className='dcircles__streak'><div className='dcircles__streak-sequence'>{parityStats.streak.map((value, index) => <span key={index} className={value === 'E' ? 'dcircles__streak-even' : 'dcircles__streak-odd'}>{value}</span>)}</div></div>}
             </div>}
+            {showContractProbabilities && <div className='dcircles__contract-probabilities' aria-live='polite'>
+                <div className='dcircles__contract-heading'><strong>Contract probabilities</strong><span>{analysisTicks.length} ticks analysed</span></div>
+                {[{ name: contractProbabilities.firstName, percent: contractProbabilities.firstPercent, tone: 'first' }, { name: contractProbabilities.secondName, percent: contractProbabilities.secondPercent, tone: 'second' }].map(item => <div className='dcircles__contract-row' key={item.name}>
+                    <div className='dcircles__contract-label'><span>{item.name}</span><b>{analysisTicks.length ? item.percent.toFixed(1) + '%' : '—'}</b></div>
+                    <div className='dcircles__contract-track'><i className={'dcircles__contract-fill dcircles__contract-fill--' + item.tone} style={{ width: item.percent + '%' }} /></div>
+                </div>)}
+                <div className='dcircles__contract-streak'>Current {contractProbabilities.lastClass === 'first' ? contractProbabilities.firstName : contractProbabilities.lastClass === 'second' ? contractProbabilities.secondName : 'outcome'} streak: <strong>{analysisTicks.length ? contractProbabilities.streak : 0}</strong></div>
+                <small>Historical frequencies, not guaranteed next-tick odds.</small>
+            </div>}
         </>}
     </section>;
 };
 
 export default AnalysisTool;
+
+.dcircles__contract-probabilities{margin:12px 0;padding:13px;border:1px solid rgba(150,165,185,.3);border-radius:14px;background:linear-gradient(145deg,rgba(255,255,255,.95),rgba(235,241,248,.88));box-shadow:0 4px 14px rgba(25,40,60,.06);color:#263344}.dcircles__contract-heading,.dcircles__contract-label{display:flex;justify-content:space-between;align-items:center;gap:8px}.dcircles__contract-heading{margin-bottom:12px;font-size:13px}.dcircles__contract-heading span,.dcircles__contract-probabilities small{font-size:10px;color:#7a8492}.dcircles__contract-row{margin:10px 0}.dcircles__contract-label{font-size:12px;font-weight:800;margin-bottom:5px}.dcircles__contract-label b{font-variant-numeric:tabular-nums;font-size:13px}.dcircles__contract-track{height:9px;border-radius:999px;overflow:hidden;background:#e8edf3}.dcircles__contract-fill{display:block;height:100%;border-radius:999px;transition:width .25s ease}.dcircles__contract-fill--first{background:linear-gradient(90deg,#16b981,#059669)}.dcircles__contract-fill--second{background:linear-gradient(90deg,#fb7185,#ef4444)}.dcircles__contract-streak{padding-top:9px;margin-top:10px;border-top:1px solid #e3e8ef;font-size:12px}.dcircles__contract-streak strong{font-size:15px;margin-left:4px}.dcircles__contract-probabilities>small{display:block;margin-top:7px;line-height:1.4}
