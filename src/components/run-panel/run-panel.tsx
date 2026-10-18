@@ -116,7 +116,7 @@ const RunPanel = observer(() => {
     return (
         <>
             <div className={!isDesktop && is_drawer_open ? 'run-panel__container--mobile' : 'run-panel'}>
-                <Drawer anchor='right' className={classNames('run-panel', { 'run-panel__container': isDesktop, 'run-panel__container--tour-active': isDesktop && active_tour })} contentClassName='run-panel__content' header={header} footer={isDesktop && footer} is_open={is_drawer_open} toggleDrawer={toggleDrawer} width={366} zIndex={popover_zindex.RUN_PANEL}>{content}</Drawer>
+                <Drawer anchor='right' className={classNames('run-panel', { 'run-panel__container': isDesktop, 'run-panel__container--tour-active': isDesktop && active_tour, 'run-panel--dashboard': active_tab === DBOT_TABS.DASHBOARD })} contentClassName='run-panel__content' header={header} footer={isDesktop && footer} is_open={is_drawer_open} toggleDrawer={toggleDrawer} width={366} zIndex={popover_zindex.RUN_PANEL}>{content}</Drawer>
                 {!isDesktop && <MobileDrawerFooter />}
             </div>
             <StatisticsInfoModal is_mobile={!isDesktop} is_statistics_info_modal_open={is_statistics_info_modal_open} toggleStatisticsInfoModal={toggleStatisticsInfoModal} />
