@@ -313,3 +313,35 @@ svg.dcircles__outcome-symbol {
   align-items: center;
   gap: 2px;
 }
+
+
+/* Probability bars now begin before their outcome labels, in the same row */
+.dcircles__contract-row {
+  display: grid !important;
+  grid-template-columns: minmax(44px, 1fr) minmax(0, 1.25fr) !important;
+  align-items: center !important;
+  column-gap: 7px !important;
+  row-gap: 0 !important;
+}
+.dcircles__contract-track {
+  grid-column: 1;
+  grid-row: 1;
+  width: calc(100% + 2.5px) !important;
+  min-width: 0;
+  margin: 0 !important;
+}
+.dcircles__contract-label {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+.dcircles__contract-label > span {
+  min-width: 0;
+  white-space: nowrap;
+  gap: 3px !important;
+}
