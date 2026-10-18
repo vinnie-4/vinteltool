@@ -133,7 +133,16 @@ const ManualTraderStructure = () => {
             ...(isClosed ? { status: String(contract.status || 'Closed') } : {}),
         } as ManualTradeRecord;
         updateTradeRecord(contractId, updatedRecord);
-        // Feed the same contract into DBot's native Transactions run-panel store.
+        // Update the compact Execution Run panel (not the Transactions drawer).
+        // DBot's existing stage renderer displays "Contract bought" and then Won/Lost.
+        if (isClosed) {
+            run_panel.setContractStage(6);
+            run_panel.setHasOpenContract(false);
+        } else {
+            run_panel.setContractStage(4);
+            run_panel.setHasOpenContract(true);
+        }
+        // Feed the same contract into DBot's native store for statistics/history.
         transactions.pushTransaction({
             ...contract,
             contract_id: Number(contractId),
@@ -191,11 +200,12 @@ const ManualTraderStructure = () => {
             const api = await waitForTradingApi();
             ensureTradeMessageListener(api);
             const currency = api_base.account_info?.currency || 'USD';
-            // Route manual contracts through DBot's native Run panel Transactions tab.
+            // Keep the compact bottom Execution panel active without opening the Transactions drawer.
             if (!run_panel.is_running) {
                 if (!manualRunIdRef.current) manualRunIdRef.current = `manual-${Date.now()}`;
                 run_panel.run_id = manualRunIdRef.current;
             }
+            run_panel.setContractStage(3);
             // Execute sequentially so bulk purchases do not race each other.
             for (let index = 0; index < count; index += 1) {
                 const buy = await buyContract(api, CONTRACT_TYPES[selection], amount, symbol, ticks, Number(prediction));
