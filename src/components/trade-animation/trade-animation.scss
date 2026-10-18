@@ -36,8 +36,31 @@
     &__wrapper {
         display: flex;
         align-items: center;
-        height: 40px;
+        height: 34px;
         gap: 0;
+        margin-left: 0;
+        padding-left: 0;
+        transform: translateY(6px);
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    &__run-button,
+    &__pause-resume-button,
+    &__stop-button {
+        font-size: 12px !important;
+        min-height: 0 !important;
+        padding: 0 8px !important;
+    }
+
+    &__container {
+        padding: 3px 8px;
+    }
+
+    &__text {
+        font-size: 11px;
+        line-height: 15px;
+        margin-bottom: 3px;
     }
 
     &__overlay {
