@@ -84,13 +84,18 @@ const AnalysisTool = ({
         wsRef.current = null;
         if (previous) { previous.onopen = null; previous.onmessage = null; previous.onerror = null; previous.onclose = null; previous.close(); }
         const ws = new WebSocket(WS_URL);
+        // Some public Deriv WS responses cap a history response at 1,000 ticks.
+        // Page backwards until the selected window is actually filled.
+        let historyPrices: number[] = [];
+        let historyTimes: number[] = [];
+        let historyPagePending = false;
         wsRef.current = ws;
         ws.onopen = () => {
             if (stoppedRef.current || connectionId !== connectionIdRef.current || wsRef.current !== ws) return;
             setConnected(true);
             setConnectionError('');
             // Load the full requested window first; start the live subscription after history arrives.
-            ws.send(JSON.stringify({ ticks_history: selectedSymbol, count: windowSize, end: 'latest', style: 'ticks', req_id: 1 }));
+            ws.send(JSON.stringify({ ticks_history: selectedSymbol, count: Math.min(windowSize, 1000), end: 'latest', style: 'ticks', req_id: 1 }));
         };
         ws.onmessage = event => {
             if (connectionId !== connectionIdRef.current || wsRef.current !== ws) return;
@@ -101,14 +106,43 @@ const AnalysisTool = ({
                 if (Number.isFinite(receivedPipSize) && receivedPipSize >= 0) { pipSizeRef.current = receivedPipSize; setPipSize(receivedPipSize); }
                 const decimals = Number.isFinite(receivedPipSize) && receivedPipSize >= 0 ? receivedPipSize : pipSizeRef.current;
                 if (data.msg_type === 'history' && Array.isArray(data.history?.prices)) {
-                    const prices = data.history.prices.map(Number).filter(Number.isFinite);
-                    const historyTicks = prices.map(quote => ({ quote, digit: getLastDigit(quote, decimals) })).slice(-windowSize);
+                    const pagePrices = data.history.prices.map(Number);
+                    const pageTimes = Array.isArray(data.history.times) ? data.history.times.map(Number) : [];
+                    const valid = pagePrices.map((quote, index) => ({ quote, time: pageTimes[index] }))
+                        .filter(item => Number.isFinite(item.quote) && Number.isFinite(item.time));
+                    const knownTimes = new Set(historyTimes);
+                    valid.forEach(item => {
+                        if (!knownTimes.has(item.time)) {
+                            historyTimes.push(item.time);
+                            historyPrices.push(item.quote);
+                            knownTimes.add(item.time);
+                        }
+                    });
+                    // Keep price/time pairs in chronological order before deciding whether another page is needed.
+                    const combined = historyTimes.map((time, index) => ({ time, quote: historyPrices[index] }))
+                        .sort((a, b) => a.time - b.time);
+                    historyTimes = combined.map(item => item.time);
+                    historyPrices = combined.map(item => item.quote);
+                    if (historyPrices.length < windowSize && valid.length && ws.readyState === WebSocket.OPEN) {
+                        const oldestTime = Math.min(...valid.map(item => item.time));
+                        const remaining = windowSize - historyPrices.length;
+                        historyPagePending = true;
+                        ws.send(JSON.stringify({
+                            ticks_history: selectedSymbol,
+                            count: Math.min(remaining + 1, 1000),
+                            end: Math.max(1, oldestTime - 1),
+                            style: 'ticks',
+                            req_id: 1
+                        }));
+                        return;
+                    }
+                    const historyTicks = historyPrices.slice(-windowSize).map(quote => ({ quote, digit: getLastDigit(quote, decimals) }));
                     setTicks(historyTicks);
                     const last = historyTicks[historyTicks.length - 1];
                     if (last) { setLatestPrice(last.quote); setLatestDigit(last.digit); }
                     setConnected(true); setConnectionError('');
-                    // Subscribe only after the historical snapshot is installed, preventing a late history response
-                    // from overwriting newer live ticks and making the count appear to restart.
+                    historyPagePending = false;
+                    // Subscribe only after the full selected historical window has been installed.
                     if (ws.readyState === WebSocket.OPEN) {
                         ws.send(JSON.stringify({ ticks: selectedSymbol, subscribe: 1, req_id: 2 }));
                     }
