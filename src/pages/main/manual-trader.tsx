@@ -102,7 +102,6 @@ const ManualTraderStructure = () => {
     const [prediction, setPrediction] = useState(1);
     const [isTrading, setIsTrading] = useState(false);
     const [tradeRecords, setTradeRecords] = useState<ManualTradeRecord[]>([]);
-    const [runEvents, setRunEvents] = useState<Array<{ id: string; message: string; status: 'open' | 'won' | 'lost' | 'info'; time: string }>>([]);
     const tradeLockRef = useRef(false);
     const manualRunIdRef = useRef<string>('');
     const messageSubscriptionRef = useRef<any>(null);
@@ -193,7 +192,7 @@ const ManualTraderStructure = () => {
             ensureTradeMessageListener(api);
             const currency = api_base.account_info?.currency || 'USD';
             // Route manual contracts through DBot's native Run panel Transactions tab.
-            if (!run_panel.is_running && !run_panel.run_id) {
+            if (!run_panel.is_running) {
                 if (!manualRunIdRef.current) manualRunIdRef.current = `manual-${Date.now()}`;
                 run_panel.run_id = manualRunIdRef.current;
             }
