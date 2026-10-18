@@ -48,7 +48,7 @@ const AnalysisTool = ({
     onSelectedIndexChange,
     windowSize: controlledWindowSize,
     onWindowSizeChange,
-    showContractProbabilities = false,
+    showContractProbabilities = true,
     contractMode = 'Even/Odd',
     predictionDigit = 1,
 }: AnalysisToolProps) => {
