@@ -113,3 +113,8 @@
  .dcircles__circle{width:min(100%,54px)}
  .dcircles__recent-digits span{min-height:34px;font-size:11px}
 }
+
+/* Last-digit parity history: show E/O inside the colored tiles */
+.dcircles__recent-digits span{font-size:16px;font-weight:900;letter-spacing:.02em}
+.dcircles__status{font-size:11px}
+.dcircles__market-heading{margin-top:10px}
