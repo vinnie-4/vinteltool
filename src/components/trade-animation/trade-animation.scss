@@ -357,3 +357,65 @@
         min-width: 148px;
     }
 }
+
+
+/* Keep the full bot execution strip visually aligned like the reference screenshots. */
+.animation__wrapper {
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    display: flex !important;
+    align-items: stretch !important;
+    transform: none !important;
+}
+.animation__wrapper > #db-animation__run-button,
+.animation__wrapper > .run__button_wrapper,
+.animation__wrapper > .animation__pause-resume-button {
+    margin: 0 !important;
+    border-radius: 0 !important;
+    min-width: 148px;
+}
+.animation__wrapper > #db-animation__run-button {
+    background: linear-gradient(110deg, #4388ff 0%, #063b83 100%) !important;
+    color: #fff !important;
+}
+.animation__wrapper > .animation__pause-resume-button {
+    background: #ffa726 !important;
+    color: #fff !important;
+}
+.animation__wrapper > #db-animation__stop-button {
+    background: #ef353d !important;
+    color: #fff !important;
+    border-radius: 0 !important;
+}
+.animation__wrapper > #db-animation__stop-button svg {
+    fill: #fff !important;
+    color: #fff !important;
+}
+.animation__wrapper .animation__container {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    padding: 4px 10px !important;
+}
+.animation__wrapper .animation__text {
+    font-size: 11px !important;
+    line-height: 15px !important;
+    margin: 0 0 2px !important;
+}
+@media (max-width: 767px) {
+    .animation__wrapper > #db-animation__run-button,
+    .animation__wrapper > .animation__pause-resume-button {
+        min-width: 148px;
+        padding-inline: 8px !important;
+    }
+    .animation__wrapper > #db-animation__stop-button {
+        min-width: 148px;
+        padding-inline: 8px !important;
+    }
+}
