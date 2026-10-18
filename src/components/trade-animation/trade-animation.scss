@@ -232,3 +232,38 @@
         width: 31.2rem !important;
     }
 }
+
+
+/* Manual Trader settlement messages must sit above the progress/overlay layers. */
+.animation__container--manual-won,
+.animation__container--manual-lost,
+.animation__container--manual-bought {
+    position: relative;
+}
+
+.animation__container .animation__text--manual-result {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 24px;
+    opacity: 1 !important;
+    visibility: visible !important;
+    color: #00a6a6 !important;
+    font-weight: 700 !important;
+    text-align: center;
+    background: linear-gradient(180deg, rgba(0, 166, 166, 0.16), rgba(255, 255, 255, 0.96));
+    pointer-events: none;
+}
+
+.animation__container--manual-lost .animation__text--manual-result {
+    color: #ff444f !important;
+    background: linear-gradient(180deg, rgba(255, 68, 79, 0.12), rgba(255, 255, 255, 0.96));
+}
+
+.animation__container .animation__progress {
+    position: relative;
+    z-index: 1;
+}
