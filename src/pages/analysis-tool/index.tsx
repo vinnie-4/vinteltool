@@ -214,13 +214,13 @@ const AnalysisTool = ({
             </div>}
             {!showControls && showPrice && <div className='dcircles__controls dcircles__controls--price-only'><div className='dcircles__price'><span>Live price</span><strong>{formatPrice(latestPrice, pipSize)}</strong></div></div>}
             <div className='dcircles__circle-panel'>
-                <div className='dcircles__market-heading'><strong>📌 {selectedIndex} Index</strong><span>{formatPrice(latestPrice, pipSize)}</span></div>
                 <div className='dcircles__circles'>{stats.map(item => <div className={`dcircles__digit dcircles__digit--${item.digit} dcircles__digit--rank-${item.rankTone}${item.digit === latestDigit ? ' dcircles__digit--latest' : ''}${item.digit === selectedBarrierDigit ? ' dcircles__digit--selected-barrier' : ''}`} key={item.digit}>
                     <button type='button' className='dcircles__circle' onClick={() => onDigitSelect?.(item.digit)} aria-pressed={item.digit === selectedBarrierDigit} aria-label={`Select barrier digit ${item.digit}; ${item.percentage.toFixed(1)} percent, ${item.count} appearances${item.digit === latestDigit ? ', latest tick' : ''}`}><span>{item.digit}</span><b>{item.percentage.toFixed(1)}%</b>{item.digit === latestDigit && <i className='dcircles__pointer' aria-label='Latest tick cursor'>▲</i>}</button>
                     <strong className='dcircles__digit-count'>{item.count}</strong>
                 </div>)}</div>
-                <div className='dcircles__status'>{connected ? '● Live · Deriv' : '○ Connecting to Deriv…'} · {analysisTicks.length} / {windowSize} ticks{connectionError && <span className='dcircles__error'> · {connectionError}</span>}</div>
-                <div className='dcircles__recent-digits' aria-label='Last ten digits'>{analysisTicks.slice(-10).map((tick, index, recent) => <span key={index} className={tick.digit % 2 === 0 ? 'is-even' : 'is-odd'} aria-label={'Digit ' + tick.digit}>{tick.digit}</span>)}</div>
+                <div className='dcircles__status'>{connected ? '● Live' : '○ Connecting'} · {Math.min(analysisTicks.length, windowSize)} / {windowSize}{connectionError && <span className='dcircles__error'> · {connectionError}</span>}</div>
+                <div className='dcircles__recent-digits' aria-label='Last ten digits'>{analysisTicks.slice(-10).map((tick, index, recent) => <span key={index} className={tick.digit % 2 === 0 ? 'is-even' : 'is-odd'} aria-label={tick.digit % 2 === 0 ? 'Even' : 'Odd'}>{tick.digit % 2 === 0 ? 'E' : 'O'}</span>)}</div>
+                <div className='dcircles__market-heading'><strong>{selectedIndex} Index</strong><span>{formatPrice(latestPrice, pipSize)}</span></div>
             </div>
             {(showLegend || showStreak) && <div className={`dcircles__parity${showStreak && !showLegend ? ' dcircles__parity--streak-only' : ''}`}>
                 {showLegend && contractMode !== 'Even/Odd' && <>
@@ -230,13 +230,13 @@ const AnalysisTool = ({
                 {showStreak && <div className='dcircles__streak'><div className='dcircles__streak-sequence'>{parityStats.streak.map((value, index) => <span key={index} className={value === 'E' ? 'dcircles__streak-even' : 'dcircles__streak-odd'}>{value}</span>)}</div></div>}
             </div>}
             {showContractProbabilities && <div className='dcircles__contract-probabilities' aria-live='polite'>
-                <div className='dcircles__contract-heading'><strong>Contract probabilities</strong><span>{analysisTicks.length} ticks analysed</span></div>
+                <div className='dcircles__contract-heading'><strong>Probabilities</strong><span>{Math.min(analysisTicks.length, windowSize)} / {windowSize}</span></div>
                 {[{ name: contractProbabilities.firstName, percent: contractProbabilities.firstPercent, tone: 'first' }, { name: contractProbabilities.secondName, percent: contractProbabilities.secondPercent, tone: 'second' }].map(item => <div className='dcircles__contract-row' key={item.name}>
                     <div className='dcircles__contract-label'><span>{item.name}</span><b>{analysisTicks.length ? item.percent.toFixed(1) + '%' : '—'}</b></div>
                     <div className='dcircles__contract-track'><i className={'dcircles__contract-fill dcircles__contract-fill--' + item.tone} style={{ width: item.percent + '%' }} /></div>
                 </div>)}
                 <div className='dcircles__contract-streak'>Current {contractProbabilities.lastClass === 'first' ? contractProbabilities.firstName : contractProbabilities.lastClass === 'second' ? contractProbabilities.secondName : 'outcome'} streak: <strong>{analysisTicks.length ? contractProbabilities.streak : 0}</strong></div>
-                <small>Historical frequencies, not guaranteed next-tick odds.</small>
+                
             </div>}
         </>}
     </section>;
