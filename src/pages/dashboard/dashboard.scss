@@ -517,3 +517,66 @@
         min-height: 2.4rem;
     }
 }
+
+
+/* Dashboard atmosphere: deep navy below the main navigation, with a subtle
+   blue-lit perspective tile floor at the bottom. Visual-only styling. */
+.tab__dashboard {
+    position: relative;
+    isolation: isolate;
+    background: #020817 !important;
+}
+
+.tab__dashboard__content {
+    position: relative;
+    isolation: isolate;
+    background-color: #020817 !important;
+    background-image:
+        radial-gradient(ellipse at 50% 5%, rgba(0, 100, 190, .14) 0%, transparent 48%),
+        linear-gradient(180deg, #020817 0%, #031126 56%, #020817 100%) !important;
+}
+
+.tab__dashboard__content::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    inset: 0;
+    background:
+        radial-gradient(ellipse at 50% 100%, rgba(0, 119, 255, .22) 0%, rgba(0, 71, 150, .10) 24%, transparent 58%),
+        linear-gradient(180deg, rgba(2, 8, 23, .02) 0%, rgba(2, 8, 23, .04) 60%, rgba(2, 8, 23, .2) 100%);
+}
+
+.tab__dashboard__content::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    left: -12%;
+    right: -12%;
+    bottom: -3%;
+    height: 35%;
+    opacity: .68;
+    transform: perspective(240px) rotateX(48deg);
+    transform-origin: center bottom;
+    background-image:
+        linear-gradient(rgba(0, 145, 255, .24) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 145, 255, .24) 1px, transparent 1px);
+    background-size: 100% 28px, 44px 100%;
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 28%, #000 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 28%, #000 100%);
+    box-shadow: 0 -10px 32px rgba(0, 119, 255, .08);
+}
+
+.tab__dashboard__content > * {
+    position: relative;
+    z-index: 1;
+}
+
+@media (max-width: 700px) {
+    .tab__dashboard__content::after {
+        height: 30%;
+        background-size: 100% 23px, 36px 100%;
+        opacity: .62;
+    }
+}
