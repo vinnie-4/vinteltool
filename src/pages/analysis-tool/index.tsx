@@ -222,13 +222,6 @@ const AnalysisTool = ({
                 <div className='dcircles__recent-digits' aria-label='Last ten digits'>{analysisTicks.slice(-10).map((tick, index, recent) => <span key={index} className={tick.digit % 2 === 0 ? 'is-even' : 'is-odd'} aria-label={tick.digit % 2 === 0 ? 'Even' : 'Odd'}>{tick.digit % 2 === 0 ? 'E' : 'O'}</span>)}</div>
                 <div className='dcircles__market-heading'><strong>{selectedIndex} Index</strong><span>{formatPrice(latestPrice, pipSize)}</span></div>
             </div>
-            {(showLegend || showStreak) && <div className={`dcircles__parity${showStreak && !showLegend ? ' dcircles__parity--streak-only' : ''}`}>
-                {showLegend && contractMode !== 'Even/Odd' && <>
-                    <div className='dcircles__parity-row'><span>Even</span><div className='dcircles__parity-track dcircles__parity-track--even'><i style={{ width: `${parityStats.evenPercent}%` }} /></div><b className='dcircles__parity-percent'>{parityStats.evenPercent.toFixed(1)}%</b></div>
-                    <div className='dcircles__parity-row'><span>Odd</span><div className='dcircles__parity-track dcircles__parity-track--odd'><i style={{ width: `${parityStats.oddPercent}%` }} /></div><b className='dcircles__parity-percent'>{parityStats.oddPercent.toFixed(1)}%</b></div>
-                </>}
-                {showStreak && <div className='dcircles__streak'><div className='dcircles__streak-sequence'>{parityStats.streak.map((value, index) => <span key={index} className={value === 'E' ? 'dcircles__streak-even' : 'dcircles__streak-odd'}>{value}</span>)}</div></div>}
-            </div>}
             {showContractProbabilities && <div className='dcircles__contract-probabilities' aria-live='polite'>
                 <div className='dcircles__contract-heading'><strong>Probabilities</strong><span>{Math.min(analysisTicks.length, windowSize)} / {windowSize}</span></div>
                 {[{ name: contractProbabilities.firstName, percent: contractProbabilities.firstPercent, tone: 'first' }, { name: contractProbabilities.secondName, percent: contractProbabilities.secondPercent, tone: 'second' }].map(item => <div className='dcircles__contract-row' key={item.name}>
