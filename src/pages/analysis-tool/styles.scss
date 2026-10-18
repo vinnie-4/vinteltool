@@ -155,3 +155,53 @@
 @media (max-width: 600px) {
   .dcircles__circle-panel > .dcircles__market-heading { margin-top: 0 !important; }
 }
+
+
+/* Final DCircles header alignment and compact teal styling */
+.dcircles__circle-panel > .dcircles__market-heading {
+  justify-content: space-between !important;
+  gap: 8px !important;
+  margin-top: 3px !important;
+  margin-bottom: 4px !important;
+  padding-top: 0 !important;
+}
+.dcircles__circle-panel > .dcircles__market-heading > strong {
+  order: 0 !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+  text-align: left !important;
+}
+.dcircles__circle-panel > .dcircles__market-heading > span {
+  order: 1 !important;
+  margin-left: auto !important;
+  text-align: right !important;
+  color: #00a6a6 !important;
+}
+.dcircles__circle-panel > .dcircles__market-heading + .dcircles__circles {
+  margin-top: 3px !important;
+}
+.dcircles__status,
+.dcircles__price strong,
+.dcircles__market-heading span,
+.dcircles__contract-fill--first {
+  color: #00a6a6 !important;
+}
+.dcircles__contract-fill--first {
+  background: #00a6a6 !important;
+}
+.dcircles__digit--rank-most .dcircles__circle {
+  border-color: #00a6a6 !important;
+}
+.dcircles__digit--rank-most .dcircles__circle,
+.dcircles__contract-fill--first {
+  box-shadow: none !important;
+}
+@media (max-width: 600px) {
+  .dcircles__controls {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  .dcircles__circle-panel {
+    margin-top: 3px !important;
+  }
+}
