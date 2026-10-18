@@ -267,3 +267,28 @@
 .dcircles__recent-digits .is-differs {
   background-color: #ef3f43 !important;
 }
+
+
+/* Manual Trader probability row refinements */
+.dcircles__contract-probabilities {
+  margin-top: 2px !important;
+}
+.dcircles__contract-track {
+  width: calc(100% + 2.5px) !important;
+}
+.dcircles__contract-label > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.dcircles__outcome-symbol {
+  display: inline-block;
+  flex: 0 0 auto;
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: -2px;
+  line-height: 1;
+}
+.dcircles__outcome-symbol--first { color: #00A6A6 !important; }
+.dcircles__outcome-symbol--second { color: #EF3F43 !important; }
