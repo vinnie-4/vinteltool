@@ -106,6 +106,7 @@ const ManualTraderStructure = () => {
     const tradeLockRef = useRef(false);
     const manualRunIdRef = useRef<string>('');
     const messageSubscriptionRef = useRef<any>(null);
+    const resultDisplayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const recordsByContractRef = useRef<Record<string, ManualTradeRecord>>({});
 
     const updateTradeRecord = (contractId: string, patch: Partial<ManualTradeRecord>) => {
@@ -138,9 +139,14 @@ const ManualTraderStructure = () => {
         // DBot's existing stage renderer displays "Contract bought" and then Won/Lost.
         if (isClosed) {
             document.body.classList.remove('manual-trade-in-progress');
+            if (resultDisplayTimerRef.current) clearTimeout(resultDisplayTimerRef.current);
             const normalizedStatus = String(contract.status || '').toLowerCase();
             const outcome = ['won', 'lost'].includes(normalizedStatus) ? normalizedStatus : Number(updatedRecord.profit ?? 0) > 0 ? 'won' : 'lost';
             run_panel.setManualContractResult(outcome as 'won' | 'lost');
+            resultDisplayTimerRef.current = setTimeout(() => {
+                run_panel.setManualContractResult('');
+                resultDisplayTimerRef.current = null;
+            }, 2000);
             run_panel.setContractStage(6);
             run_panel.setHasOpenContract(false);
         } else {
@@ -188,6 +194,8 @@ const ManualTraderStructure = () => {
     useEffect(() => () => {
         messageSubscriptionRef.current?.unsubscribe?.();
         messageSubscriptionRef.current = null;
+        if (resultDisplayTimerRef.current) clearTimeout(resultDisplayTimerRef.current);
+        document.body.classList.remove('manual-trade-in-progress');
     }, []);
 
     const selectedVolatility = Object.keys(VOLATILITY_SYMBOLS).find(name => VOLATILITY_SYMBOLS[name] === symbol) || 'Volatility 100 (1s)';
