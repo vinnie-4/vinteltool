@@ -495,3 +495,39 @@
   .dcircles__streak-sequence { gap: 1px !important; line-height: 1.1 !important; font-size: 10px !important; }
   .dcircles__market-heading { border-bottom: 0 !important; }
 }
+
+
+/* Android Manual Trader: desktop-style single-row trading inputs */
+@media (max-width: 767px) {
+  .manual-trader__trade-inputs {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    align-items: end !important;
+    gap: 4px !important;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 3px !important;
+    margin: 0 !important;
+  }
+  .manual-trader__trade-inputs label {
+    display: flex !important;
+    flex-direction: column !important;
+    min-width: 0 !important;
+    width: auto !important;
+    flex: initial !important;
+    gap: 2px !important;
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+    white-space: nowrap;
+  }
+  .manual-trader__trade-inputs input {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 30px !important;
+    min-height: 30px !important;
+    box-sizing: border-box !important;
+    padding: 2px 4px !important;
+    font-size: 12px !important;
+    text-align: center;
+  }
+}
