@@ -4,6 +4,7 @@ import { Localize } from '@deriv-com/translations';
 
 type TContractStageText = {
     contract_stage: number | undefined;
+    manual_contract_result?: 'bought' | 'won' | 'lost' | '';
 };
 
 export const text_contract_stages = Object.freeze({
@@ -16,7 +17,10 @@ export const text_contract_stages = Object.freeze({
     CONTRACT_CLOSED: 'Contract closed',
 });
 
-const ContractStageText: React.FC<TContractStageText> = ({ contract_stage }) => {
+const ContractStageText: React.FC<TContractStageText> = ({ contract_stage, manual_contract_result }) => {
+    if (manual_contract_result === 'won') return <>Won</>;
+    if (manual_contract_result === 'lost') return <>Lost</>;
+    if (manual_contract_result === 'bought') return <>Contract bought</>;
     const stage = contract_stage !== undefined ? contract_stage : contract_stages.NOT_RUNNING;
 
     switch (stage) {
