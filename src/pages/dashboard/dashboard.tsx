@@ -38,15 +38,25 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
     const [subtitleIndex, setSubtitleIndex] = React.useState(0);
     const [showGreetingHand, setShowGreetingHand] = React.useState(false);
 
+    // Show a short animated greeting for 2 seconds, then hide it for 60 seconds.
     React.useEffect(() => {
+        let cycleTimer: number | undefined;
         let hideTimer: number | undefined;
-        const showHand = () => {
+        let cancelled = false;
+
+        const runGreetingCycle = () => {
+            if (cancelled) return;
             setShowGreetingHand(true);
-            hideTimer = window.setTimeout(() => setShowGreetingHand(false), 2000);
+            hideTimer = window.setTimeout(() => {
+                setShowGreetingHand(false);
+                cycleTimer = window.setTimeout(runGreetingCycle, 60_000);
+            }, 2_000);
         };
-        const interval = window.setInterval(showHand, 45_000);
+
+        cycleTimer = window.setTimeout(runGreetingCycle, 60_000);
         return () => {
-            window.clearInterval(interval);
+            cancelled = true;
+            if (cycleTimer) window.clearTimeout(cycleTimer);
             if (hideTimer) window.clearTimeout(hideTimer);
         };
     }, []);
