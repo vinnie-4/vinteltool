@@ -580,3 +580,53 @@
         opacity: .62;
     }
 }
+
+
+/* Final dashboard polish: keep the tile floor visible and blend the
+   transaction drawer into the dashboard background. */
+.tab__dashboard__content {
+    background:
+        linear-gradient(180deg, rgba(2, 8, 23, .30) 0%, rgba(2, 8, 23, .40) 54%, rgba(2, 8, 23, .10) 100%),
+        url('../../../public/vinteltool-dashboard-bg.jpg') center center / cover no-repeat !important;
+    background-color: #020817 !important;
+}
+.tab__dashboard__content::after {
+    height: 39%;
+    opacity: .82;
+    background-size: 100% 25px, 40px 100%;
+}
+.tab__dashboard__header .title {
+    margin-top: .3rem;
+}
+.tab__dashboard__header .dashboard-greeting-subtitle,
+.tab__dashboard__header .subtitle {
+    margin-top: 1.5rem !important;
+}
+.tab__dashboard__header {
+    margin-bottom: 4.2rem !important;
+}
+.tab__dashboard .dc-drawer,
+.tab__dashboard .dc-drawer__content,
+.tab__dashboard .dc-drawer__container {
+    background-color: rgba(2, 8, 23, .90) !important;
+    background-image: linear-gradient(180deg, rgba(235, 247, 255, .90) 0%, rgba(122, 190, 230, .40) 18%, rgba(4, 24, 49, .94) 100%) !important;
+    border-color: rgba(79, 166, 220, .22) !important;
+}
+.tab__dashboard .dc-drawer__toggle,
+.tab__dashboard .dc-drawer__toggle-container {
+    background: linear-gradient(180deg, rgba(225, 242, 252, .88), rgba(4, 23, 47, .90)) !important;
+    border-color: rgba(89, 174, 224, .26) !important;
+}
+@media (max-width: 700px) {
+    .tab__dashboard__header {
+        margin-bottom: 4rem !important;
+    }
+    .tab__dashboard__header .dashboard-greeting-subtitle,
+    .tab__dashboard__header .subtitle {
+        margin-top: 1.35rem !important;
+    }
+    .tab__dashboard__content::after {
+        height: 36%;
+        background-size: 100% 22px, 34px 100%;
+    }
+}
