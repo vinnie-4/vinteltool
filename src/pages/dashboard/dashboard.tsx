@@ -109,7 +109,8 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                                     '--subtitle-duration': `${subtitleDuration}s`,
                                 } as React.CSSProperties}
                             >
-                                {'\"'}{subtitleWords.map((word, index) => (
+                                <span className='dashboard-greeting-quote dashboard-greeting-quote--open' aria-hidden='true'>“</span>
+                                {subtitleWords.map((word, index) => (
                                     <React.Fragment key={`${subtitleIndex}-${index}`}>
                                         <span
                                             className='dashboard-greeting-word'
@@ -119,7 +120,8 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                                         </span>
                                         {index < subtitleWords.length - 1 ? ' ' : ''}
                                     </React.Fragment>
-                                ))}{'\"'}
+                                ))}
+                                <span className='dashboard-greeting-quote dashboard-greeting-quote--close' aria-hidden='true'>”</span>
                             </div>
                         </div>
                         <div
