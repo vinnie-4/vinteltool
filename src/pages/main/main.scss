@@ -669,3 +669,21 @@ svg.deriv-contract-symbol {
     font-size: 11px !important;
   }
 }
+
+
+/* Manual Trader uses the compact Execution status/progress panel only; hide bot controls on this page alone. */
+body.manual-trader-active .animation__wrapper > #db-animation__run-button,
+body.manual-trader-active .animation__wrapper > #db-animation__stop-button,
+body.manual-trader-active .animation__wrapper > .run__button_wrapper {
+  display: none !important;
+}
+body.manual-trader-active .animation__wrapper {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  width: 100% !important;
+}
+body.manual-trader-active .animation__wrapper .animation__container {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
