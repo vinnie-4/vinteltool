@@ -17,6 +17,7 @@ import { CONNECTION_STATUS } from '@/external/bot-skeleton/services/api/observab
 import { isDbotRTL } from '@/external/bot-skeleton/utils/workspace';
 import { useApiBase } from '@/hooks/useApiBase';
 import { useStore } from '@/hooks/useStore';
+import { useLogout } from '@/hooks/useLogout';
 import { disableUrlParameterApplication, enableUrlParameterApplication, setupTradeTypeChangeListener } from '@/utils/blockly-url-param-handler';
 import { checkAndShowTradeTypeModal, getModalState, handleTradeTypeCancel, handleTradeTypeConfirm, resetUrlParamProcessing, setModalStateChangeCallback } from '@/utils/trade-type-modal-handler';
 import { Localize, localize } from '@deriv-com/translations';
@@ -66,6 +67,37 @@ const AppWrapper = observer(() => {
     const { isDesktop } = useDevice();
     const location = useLocation();
     const navigate = useNavigate();
+    const handleSessionLogout = useLogout();
+
+    // Sign out after five minutes without user activity; interactions keep the session alive.
+    useEffect(() => {
+        const INACTIVITY_TIMEOUT_MS = 300_000;
+        let inactivityTimer: ReturnType<typeof setTimeout> | undefined;
+        let loggedOut = false;
+        const hasAuthenticatedSession = () => Boolean(
+            localStorage.getItem('authToken') ||
+            localStorage.getItem('active_loginid') ||
+            localStorage.getItem('accountsList')
+        );
+        const resetInactivityTimer = () => {
+            if (inactivityTimer) clearTimeout(inactivityTimer);
+            if (loggedOut || !hasAuthenticatedSession()) return;
+            inactivityTimer = setTimeout(() => {
+                if (!hasAuthenticatedSession()) return;
+                loggedOut = true;
+                void handleSessionLogout();
+            }, INACTIVITY_TIMEOUT_MS);
+        };
+        const activityEvents: (keyof WindowEventMap)[] = ['pointerdown', 'pointermove', 'keydown', 'touchstart', 'scroll', 'click'];
+        activityEvents.forEach(eventName => window.addEventListener(eventName, resetInactivityTimer, { passive: true }));
+        document.addEventListener('visibilitychange', resetInactivityTimer);
+        resetInactivityTimer();
+        return () => {
+            if (inactivityTimer) clearTimeout(inactivityTimer);
+            activityEvents.forEach(eventName => window.removeEventListener(eventName, resetInactivityTimer));
+            document.removeEventListener('visibilitychange', resetInactivityTimer);
+        };
+    }, [handleSessionLogout]);
     const [left_tab_shadow, setLeftTabShadow] = useState<boolean>(false);
     const [right_tab_shadow, setRightTabShadow] = useState<boolean>(false);
     const [tradeTypeModalState, setTradeTypeModalState] = useState(getModalState());
