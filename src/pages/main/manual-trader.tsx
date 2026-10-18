@@ -123,8 +123,10 @@ const ManualTraderStructure = () => {
         const exitValue = contract.exit_tick_display_value ?? contract.exit_tick ?? contract.exit_spot;
         const sellTransactionId = contract.sell_transaction_id ?? contract.transaction_ids?.sell;
         const profitValue = contract.profit;
+        const normalizedStatus = String(contract.status || '').toLowerCase();
         const isClosed = contract.is_sold === 1 || contract.is_sold === true ||
-            ['won', 'lost', 'sold', 'expired'].includes(String(contract.status || '').toLowerCase());
+            contract.is_expired === 1 || contract.is_expired === true ||
+            ['won', 'lost', 'sold', 'expired'].includes(normalizedStatus);
         const currentRecord = recordsByContractRef.current[contractId];
         const updatedRecord = {
             ...(currentRecord || {}),
@@ -140,9 +142,12 @@ const ManualTraderStructure = () => {
         if (isClosed) {
             document.body.classList.remove('manual-trade-in-progress');
             if (resultDisplayTimerRef.current) clearTimeout(resultDisplayTimerRef.current);
-            const normalizedStatus = String(contract.status || '').toLowerCase();
-            const outcome = ['won', 'lost'].includes(normalizedStatus) ? normalizedStatus : Number(updatedRecord.profit ?? 0) > 0 ? 'won' : 'lost';
-            run_panel.setManualContractResult(outcome as 'won' | 'lost');
+            // Deriv may report a settled contract as sold rather than won/lost.
+            const settledProfit = profitValue !== undefined && profitValue !== null ? Number(profitValue) : Number(currentRecord?.profit ?? 0);
+            const outcome: 'won' | 'lost' = normalizedStatus === 'won' || normalizedStatus === 'lost'
+                ? normalizedStatus
+                : settledProfit > 0 ? 'won' : 'lost';
+            run_panel.setManualContractResult(outcome);
             resultDisplayTimerRef.current = setTimeout(() => {
                 run_panel.setManualContractResult('');
                 resultDisplayTimerRef.current = null;
@@ -183,9 +188,11 @@ const ManualTraderStructure = () => {
         const stream = api.onMessage();
         if (stream && typeof stream.subscribe === 'function') {
             messageSubscriptionRef.current = stream.subscribe((message: any) => {
-                const data = message?.data ?? message;
-                if (data?.msg_type === 'proposal_open_contract' || data?.proposal_open_contract) {
-                    applyOpenContract(data.proposal_open_contract ?? data);
+                const envelope = message?.data ?? message;
+                const data = envelope?.data ?? envelope;
+                const contract = data?.proposal_open_contract ?? envelope?.proposal_open_contract ?? data;
+                if (data?.msg_type === 'proposal_open_contract' || envelope?.msg_type === 'proposal_open_contract' || data?.proposal_open_contract || envelope?.proposal_open_contract) {
+                    applyOpenContract(contract);
                 }
             });
         }
