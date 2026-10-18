@@ -73,7 +73,7 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                                 lineHeight='xxl'
                                 weight='bold'
                                 style={{
-                                    fontSize: '40px',
+                                    fontSize: isDesktop ? '32px' : '30px',
                                     color: '#38BDF8',
                                     fontWeight: 700,
                                     fontFamily: 'Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
@@ -90,11 +90,12 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
                                     width: '100%',
                                     textAlign: 'center',
                                     marginTop: '4px',
-                                    fontSize: isDesktop ? '20px' : '17px',
+                                    fontSize: isDesktop ? '19px' : '17px',
                                     lineHeight: '1.3',
                                     fontFamily: 'Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif',
-                                    fontWeight: 700,
-                                    color: '#8B5CF6',
+                                    fontWeight: 400,
+                                    fontStyle: 'italic',
+                                    color: '#9BB5D1',
                                     '--subtitle-duration': `${subtitleDuration}s`,
                                 } as React.CSSProperties}
                             >
