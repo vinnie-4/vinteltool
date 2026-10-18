@@ -36,13 +36,19 @@
     &__wrapper {
         display: flex;
         align-items: center;
-        height: 34px;
+        height: 40px;
         gap: 0;
-        margin-left: 0;
-        padding-left: 0;
-        transform: translateY(6px);
+        margin: 0;
+        padding: 0;
+        transform: none;
         width: 100%;
         box-sizing: border-box;
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        z-index: 1000;
+        background: #fff;
+        align-items: stretch;
     }
 
     &__run-button,
@@ -54,7 +60,9 @@
     }
 
     &__container {
-        padding: 3px 8px;
+        padding: 5px 12px;
+        border-radius: 0 !important;
+        background: #fff;
     }
 
     &__text {
@@ -80,24 +88,27 @@
     }
 
     &__run-button {
-        background-color: var(--button-primary-default);
+        background: linear-gradient(110deg, #3f82f5 0%, #063b83 100%) !important;
+        color: #fff !important;
+        border-radius: 0 !important;
+        font-size: 14px !important;
 
         &:hover,
         &:focus,
         &:active {
-            background-color: var(--button-primary-default) !important;
+            background: linear-gradient(110deg, #3f82f5 0%, #063b83 100%) !important;
             opacity: 1 !important;
         }
     }
 
     &__pause-resume-button {
-        background-color: #f59e0b !important;
+        background: linear-gradient(110deg, #3f82f5 0%, #063b83 100%) !important;
         color: #fff !important;
 
         &:hover,
         &:focus,
         &:active {
-            background-color: #f59e0b !important;
+            background: linear-gradient(110deg, #3f82f5 0%, #063b83 100%) !important;
             color: #fff !important;
             opacity: 1 !important;
         }
@@ -137,7 +148,7 @@
         display: flex;
         flex-direction: column;
         justify-content: space-evenly;
-        border-radius: $BORDER_RADIUS;
+        border-radius: 0;
         border: solid 1px var(--border-normal);
         position: relative;
         flex: 1 1 auto;
@@ -289,4 +300,60 @@
 .animation__container .animation__progress {
     position: relative;
     z-index: 1;
+}
+
+
+/* Screenshot-matched bottom Run + Execution strip */
+.animation__wrapper {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    z-index: 1000;
+    background: #fff;
+}
+
+.animation__wrapper > #db-animation__run-button,
+.animation__wrapper > #db-animation__stop-button,
+.animation__wrapper > .animation__pause-resume-button {
+    border-radius: 0 !important;
+    margin: 0 !important;
+}
+
+.animation__wrapper > #db-animation__run-button,
+.animation__wrapper > .animation__pause-resume-button {
+    min-width: 148px;
+}
+
+.animation__wrapper .animation__container {
+    background: #fff;
+    border-radius: 0;
+    border-top: 1px solid #d8d8d8;
+    border-bottom: 1px solid #d8d8d8;
+}
+
+.animation__wrapper .animation__container:has(.execution-control) {
+    background: #fff;
+}
+
+.animation__wrapper .animation__text {
+    margin-bottom: 3px;
+    line-height: 16px;
+}
+
+.animation__wrapper .animation__progress-bar {
+    background-color: #00a6a6;
+}
+
+@media (max-width: 767px) {
+    .animation__wrapper {
+        height: 40px;
+    }
+    .animation__wrapper > #db-animation__run-button,
+    .animation__wrapper > .animation__pause-resume-button {
+        min-width: 148px;
+    }
 }
