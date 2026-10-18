@@ -196,8 +196,6 @@ const ManualTraderStructure = () => {
                 if (!manualRunIdRef.current) manualRunIdRef.current = `manual-${Date.now()}`;
                 run_panel.run_id = manualRunIdRef.current;
             }
-            run_panel.setActiveTabIndex(1);
-            run_panel.toggleDrawer(true);
             // Execute sequentially so bulk purchases do not race each other.
             for (let index = 0; index < count; index += 1) {
                 const buy = await buyContract(api, CONTRACT_TYPES[selection], amount, symbol, ticks, Number(prediction));
