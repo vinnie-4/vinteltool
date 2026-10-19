@@ -138,6 +138,7 @@ const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher 
                     className={classNames('acc-info', {
                         'acc-info--is-virtual': isVirtual,
                         'acc-info--interactive': showChevron,
+                        'acc-info--transactions-collapsed': !run_panel?.is_drawer_open,
                     })}
                     onClick={toggleDropdown}
                     onKeyDown={e => {
