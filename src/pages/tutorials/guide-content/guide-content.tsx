@@ -4,7 +4,6 @@ import Dialog from '@/components/shared_ui/dialog';
 import Text from '@/components/shared_ui/text';
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { useStore } from '@/hooks/useStore';
-import { removeKeyValue } from '@/utils/settings';
 import { LegacyPlay1pxIcon } from '@deriv/quill-icons/Legacy';
 import { Localize, localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
@@ -41,18 +40,10 @@ const GuideContent = ({ guide_tab_content, video_tab_content, is_dialog_open }: 
     } = dashboard;
 
     const triggerTour = (type: string) => {
-        if (type === 'OnBoard') {
-            removeKeyValue('onboard_tour_token');
-            setActiveTab(DBOT_TABS.DASHBOARD);
-            if (!isDesktop) setActiveTour('onboarding');
-            setTourDialogVisibility(true);
-            setTimeout(() => {
-                const dbotDashboardSection = document.getElementById('id-dbot-dashboard');
-                if (dbotDashboardSection) {
-                    dbotDashboardSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }
-            }, 100);
-        } else {
+        // The legacy welcome/onboarding tour is intentionally removed from VintelTool.
+        // Only the explicit Bot Builder tutorial remains available.
+        if (type === 'OnBoard') return;
+        {
             setActiveTab(DBOT_TABS.BOT_BUILDER);
             if (!isDesktop) setActiveTour('bot_builder');
             setTourDialogVisibility(true);
