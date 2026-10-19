@@ -440,3 +440,13 @@
         display: none !important;
     }
 }
+
+
+/* The duplicate desktop overlay is the TradeAnimation rendered inside the
+   mobile drawer footer (controls__animation). Hide only that instance on
+   desktop; retain the primary dashboard execution panel and mobile footer. */
+@media (min-width: 768px) {
+    .animation__wrapper.controls__animation {
+        display: none !important;
+    }
+}
