@@ -432,3 +432,28 @@
 }
 
 
+
+
+/* Prevent the desktop Run/Execution strip from escaping its Bot Builder wrapper. */
+@media (min-width: 768px) {
+    .main__run-strategy-wrapper > .animation__wrapper {
+        /* The parent owns desktop placement; avoid a second viewport-fixed overlay. */
+        position: relative !important;
+        inset: auto !important;
+        left: auto !important;
+        right: auto !important;
+        top: auto !important;
+        bottom: auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        transform: none !important;
+        z-index: 2;
+    }
+
+    .main__run-strategy-wrapper > .animation__wrapper.animation__wrapper--dashboard {
+        left: auto !important;
+        right: auto !important;
+        width: 100% !important;
+        transform: none !important;
+    }
+}
