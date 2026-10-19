@@ -579,3 +579,15 @@
     color: #ff444f !important;
     text-decoration: underline !important;
 }
+
+
+/* Keep the top-header Real/Demo balance control transparent; no navy button fill. */
+#dt_core_account-info_acc-info,
+#dt_core_account-info_acc-info:hover,
+#dt_core_account-info_acc-info:focus,
+#dt_core_account-info_acc-info:active,
+#dt_core_account-info_acc-info:focus-visible {
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
