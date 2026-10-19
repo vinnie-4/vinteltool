@@ -12,18 +12,10 @@ export const user_guide_content = (): TUserGuideContent[] => [
     {
         id: 1,
         type: 'Tour',
-        subtype: 'OnBoard',
-        content: localize('Get started on Deriv Bot'),
-        src: getImageLocation('dbot-onboard-tour.png'),
-        search_id: `${USER_GUIDE}-0`,
-    },
-    {
-        id: 2,
-        type: 'Tour',
         subtype: 'BotBuilder',
-        content: localize('Let’s build a bot!'),
+        content: localize('Build a bot in VintelTool'),
         src: getImageLocation('bot-builder-tour.webp'),
-        search_id: `${USER_GUIDE}-1`,
+        search_id: `${USER_GUIDE}-0`,
     },
 ];
 
@@ -63,6 +55,30 @@ export const guide_content = (): TGuideContent[] => [
 ];
 
 export const faq_content = (): TFaqContent[] => [
+    {
+        title: localize('How is VintelTool organised?'),
+        description: [
+            {
+                type: 'text',
+                content: localize(
+                    'Use Dashboard to start from the main workspace. Use the account switcher in the header to view and select an available Demo or Real account; the available choices depend on the Deriv accounts connected to your session.'
+                ),
+            },
+            {
+                type: 'text',
+                content: localize(
+                    'Bot Builder is the drag-and-drop workspace for creating and editing bots. Free Bots is where you can browse and load published XML bots. Analysis Tool and Charts are for market analysis, Manual Trader is for manual contracts, and Tutorials contains the step-by-step bot guide, Deriv learning videos, FAQs, and Quick Strategy guides.'
+                ),
+            },
+            {
+                type: 'text',
+                content: localize(
+                    'Always check the selected account, stake, duration, and risk limits before running a bot or placing a trade. Trading involves risk.'
+                ),
+            },
+        ],
+        search_id: 'faq-vinteltool-navigation',
+    },
     {
         title: localize('What is Deriv Bot?'),
         description: [
