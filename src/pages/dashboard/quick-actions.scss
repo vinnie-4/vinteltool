@@ -156,6 +156,29 @@
 .tab__dashboard__quick-card--purple { --card-accent: #a970ff; }
 .tab__dashboard__quick-card--amber { --card-accent: #ffc400; }
 
+/* Quick Bot Builder action: match the shared navy gradient and pure-white text. */
+.tab__dashboard__quick-card--amber {
+    background: linear-gradient(105deg, #0d1f43 0%, #17386b 55%, #10274f 100%);
+    border: 1px solid rgba(255, 255, 255, .16);
+    border-top: 2px solid rgba(255, 255, 255, .22);
+    color: #fff;
+}
+.tab__dashboard__quick-card--amber .tab__dashboard__quick-card__title,
+.tab__dashboard__quick-card--amber .tab__dashboard__quick-card__description,
+.tab__dashboard__quick-card--amber .tab__dashboard__quick-card__footer,
+.tab__dashboard__quick-card--amber .tab__dashboard__quick-card__arrow {
+    color: #fff !important;
+}
+.tab__dashboard__quick-card--amber .tab__dashboard__quick-card__icon {
+    background: rgba(255, 255, 255, .09);
+    border-color: rgba(255, 255, 255, .18);
+}
+.tab__dashboard__quick-card--amber:hover,
+.tab__dashboard__quick-card--amber:focus-visible {
+    background: linear-gradient(105deg, #142b55 0%, #204578 55%, #17335f 100%);
+    border-color: rgba(255, 255, 255, .28);
+}
+
 .tab__dashboard__quick-card__icon {
     width: 5.8rem;
     height: 5.8rem;
