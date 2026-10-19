@@ -12,11 +12,34 @@
     &__clear-button { @include mobile-or-tablet-screen { position: absolute !important; top: 0.5rem; right: 1.6rem; height: 2.6rem !important; min-width: 8rem; } }
 }
 
-/* Visual-only: match Reset and Download backgrounds to the Run button. */
+/* Shared subtle navy action style: Run, Download and transaction Reset.
+   Visual-only; button handlers and trade logic remain unchanged. */
+:root {
+    --vintel-action-navy: linear-gradient(105deg, #0d1f43 0%, #17386b 55%, #10274f 100%);
+}
+
 .run-panel__footer-button,
 .run-panel__clear-button,
-.transactions .download__button {
-    background-color: var(--button-primary-default) !important;
+.transactions .download__button,
+.main__run-strategy-wrapper .animation__button#db-animation #db-animation__run-button {
+    background: var(--vintel-action-navy) !important;
+    color: #fff !important;
+    border-color: rgba(255, 255, 255, .18) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 4px 12px rgba(10, 28, 68, .18);
+}
+
+.run-panel__footer-button *,
+.run-panel__clear-button *,
+.transactions .download__button *,
+.main__run-strategy-wrapper .animation__button#db-animation #db-animation__run-button * {
+    color: #fff !important;
+}
+
+.run-panel__footer-button:hover:not(:disabled),
+.run-panel__clear-button:hover:not(:disabled),
+.transactions .download__button:hover:not(:disabled),
+.main__run-strategy-wrapper .animation__button#db-animation #db-animation__run-button:hover:not(:disabled) {
+    background: linear-gradient(105deg, #142b55 0%, #204578 55%, #17335f 100%) !important;
 }
 
 .controls {
