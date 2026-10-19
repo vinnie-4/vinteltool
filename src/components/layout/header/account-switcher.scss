@@ -590,4 +590,27 @@
     background: transparent !important;
     background-color: transparent !important;
     box-shadow: none !important;
+    border: 0 !important;
+    outline: 0 !important;
+}
+
+#dt_core_account-info_acc-info::before,
+#dt_core_account-info_acc-info::after {
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+.acc-modal__logout > span {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    color: #000 !important;
+    font-size: 15px !important;
+    line-height: 1.4 !important;
+    flex: 0 0 auto !important;
+}
+
+.acc-modal__logout > svg {
+    display: block !important;
+    flex: 0 0 20px !important;
 }
