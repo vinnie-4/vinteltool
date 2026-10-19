@@ -581,3 +581,19 @@
         padding: .7rem .65rem max(1rem, env(safe-area-inset-bottom));
     }
 }
+
+
+/* VintelTool Quick Bot Builder action: keep the primary Load button navy with white text. */
+.vintel-quick-builder-modal .vqb-load,
+.vintel-quick-builder-modal .vqb-load:visited,
+.vintel-quick-builder-modal .vqb-load:hover,
+.vintel-quick-builder-modal .vqb-load:focus-visible,
+.vintel-quick-builder-modal .vqb-load:disabled {
+    background: linear-gradient(105deg, #0d1f43 0%, #17386b 55%, #10274f 100%) !important;
+    color: #fff !important;
+    border: 1px solid rgba(255, 255, 255, .18) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 4px 12px rgba(10, 28, 68, .18) !important;
+}
+.vintel-quick-builder-modal .vqb-load:hover:not(:disabled) {
+    background: linear-gradient(105deg, #142b55 0%, #204578 55%, #17335f 100%) !important;
+}
