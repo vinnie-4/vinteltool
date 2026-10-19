@@ -11,8 +11,6 @@ export const FREE_BOTS: TFreeBot[] = [
     {
         id: 'vintel-under-6-recovery-under-5',
         name: 'VintelTool Under 6 Recovery Under 5',
-        description: 'Digits • UNDER 6 → UNDER 5 on loss • R_25 • 1 tick • base stake $1 • Martingale ×2',
-        tags: ['Digits', 'UNDER 6', 'LOSS → UNDER 5', 'R_25', '1 TICK', '$1 STAKE', 'MARTINGALE ×2'],
         xml: VINTEL_UNDER_6_RECOVERY_UNDER_5_XML,
     },
 ];
