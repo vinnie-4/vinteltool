@@ -490,6 +490,21 @@
 }
 .vqb-close:focus-visible { outline: 2px solid #10bfc4; outline-offset: 2px; }
 .vqb-load:disabled { opacity: .7; cursor: progress; }
+
+/* Match the shared subtle navy action buttons with crisp white text. */
+.vqb-load {
+    background: linear-gradient(105deg, #0d1f43 0%, #17386b 55%, #10274f 100%) !important;
+    color: #fff !important;
+    border: 1px solid rgba(255, 255, 255, .18);
+    font-family: var(--vintel-font-family, 'IBM Plex Sans', Arial, sans-serif);
+    font-weight: 600;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 4px 12px rgba(10, 28, 68, .18);
+}
+.vqb-load:hover:not(:disabled) {
+    background: linear-gradient(105deg, #142b55 0%, #204578 55%, #17335f 100%) !important;
+    color: #fff !important;
+}
+.vqb-load:disabled { color: #fff !important; }
 .vqb-load-error {
     margin: .5rem 0;
     padding: .7rem .85rem;
