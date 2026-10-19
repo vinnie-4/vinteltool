@@ -124,3 +124,12 @@
         }
     }
 }
+
+
+/* On Dashboard, keep the main navigation tabs visible above the expanded
+   transactions drawer instead of letting the drawer rise over them. */
+@media (max-width: 767px) {
+    .run-panel--dashboard.dc-drawer--open {
+        transform: translateY(calc(-100% + 3.6rem + 5.6rem)) !important;
+    }
+}
