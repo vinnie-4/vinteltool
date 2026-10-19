@@ -56,8 +56,10 @@ const FreeBots = ({ bots = FREE_BOTS, onLoadBot }: TFreeBotsProps) => {
                         <article className='free-bots__card' key={bot.id}>
                             <div className='free-bots__body'>
                                 <h3 className='free-bots__name'>{bot.name}</h3>
-                                {bot.description && <p className='free-bots__description'>{bot.description}</p>}
-                                {!!bot.tags?.length && (
+                                {bot.id !== 'vintel-under-6-recovery-under-5' && bot.description && (
+                                    <p className='free-bots__description'>{bot.description}</p>
+                                )}
+                                {bot.id !== 'vintel-under-6-recovery-under-5' && !!bot.tags?.length && (
                                     <div className='free-bots__tags'>
                                         {bot.tags.map(tag => <span key={tag}>{tag}</span>)}
                                     </div>
