@@ -689,7 +689,12 @@ body.manual-trade-in-progress .animation__wrapper .animation__container {
 }
 
 
-/* Blue primary action buttons with white text, including execution controls. */
+/* Shared subtle navy primary actions with pure-white text.
+   Keep this late in main.scss so it overrides legacy blue button rules. */
+:root {
+    --vintel-action-navy: linear-gradient(105deg, #0d1f43 0%, #17386b 55%, #10274f 100%);
+    --vintel-action-navy-hover: linear-gradient(105deg, #142b55 0%, #204578 55%, #17335f 100%);
+}
 #db-animation__run-button,
 #db-animation__stop-button,
 #db-animation__pause-button,
@@ -700,8 +705,9 @@ button[id*="reset"],
 button[class*="reset"],
 .dc-btn--primary {
     color: #fff !important;
-    background: linear-gradient(110deg, #1760d4 0%, #347ff0 100%) !important;
-    border-color: #347ff0 !important;
+    background: var(--vintel-action-navy) !important;
+    border-color: rgba(255, 255, 255, .18) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 4px 12px rgba(10, 28, 68, .18);
 }
 #db-animation__run-button *,
 #db-animation__stop-button *,
@@ -713,6 +719,18 @@ button[id*="reset"] *,
 button[class*="reset"] *,
 .dc-btn--primary * {
     color: #fff !important;
+}
+#db-animation__run-button:hover:not(:disabled),
+#db-animation__stop-button:hover:not(:disabled),
+#db-animation__pause-button:hover:not(:disabled),
+#db-animation__resume-button:hover:not(:disabled),
+button[id*="download"]:hover:not(:disabled),
+button[class*="download"]:hover:not(:disabled),
+button[id*="reset"]:hover:not(:disabled),
+button[class*="reset"]:hover:not(:disabled),
+.dc-btn--primary:hover:not(:disabled) {
+    color: #fff !important;
+    background: var(--vintel-action-navy-hover) !important;
 }
 /* Transaction expand/collapse strip blends from white into dashboard navy. */
 .animation__wrapper,
