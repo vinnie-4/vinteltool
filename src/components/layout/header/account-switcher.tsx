@@ -231,7 +231,7 @@ const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher 
                                 onLogout?.();
                             }}
                         >
-                            <span>Logout</span>
+                            {'Logout'}
                             <svg width='20' height='20' viewBox='0 0 20 20' fill='none' aria-hidden='true'>
                                 <path d='M8 4H4.8C4.36 4 4 4.36 4 4.8V15.2C4 15.64 4.36 16 4.8 16H8' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
                                 <path d='M11 6L15 10L11 14' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round' />
