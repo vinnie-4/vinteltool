@@ -614,3 +614,22 @@
     display: block !important;
     flex: 0 0 20px !important;
 }
+
+
+/* Subtle navy fill is shown only while the transaction drawer is collapsed. */
+#dt_core_account-info_acc-info.acc-info--transactions-collapsed {
+    background: rgba(11, 27, 58, 0.28) !important;
+    background-color: rgba(11, 27, 58, 0.28) !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    outline: 0 !important;
+}
+
+#dt_core_account-info_acc-info:not(.acc-info--transactions-collapsed),
+#dt_core_account-info_acc-info:not(.acc-info--transactions-collapsed):hover,
+#dt_core_account-info_acc-info:not(.acc-info--transactions-collapsed):focus,
+#dt_core_account-info_acc-info:not(.acc-info--transactions-collapsed):active,
+#dt_core_account-info_acc-info:not(.acc-info--transactions-collapsed):focus-visible {
+    background: transparent !important;
+    background-color: transparent !important;
+}
