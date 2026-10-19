@@ -6,6 +6,7 @@ import VINTEL_UNDER_6_RECOVERY_UNDER_5_XML from '@/xml/VintelTool Under 6 Recove
 export type TFreeBot = { id: string; name: string; xml: string; description?: string; tags?: string[] };
 type TFreeBotsProps = { bots?: TFreeBot[]; onLoadBot: (bot: TFreeBot) => void | Promise<void> };
 type TPublishedBot = { id?: string; name?: string; description?: string; category?: string; filename?: string; xml?: string; visible?: boolean; tags?: string[]; created_at?: string | number; uploaded_at?: string | number; createdAt?: string | number; uploadedAt?: string | number; updated_at?: string | number; updatedAt?: string | number; timestamp?: string | number };
+type TPublishedFreeBot = TFreeBot & { publishedAt: number; sourceIndex: number };
 
 export const FREE_BOTS: TFreeBot[] = [
     {
@@ -17,7 +18,7 @@ export const FREE_BOTS: TFreeBot[] = [
 
 const FreeBots = ({ bots = FREE_BOTS, onLoadBot }: TFreeBotsProps) => {
     const [loading_bot_id, setLoadingBotId] = React.useState<string | null>(null);
-    const [publishedBots, setPublishedBots] = React.useState<TFreeBot[]>([]);
+    const [publishedBots, setPublishedBots] = React.useState<TPublishedFreeBot[]>([]);
     React.useEffect(() => {
         let active = true;
         fetch('https://raw.githubusercontent.com/DerivFX4/vinteltool/main/brand.config.json', { cache: 'no-store' })
@@ -25,8 +26,22 @@ const FreeBots = ({ bots = FREE_BOTS, onLoadBot }: TFreeBotsProps) => {
             .then(config => {
                 const records: TPublishedBot[] = config?.studio_settings?.bot_store?.bots;
                 if (!active || !Array.isArray(records)) return;
-                const mapped = records.filter(bot => bot && bot.visible !== false && typeof bot.xml === 'string' && /<\\s*xml\\b|<xml[\\s>]/i.test(bot.xml) && /<block\\b/i.test(bot.xml))
-                    .map(bot => ({ id: String(bot.id || bot.filename || bot.name), name: String(bot.name || 'VintelTool Free Bot'), description: [bot.description, bot.category ? 'Category: ' + bot.category : ''].filter(Boolean).join(' · '), tags: bot.tags || (bot.category ? [bot.category, 'FREE XML BOT'] : ['FREE XML BOT']), xml: bot.xml as string }));
+                const mapped: TPublishedFreeBot[] = records
+                    .filter(bot => bot && bot.visible !== false && typeof bot.xml === 'string' && /<\s*xml\b/i.test(bot.xml) && /<block\b/i.test(bot.xml))
+                    .map((bot, index) => {
+                        const rawDate = bot.uploaded_at ?? bot.uploadedAt ?? bot.created_at ?? bot.createdAt ?? bot.updated_at ?? bot.updatedAt ?? bot.timestamp;
+                        const parsedDate = typeof rawDate === 'number' ? (rawDate < 1e12 ? rawDate * 1000 : rawDate) : Date.parse(String(rawDate ?? ''));
+                        return {
+                            id: String(bot.id || bot.filename || bot.name || `published-xml-${index}`),
+                            name: String(bot.name || bot.filename || 'VintelTool Free Bot'),
+                            description: [bot.description, bot.category ? 'Category: ' + bot.category : ''].filter(Boolean).join(' · '),
+                            tags: bot.tags || (bot.category ? [bot.category, 'FREE XML BOT'] : ['FREE XML BOT']),
+                            xml: bot.xml as string,
+                            publishedAt: Number.isFinite(parsedDate) ? parsedDate : 0,
+                            sourceIndex: index,
+                        };
+                    })
+                    .sort((a, b) => b.publishedAt - a.publishedAt || b.sourceIndex - a.sourceIndex);
                 setPublishedBots(mapped);
             }).catch(error => console.warn('Could not load published Free Bots catalog:', error));
         return () => { active = false; };
