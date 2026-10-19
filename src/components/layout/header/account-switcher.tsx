@@ -172,8 +172,8 @@ const AccountSwitcher = observer(({ activeAccount, onLogout }: TAccountSwitcher 
             </AccountInfoWrapper>
 
             {isOpen && (
-                <div className='acc-modal-backdrop' role='presentation' onMouseDown={e => e.stopPropagation()}>
-                    <div className='acc-modal' role='dialog' aria-modal='true' aria-label='Accounts'>
+                <div className='acc-modal-backdrop' role='presentation' onMouseDown={() => setIsOpen(false)}>
+                    <div className='acc-modal' role='dialog' aria-modal='true' aria-label='Accounts' onMouseDown={e => e.stopPropagation()}>
                         <div className='acc-modal__tabs' role='tablist' aria-label='Account type'>
                             <button type='button' role='tab' aria-selected={activeTab === 'real'} className={classNames('acc-modal__tab', { 'acc-modal__tab--active': activeTab === 'real' })} style={{ background: '#fff', color: '#000' }} onClick={() => setSelectedTab('real')}>Real</button>
                             <button type='button' role='tab' aria-selected={activeTab === 'demo'} className={classNames('acc-modal__tab', { 'acc-modal__tab--active': activeTab === 'demo' })} style={{ background: '#fff', color: '#000' }} onClick={() => setSelectedTab('demo')}>Demo</button>
