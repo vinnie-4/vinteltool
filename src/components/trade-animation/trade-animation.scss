@@ -430,3 +430,13 @@
         flex: 0 1 148px !important;
     }
 }
+
+
+/* Desktop has its own dashboard execution strip; suppress the legacy fixed
+   overlay duplicate there while leaving mobile controls and the dashboard
+   strip untouched. */
+@media (min-width: 768px) {
+    .animation__wrapper:not(.animation__wrapper--dashboard) {
+        display: none !important;
+    }
+}
