@@ -53,7 +53,8 @@ const DashboardComponent = observer(({ handleTabChange }: TMobileIconGuide) => {
             }, 2_000);
         };
 
-        cycleTimer = window.setTimeout(runGreetingCycle, 60_000);
+        // Greet once when the dashboard opens, then repeat after each 60-second hidden period.
+        runGreetingCycle();
         return () => {
             cancelled = true;
             if (cycleTimer) window.clearTimeout(cycleTimer);
