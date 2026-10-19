@@ -5,7 +5,7 @@ import VINTEL_UNDER_6_RECOVERY_UNDER_5_XML from '@/xml/VintelTool Under 6 Recove
 
 export type TFreeBot = { id: string; name: string; xml: string; description?: string; tags?: string[] };
 type TFreeBotsProps = { bots?: TFreeBot[]; onLoadBot: (bot: TFreeBot) => void | Promise<void> };
-type TPublishedBot = { id?: string; name?: string; description?: string; category?: string; filename?: string; xml?: string; visible?: boolean; tags?: string[] };
+type TPublishedBot = { id?: string; name?: string; description?: string; category?: string; filename?: string; xml?: string; visible?: boolean; tags?: string[]; created_at?: string | number; uploaded_at?: string | number; createdAt?: string | number; uploadedAt?: string | number; updated_at?: string | number; updatedAt?: string | number; timestamp?: string | number };
 
 export const FREE_BOTS: TFreeBot[] = [
     {
@@ -31,7 +31,10 @@ const FreeBots = ({ bots = FREE_BOTS, onLoadBot }: TFreeBotsProps) => {
             }).catch(error => console.warn('Could not load published Free Bots catalog:', error));
         return () => { active = false; };
     }, []);
-    const allBots = [...bots, ...publishedBots.filter(published => !bots.some(existing => existing.id === published.id))];
+    const allBots = [
+        ...bots.map((bot, index) => ({ ...bot, publishedAt: 0, sourceIndex: -bots.length + index })),
+        ...publishedBots.filter(published => !bots.some(existing => existing.id === published.id)),
+    ].sort((a, b) => b.publishedAt - a.publishedAt || b.sourceIndex - a.sourceIndex);
 
     if (!allBots.length) return null;
 
@@ -56,10 +59,8 @@ const FreeBots = ({ bots = FREE_BOTS, onLoadBot }: TFreeBotsProps) => {
                         <article className='free-bots__card' key={bot.id}>
                             <div className='free-bots__body'>
                                 <h3 className='free-bots__name'>{bot.name}</h3>
-                                {bot.id !== 'vintel-under-6-recovery-under-5' && bot.description && (
-                                    <p className='free-bots__description'>{bot.description}</p>
-                                )}
-                                {bot.id !== 'vintel-under-6-recovery-under-5' && !!bot.tags?.length && (
+                                {bot.description && <p className='free-bots__description'>{bot.description}</p>}
+                                {!!bot.tags?.length && (
                                     <div className='free-bots__tags'>
                                         {bot.tags.map(tag => <span key={tag}>{tag}</span>)}
                                     </div>
