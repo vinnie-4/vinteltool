@@ -13,7 +13,7 @@ export const user_guide_content = (): TUserGuideContent[] => [
         id: 1,
         type: 'Tour',
         subtype: 'BotBuilder',
-        content: localize('Build a bot in VintelTool'),
+        content: localize('Build a bot with the VintelTool Bot Builder'),
         src: getImageLocation('bot-builder-tour.webp'),
         search_id: `${USER_GUIDE}-0`,
     },
@@ -80,7 +80,7 @@ export const faq_content = (): TFaqContent[] => [
         search_id: 'faq-vinteltool-navigation',
     },
     {
-        title: localize('What is Deriv Bot?'),
+        title: localize('What is the VintelTool Bot Builder?'),
         description: [
             {
                 type: 'text',
