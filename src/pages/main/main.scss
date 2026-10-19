@@ -727,5 +727,6 @@ button[class*="reset"] *,
 }
 .dc-drawer__toggle,
 .dc-drawer__toggle-container {
-    background: linear-gradient(180deg, #edf6ff 0%, #c6e0f7 35%, #356ba4 72%, #061a36 100%) !important;
+    /* Transactions drawer fades from navy at the top to light at the bottom. */
+    background: linear-gradient(180deg, #061a36 0%, #356ba4 35%, #c6e0f7 72%, #edf6ff 100%) !important;
 }
