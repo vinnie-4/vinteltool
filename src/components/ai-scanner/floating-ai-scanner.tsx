@@ -449,7 +449,6 @@ const FloatingAIScanner = () => {
                     {recoveryExpanded && <div className='ai-scanner__recovery-options'>
                         <strong>Recovery</strong>
                         <label>Analyse last <input type='number' defaultValue='2' min='1' max='30' /> digits</label>
-                        <p>If the last selected digits are odd, trade Even. If they are even, trade Odd.</p>
                     </div>}
                     <div className='ai-scanner__config-actions'>
                         <button type='button' onClick={() => setShowLoadConfig(false)}>Back</button>
