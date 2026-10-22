@@ -325,7 +325,6 @@ const AnalysisTool = ({
                             : (outcome === 'M' ? 'Matches ' + predictionDigit : 'Differs ' + predictionDigit);
                     return <span key={index} className={tone} aria-label={description}>{outcome}</span>;
                 })}</div>
-            </div>
             {showContractProbabilities && <div className='dcircles__contract-probabilities' aria-live='polite'>
                 <div className='dcircles__contract-heading'><strong>Probabilities</strong><span>{Math.min(analysisTicks.length, windowSize)} / {windowSize}</span></div>
                 {[{ name: contractProbabilities.firstName, percent: contractProbabilities.firstPercent, tone: 'first' }, { name: contractProbabilities.secondName, percent: contractProbabilities.secondPercent, tone: 'second' }].map(item => <div className='dcircles__contract-row' key={item.name}>
