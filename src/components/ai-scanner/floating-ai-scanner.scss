@@ -1,11 +1,15 @@
 .ai-scanner__fab {
-    position: fixed; right: 16px; bottom: 78px; z-index: 1200; width: 58px; height: 58px;
-    border: 0; border-radius: 50%; background: var(--brand-red, #e53935); color: #fff;
-    box-shadow: 0 8px 24px rgba(0,0,0,.24); display:flex; flex-direction:column;
-    align-items:center; justify-content:center; cursor:pointer;
+    position: fixed; right: 34px; bottom: clamp(130px, 12vh, 180px); z-index: 1200;
+    width: 72px; height: 72px; padding: 0; touch-action: none; user-select: none;
+    border: 2px solid rgba(214, 190, 255, .72); border-radius: 50%;
+    background: radial-gradient(circle at 32% 24%, rgba(190, 153, 255, .98), rgba(112, 68, 177, .94) 58%, rgba(76, 42, 132, .98));
+    color: #fff; box-shadow: 0 0 0 3px rgba(162, 119, 255, .16), 0 0 24px rgba(153, 106, 255, .52), inset 0 1px 8px rgba(255,255,255,.28);
+    display:flex; align-items:center; justify-content:center; cursor: grab;
 }
-.ai-scanner__fab span { font-size:17px; line-height:16px; }
-.ai-scanner__fab b { font-size:11px; letter-spacing:.8px; }
+.ai-scanner__fab:active { cursor: grabbing; }
+.ai-scanner__fab.is-positioned { right: auto; bottom: auto; }
+.ai-scanner__fab-label { font-size: 27px; line-height: 1; font-weight: 900; letter-spacing: .3px; text-shadow: 0 1px 5px rgba(255,255,255,.45); }
+.ai-scanner__fab-dot { position:absolute; top: 9px; right: 9px; width: 11px; height: 11px; border-radius:50%; background:#20e878; border:2px solid #153d32; box-shadow:0 0 8px rgba(32,232,120,.65); }
 .ai-scanner__backdrop { position:fixed; inset:0; z-index:1190; background:rgba(0,0,0,.28); }
 .ai-scanner__panel {
     position:fixed; right:12px; bottom:76px; z-index:1210; width:min(390px,calc(100vw - 24px));
@@ -61,6 +65,6 @@
 .ai-scanner__note { margin:10px 0 0; font-size:9px; line-height:1.45; opacity:.6; }
 .ai-scanner__error { margin:8px 0 0; color:#c62828; font-size:10px; }
 @media (min-width:768px) {
-    .ai-scanner__fab { right:24px; bottom:28px; }
+    .ai-scanner__fab { right: 34px; bottom: clamp(130px, 12vh, 180px); }
     .ai-scanner__panel { right:24px; bottom:28px; }
 }
