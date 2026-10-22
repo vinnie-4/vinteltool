@@ -315,17 +315,8 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             removeLimitedBlocks(workspace, blockTypes);
             loadBlocks(strategy_dom, null, `quick-strategy-load${Date.now()}`, workspace);
 
-            // Quick Strategy XML contains helper procedure stacks below the main
-            // trade stack. Fit the complete imported structure into the visible
-            // Blockly viewport so those stacks are not left outside the initial view.
-            const focusLoadedStrategy = () => {
-                if (typeof workspace.zoomToFit === 'function') {
-                    workspace.zoomToFit();
-                } else if (typeof workspace.scrollCenter === 'function') {
-                    workspace.scrollCenter();
-                }
-            };
-            focusLoadedStrategy();
+            // Preserve Blockly's native default zoom and viewport after loading.
+            // Do not call zoomToFit/scrollCenter: they change the user's expected workspace scale.
 
             if (action === 'EDIT') {
                 this.setFormVisibility(false);
