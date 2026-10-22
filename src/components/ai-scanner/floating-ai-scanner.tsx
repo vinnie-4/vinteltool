@@ -384,36 +384,49 @@ const FloatingAIScanner = () => {
         }
     }, [disconnect, connectMarket, tickWindow, selectedTradeType]);
 
-    const loadScannerBot = useCallback(() => {
-        const match = /^(Over|Under) (\d)$/.exec(analysis.signal);
+    const loadScannerBot = useCallback(async () => {
+        const match = /^(Over|Under) (\\d)$/.exec(analysis.signal);
         if (!match || analysis.signal === 'Waiting') {
-            setError('Collecting more ticks before configuring a scanner bot.');
+            setError('The current tick sample has no usable Over/Under signal yet. Try scanning again.');
             return;
         }
+
         const side = match[1];
         const prediction = Number(match[2]);
-        // Send the AI-selected market and exact barrier into native Quick Strategy.
-        quick_strategy.setSelectedStrategy('MARTINGALE');
-        const values: Record<string, string | boolean> = {
-            symbol: market.symbol,
-            tradetype: 'overunder',
-            type: side === 'Over' ? 'DIGITOVER' : 'DIGITUNDER',
-            last_digit_prediction: String(prediction),
-            stake: '0.5',
-            durationtype: 't',
-            duration: '1',
-            profit: '5',
-            loss: '10',
-            size: '2',
-            recovery_even: true,
-            action: 'EDIT',
-        };
-        Object.entries(values).forEach(([key, value]) => quick_strategy.setValue(key, value as string));
-        setOpen(false);
-        setShowLoadConfig(false);
-        dashboard.setActiveTab(DBOT_TABS.BOT_BUILDER);
-        quick_strategy.setFormVisibility(true);
-    }, [analysis.signal, dashboard, market, quick_strategy]);
+        setError('');
+        setScanMessage('Loading scanner strategy into Blockly…');
+
+        try {
+            // Build native Deriv Blockly blocks directly. Do not open Quick Strategy.
+            // loadConfiguredQuickBot creates the trade-definition, purchase, and
+            // Martingale result-handling blocks in the active Bot Builder workspace.
+            dashboard.setActiveTab(DBOT_TABS.BOT_BUILDER);
+            await quick_strategy.loadConfiguredQuickBot({
+                marketGroup: 'Derived',
+                marketType: 'Continuous Indices',
+                symbol: market.symbol,
+                tradeFamily: 'Digits',
+                tradeType: 'Over/Under',
+                purchase: side,
+                contract: side,
+                prediction,
+                durationType: 't',
+                duration: Math.max(1, Number(configDuration) || 1),
+                stake: Math.max(0.01, Number(configStake) || 0.5),
+                multiplier: Math.max(1, Number(configMartingale) || 2),
+                profit: Math.max(0, Number(configTakeProfit) || 5),
+                loss: Math.max(0, Number(configStopLoss) || 10),
+                martingale: true,
+                recoveryMode: false,
+            });
+            setOpen(false);
+            setShowLoadConfig(false);
+            setRecoveryExpanded(false);
+        } catch (e) {
+            console.error('AI Scanner Blockly load failed:', e);
+            setError('Could not load the scanner bot into Blockly. Open Bot Builder and try Load Scanner Bot again.');
+        }
+    }, [analysis.signal, configDuration, configMartingale, configStake, configStopLoss, configTakeProfit, dashboard, market, quick_strategy]);
 
     if (isDuplicateInstance) return null;
 
