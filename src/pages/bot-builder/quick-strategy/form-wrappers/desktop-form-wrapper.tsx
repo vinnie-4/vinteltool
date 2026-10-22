@@ -12,7 +12,6 @@ import { localize } from '@deriv-com/translations';
 import { STRATEGIES } from '../config';
 import { TFormData, TFormValues } from '../types';
 import QSStepper from './qs-stepper';
-import QuickStrategyStructure from '../quick-strategy-structure';
 import StrategyTabContent from './strategy-tab-content';
 import StrategyTemplatePicker from './strategy-template-picker';
 import { QsSteps } from './trade-constants';
@@ -171,7 +170,7 @@ const FormWrapper = observer(
                         <div className='qs__body__sidebar'>
                             <div className='qs__body__sidebar__subtitle'>
                                 <Text size='xs'>
-                                    {localize('Choose a template below and set your trade parameters.')}
+                                    {localize('Choose a strategy and configure its parameters.')}
                                 </Text>
                             </div>
                             <QSStepper current_step={current_step} />
@@ -182,7 +181,6 @@ const FormWrapper = observer(
                                 autohide={false}
                                 refSetter={scroll_ref}
                             >
-                                <QuickStrategyStructure />
                                 {renderContent()}
                             </ThemedScrollbars>
                             {!is_selected_strategy_step && (
