@@ -95,7 +95,7 @@ const analyseTicks = (ticks: Tick[], windowSize = DEFAULT_TICK_WINDOW, requested
     }).sort((x, y) => y.rate - x.rate);
     const best = contractOptions[0];
     const signal = requestedType || best.pair;
-    const selected = contractOptions.find(item => item.pair === signal) || best;
+    const selected = requestedType ? (contractOptions.filter(item => item.pair === requestedType).sort((x, y) => y.rate - x.rate)[0] || best) : best;
     const recentWinCount = last20.filter(tick => selected.isOver ? tick.digit > selected.threshold : tick.digit < selected.threshold).length;
     const recentRate = last20.length ? recentWinCount / last20.length * 100 : 0;
     const recentPressure = Math.round(Math.abs(recentRate - selected.rate));
@@ -349,13 +349,14 @@ const FloatingAIScanner = () => {
 
             if (!results.length) throw new Error('No usable tick history was returned by Deriv.');
 
-            results.sort((a, b) => b.analysis.confidence - a.analysis.confidence);
+            results.sort((a, b) => Number(b.analysis.winRate >= 80) - Number(a.analysis.winRate >= 80) || b.analysis.winRate - a.analysis.winRate || b.analysis.momentumBurst - a.analysis.momentumBurst || b.analysis.confidence - a.analysis.confidence);
             const winner = results[0];
             setMarket(winner.market);
+            if (winner.analysis.signal !== 'Waiting') setSelectedTradeType(winner.analysis.signal);
             setTicks(winner.ticks);
             setScanProgress(100);
             setScanComplete(true);
-            setScanMessage(winner.market.name + ' • ' + winner.analysis.signal + ' • ' + winner.analysis.confidence + '% heuristic confidence');
+            setScanMessage(winner.market.name + ' • ' + winner.analysis.signal + ' • observed hit rate ' + winner.analysis.winRate.toFixed(1) + '%');
             await connectMarket(winner.market.symbol);
         } catch (e: any) {
             setError(e?.message || 'Unable to scan the volatility markets');
