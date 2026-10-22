@@ -37,6 +37,7 @@ const MARKETS: Market[] = [
 
 const TICK_WINDOWS = [3000, 1000, 500, 300, 100, 60, 30];
 const DEFAULT_TICK_WINDOW = 3000;
+const SCAN_TRADE_TYPES = ['Over1 / Under8', 'Over2 / Under7', 'Over3 / Under6'] as const;
 const MAX_TICKS = 3000;
 
 const digitOf = (quote: number, decimals: number) =>
@@ -220,6 +221,7 @@ const FloatingAIScanner = () => {
         };
     }, []);
     const [open, setOpen] = useState(false);
+    const [selectedTradeType, setSelectedTradeType] = useState<(typeof SCAN_TRADE_TYPES)[number]>('Over3 / Under6');
     const [fabPosition, setFabPosition] = useState<{ x: number; y: number } | null>(null);
     const fabDragRef = useRef<{ pointerX: number; pointerY: number; left: number; top: number; moved: boolean } | null>(null);
     const fabMovedRef = useRef(false);
@@ -436,6 +438,11 @@ const FloatingAIScanner = () => {
             </header>
 
             <div className='ai-scanner__body'>
+                <div className='ai-scanner__trade-types' role='group' aria-label='Trade type to scan'>
+                    {SCAN_TRADE_TYPES.map(type => (
+                        <button key={type} type='button' className={'ai-scanner__trade-type' + (selectedTradeType === type ? ' is-active' : '')} aria-pressed={selectedTradeType === type} onClick={() => setSelectedTradeType(type)}>{type}</button>
+                    ))}
+                </div>
                 <label className='ai-scanner__market'>
                     MARKET
                     <select value={market.symbol} onChange={e => setMarket(MARKETS.find(item => item.symbol === e.target.value) || MARKETS[8])}>
@@ -459,7 +466,7 @@ const FloatingAIScanner = () => {
                 </div>
 
                 <div className='ai-scanner__signal'>
-                    <small>AI SIGNAL</small>
+                    <small>AI SIGNAL · {selectedTradeType}</small>
                     <strong>{analysis.signal}</strong>
                     <div className='ai-scanner__confidence'><span style={{ width: confidence + '%' }} /></div>
                     <b>{confidence}% HEURISTIC CONFIDENCE</b>
