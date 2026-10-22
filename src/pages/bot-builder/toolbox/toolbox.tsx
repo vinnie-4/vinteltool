@@ -92,7 +92,7 @@ const Toolbox = observer(() => {
                             onSearchClear={onSearchClear}
                             onSearchKeyUp={onSearchKeyUp}
                         />
-                        <div className='db-toolbox__category-menu'>
+                        <div className={`db-toolbox__category-menu${is_last_digit_open ? ' db-toolbox__category-menu--analysis-open' : ''}`}>
                             {toolbox_dom &&
                                 Array.from(toolbox_dom.childNodes as HTMLElement[]).map((category, index) => {
                                     if (category.tagName.toUpperCase() === 'CATEGORY') {
@@ -171,7 +171,7 @@ const Toolbox = observer(() => {
                                     return null;
                                 })}
                         </div>
-                        <div className='db-toolbox__last-digit'>
+                        <div className={`db-toolbox__last-digit${is_last_digit_open ? ' db-toolbox__last-digit--open' : ''}`}>
                             <button type='button' className='db-toolbox__last-digit-toggle' aria-expanded={is_last_digit_open} onClick={() => setLastDigitOpen(open => !open)}>
                                 <span>Last digit · Even/Odd</span><span>{is_last_digit_open ? '−' : '+'}</span>
                             </button>
