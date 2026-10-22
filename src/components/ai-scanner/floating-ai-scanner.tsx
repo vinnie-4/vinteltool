@@ -245,7 +245,7 @@ const FloatingAIScanner = () => {
         const listener = api_base.api.onMessage().subscribe(({ data }: any) => {
             if (data?.error) {
                 setConnected(false);
-                setError(data.error.message || 'Deriv rejected the scanner request');
+                setError('Live tick data is temporarily unavailable. The scanner will use the latest available sample and retry on the next scan.');
                 return;
             }
 
