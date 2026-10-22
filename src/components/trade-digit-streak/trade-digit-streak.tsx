@@ -8,7 +8,7 @@ const isDigitContract = (contract?: TContractInfo | null) => /^DIGIT/.test(Strin
 const getDigit = (quote: number, precision: number) => Number(quote.toFixed(Math.max(0, Math.min(8, precision))).replace('.', '').slice(-1));
 
 /** Contextual live analysis for an already-issued digit contract. It never places trades. */
-const TradeDigitStreak = ({ contract }: { contract?: TContractInfo | null }) => {
+const TradeDigitStreak = ({ contract, active = true }: { contract?: TContractInfo | null; active?: boolean }) => {
     const [ticks, setTicks] = React.useState<Tick[]>([]);
     const [status, setStatus] = React.useState('Connecting…');
     const socketRef = React.useRef<WebSocket | null>(null);
@@ -16,7 +16,7 @@ const TradeDigitStreak = ({ contract }: { contract?: TContractInfo | null }) => 
     const contractKey = String((contract as any)?.contract_id || (contract as any)?.id || (contract as any)?.transaction_ids?.buy || '');
 
     React.useEffect(() => {
-        if (!isDigitContract(contract) || !symbol || !contractKey) {
+        if (!active || !isDigitContract(contract) || !symbol || !contractKey) {
             setTicks([]);
             setStatus('Waiting for digit trade');
             return;
@@ -84,9 +84,9 @@ const TradeDigitStreak = ({ contract }: { contract?: TContractInfo | null }) => 
             }
             if (socketRef.current === socket) socketRef.current = null;
         };
-    }, [symbol, contractKey, contract?.contract_type]);
+    }, [active, symbol, contractKey, contract?.contract_type]);
 
-    if (!isDigitContract(contract) || !contractKey) return null;
+    if (!active || !isDigitContract(contract) || !contractKey) return null;
     const parities = ticks.map(t => t.digit % 2 === 0 ? 'Even' : 'Odd');
     const latest = ticks[ticks.length - 1];
     const latestParity = parities[parities.length - 1];
