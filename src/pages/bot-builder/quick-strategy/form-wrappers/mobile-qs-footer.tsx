@@ -59,18 +59,6 @@ export const MobileQSFooter = observer(({ current_step, setCurrentStep }: TMobil
                     >
                         {localize('Load')}
                     </Button>
-                    <Button
-                        primary
-                        data-testid='qs-run-button'
-                        type='submit'
-                        onClick={e => {
-                            e.preventDefault();
-                            onRun();
-                        }}
-                        disabled={!isValid || quick_strategy.is_options_loading}
-                    >
-                        {localize('Run')}
-                    </Button>
                 </div>
             )}
         </>
