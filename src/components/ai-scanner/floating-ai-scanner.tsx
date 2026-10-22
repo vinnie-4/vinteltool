@@ -455,7 +455,6 @@ const FloatingAIScanner = () => {
         });
         setOpen(false);
         dashboard.setActiveTab(DBOT_TABS.BOT_BUILDER);
-        await new Promise<void>(resolve => window.setTimeout(resolve, 80));
         await quick_strategy.loadFreeBotXml(xml, 'AI Scanner • ' + market.name + ' • ' + analysis.signal);
     }, [analysis.signal, configDuration, configMartingale, configStake, configStopLoss, configTakeProfit, dashboard, market, quick_strategy]);
 
