@@ -303,7 +303,7 @@ const FloatingAIScanner = () => {
         return () => { cancelled = true; void disconnect(); };
     }, [open, market.symbol, connectMarket, disconnect]);
 
-    const analysis = useMemo(() => analyseTicks(ticks, tickWindow), [ticks, tickWindow]);
+    const analysis = useMemo(() => analyseTicks(ticks, tickWindow, selectedTradeType), [ticks, tickWindow, selectedTradeType]);
 
     useEffect(() => setConfidence(analysis.confidence), [analysis.confidence]);
 
