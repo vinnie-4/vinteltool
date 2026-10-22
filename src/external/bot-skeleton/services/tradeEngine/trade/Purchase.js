@@ -61,7 +61,43 @@ export default Engine =>
             });
         }
 
+        async waitForRecoveryContractType(contract_type) {
+            const settings = readAnalysisSettings();
+            if (!settings?.enabled || !settings?.recovery || !settings?.recoveryOnlyAfterLoss || !this.analysisRecoveryPending) return contract_type;
+            const streakLength = Math.max(2, Math.min(30, Number(settings.streak) || 2));
+            const checkStreak = async () => {
+                const digits = await this.getLastDigitList();
+                if (!Array.isArray(digits) || digits.length < streakLength) return null;
+                const recent = digits.slice(-streakLength).map(Number);
+                if (!recent.every(digit => Number.isInteger(digit) && digit >= 0 && digit <= 9)) return null;
+                const allOdd = recent.every(digit => digit % 2 === 1);
+                const allEven = recent.every(digit => digit % 2 === 0);
+                if (allOdd) return 'DIGITEVEN';
+                if (allEven) return 'DIGITODD';
+                return null;
+            };
+            const matched = await checkStreak();
+            if (matched) { this.analysisRecoveryPending = false; return matched; }
+            return new Promise(resolve => {
+                let finished = false;
+                let previousTick = this.store.getState().newTick;
+                let unsubscribe;
+                const finish = value => { if (finished) return; finished = true; unsubscribe?.(); resolve(value); };
+                unsubscribe = this.store.subscribe(() => {
+                    const state = this.store.getState();
+                    if (state.scope === 'STOP') { finish(null); return; }
+                    if (state.newTick === previousTick) return;
+                    previousTick = state.newTick;
+                    checkStreak().then(type => { if (type) { this.analysisRecoveryPending = false; finish(type); } }).catch(() => {});
+                });
+            });
+        }
         async purchase(contract_type) {
+            // After a loss, optionally switch this scanner's next recovery trade to Even/Odd
+            // once the configured number of consecutive live digits agrees on parity.
+            const recoveryContractType = await this.waitForRecoveryContractType(contract_type);
+            if (!recoveryContractType) return Promise.resolve();
+            contract_type = recoveryContractType;
             // Analysis mode waits for the configured live streak before allowing the opposite-side digit contract.
             if (!(await this.waitForAnalysisSignal(contract_type))) return Promise.resolve();
             // Prevent calling purchase twice
