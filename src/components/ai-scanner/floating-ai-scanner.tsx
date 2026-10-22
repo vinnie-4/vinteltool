@@ -450,77 +450,63 @@ const FloatingAIScanner = () => {
                         <button key={type} type='button' className={'ai-scanner__trade-type' + (selectedTradeType === type ? ' is-active' : '')} aria-pressed={selectedTradeType === type} onClick={() => setSelectedTradeType(type)}>{type}</button>
                     ))}
                 </div>
-                <label className='ai-scanner__market'>
-                    MARKET
-                    <select value={market.symbol} onChange={e => setMarket(MARKETS.find(item => item.symbol === e.target.value) || MARKETS[8])}>
-                        {MARKETS.map(item => <option key={item.symbol} value={item.symbol}>{item.name}</option>)}
-                    </select>
-                </label>
 
-                <div className='ai-scanner__controls-row'>
-                    <label>WINDOW
+                <section className='ai-scanner__intro-card'>
+                    <div>
+                        <strong>{selectedTradeType === 'Over1 / Under8' ? 'Digits Scanner' : selectedTradeType === 'Over2 / Under7' ? 'Digits Scanner' : 'Over3 / Under6'}</strong>
+                        <p>{selectedTradeType === 'Over1 / Under8' ? 'Scans Over 1 and Under 8 with recovery confirmation.' : selectedTradeType === 'Over2 / Under7' ? 'Scans Over 2 and Under 7 with recovery confirmation.' : 'Scans Over 3 and Under 6 using the same recovery flow.'}</p>
+                    </div>
+                    <label className='ai-scanner__ticks'>TICKS
                         <select value={tickWindow} onChange={e => setTickWindow(Number(e.target.value))}>
-                            {TICK_WINDOWS.map(value => <option key={value} value={value}>{value} ticks</option>)}
+                            {TICK_WINDOWS.map(value => <option key={value} value={value}>{value}</option>)}
                         </select>
                     </label>
+                </section>
+
+                <section className='ai-scanner__market-summary'>
+                    <div><label>SELECTED MARKET</label><strong>{scanComplete ? market.name : 'Scan to find the best market'}</strong></div>
+                    <div><label>TRADE TYPE</label><strong>{scanComplete ? analysis.signal : 'Waiting for scan'}</strong></div>
+                    {scanComplete && <div className='ai-scanner__result-metrics'>
+                        <div><label>AI SCORE</label><strong>{analysis.confidence}%</strong></div>
+                        <div><label>WIN RATE</label><strong>{analysis.total ? analysis.overPct.toFixed(1) + '%' : '—'}</strong></div>
+                        <div><label>RECENT</label><strong>{analysis.total ? analysis.recentPressure : '—'}</strong></div>
+                        <div><label>SAMPLES</label><strong>{analysis.total}</strong></div>
+                    </div>}
+                </section>
+
+                {scanning && <section className='ai-scanner__scan-progress-card is-scanning' aria-live='polite'>
+                    <div className='ai-scanner__scan-progress-heading'>
+                        <span>{scanMessage || 'Scanning markets…'}</span>
+                        <strong>{Math.max(1, scanProgress)}%</strong>
+                    </div>
+                    <div className='ai-scanner__scan-progress-track'><span style={{ width: Math.max(5, scanProgress) + '%' }} /></div>
+                </section>}
+
+                <div className={'ai-scanner__status ' + (scanning ? 'is-scanning' : scanComplete ? 'is-complete' : '')} aria-live='polite'>
+                    {scanning ? 'Scanning ' + (scanMessage || 'markets…') : scanComplete ? 'Best market: ' + market.name + ' · ' + analysis.confidence + '% heuristic confidence' : error || 'Not scanned yet'}
+                </div>
+
+                {scanComplete && <>
+                    <div className='ai-scanner__result-summary'>
+                        <strong>Best market: {market.name} | {analysis.signal} | AI {analysis.confidence}%</strong>
+                    </div>
+                    <div className='ai-scanner__digits'>
+                        {analysis.counts.map((count, digit) => (
+                            <div key={digit} className={digit === analysis.hot ? 'is-hot' : digit === analysis.cold ? 'is-cold' : ''}>
+                                <span>{digit}</span><b>{analysis.total ? ((count / analysis.total) * 100).toFixed(0) : 0}%</b>
+                            </div>
+                        ))}
+                    </div>
+                </>}
+
+                <div className='ai-scanner__actions'>
                     <button type='button' className='ai-scanner__scan-button' disabled={scanning} onClick={() => void scanMarkets()}>
-                        {scanning ? 'SCANNING MARKETS…' : scanComplete ? 'SCAN AGAIN' : 'SCAN MARKETS'}
+                        {scanning ? 'Scanning Markets…' : scanComplete ? 'Scan Again' : 'Scan Markets'}
+                    </button>
+                    <button type='button' className='ai-scanner__load-button' disabled={!scanComplete || analysis.signal === 'Waiting'} onClick={() => void loadScannerBot()}>
+                        Load Scanner Bot
                     </button>
                 </div>
-
-                <section className={'ai-scanner__scan-progress-card ' + (scanning ? 'is-scanning' : scanComplete ? 'is-complete' : '')} aria-live='polite'>
-                    <div className='ai-scanner__scan-progress-heading'>
-                        <span>{scanning ? scanMessage : scanComplete ? 'Best market found' : connected ? 'Ready to scan markets' : 'Ready to scan markets'}</span>
-                        <strong>{scanning ? Math.max(1, scanProgress) + '%' : scanComplete ? 'DONE' : '0/' + MARKETS.length}</strong>
-                    </div>
-                    <div className='ai-scanner__scan-progress-track'><span style={{ width: (scanning ? Math.max(5, scanProgress) : scanComplete ? 100 : 0) + '%' }} /></div>
-                </section>
-                <div className={'ai-scanner__status ' + (connected ? 'is-live' : '') + (scanning ? ' is-scanning' : '')}>
-                    <span />{scanning ? 'Scanning markets… ' + scanMessage : scanComplete ? 'Best market: ' + market.name + ' • ' + analysis.confidence + '% heuristic confidence' : connected ? 'Connected to Deriv · Ready' : 'Not scanned yet'}
-                </div>
-
-                <div className='ai-scanner__signal'>
-                    <small>AI SIGNAL · {selectedTradeType}</small>
-                    <strong>{analysis.signal}</strong>
-                    <div className='ai-scanner__confidence'><span style={{ width: confidence + '%' }} /></div>
-                    <b>{confidence}% HEURISTIC CONFIDENCE</b>
-                    <em>{analysis.strength}</em>
-                </div>
-
-                <div className='ai-scanner__stats'>
-                    <div><small>HOT</small><strong>{analysis.hot ?? '—'}</strong></div>
-                    <div><small>COLD</small><strong>{analysis.cold ?? '—'}</strong></div>
-                    <div><small>TICKS</small><strong>{analysis.total}</strong></div>
-                </div>
-
-                <div className='ai-scanner__stats ai-scanner__stats--secondary'>
-                    <div><small>EVEN</small><strong>{analysis.total ? analysis.evenPct.toFixed(1) : '—'}%</strong></div>
-                    <div><small>OVER 4</small><strong>{analysis.total ? analysis.overPct.toFixed(1) : '—'}%</strong></div>
-                    <div><small>RECENT PRESSURE</small><strong>{analysis.total ? analysis.recentPressure : '—'}</strong></div>
-                </div>
-
-                <div className='ai-scanner__digits'>
-                    {analysis.counts.map((count, digit) => (
-                        <div key={digit} className={digit === analysis.hot ? 'is-hot' : digit === analysis.cold ? 'is-cold' : ''}>
-                            <span>{digit}</span>
-                            <b>{analysis.total ? ((count / analysis.total) * 100).toFixed(0) : 0}%</b>
-                        </div>
-                    ))}
-                </div>
-
-                <div className='ai-scanner__rationale'>
-                    <strong>Analysis</strong>
-                    <span>{analysis.rationale}</span>
-                </div>
-
-                <button type='button' className='ai-scanner__load-button' disabled={analysis.signal === 'Waiting'} onClick={() => void loadScannerBot()}>
-                    LOAD SCANNER BOT
-                </button>
-
-                <p className='ai-scanner__note'>
-                    Signal and confidence are derived from observed tick statistics and recent pressure. Confidence is a heuristic strength score, not a guaranteed probability or prediction of the next contract result.
-                </p>
-
                 {error && <p className='ai-scanner__error'>{error}</p>}
             </div>
         </section>}
