@@ -15,7 +15,9 @@ type Analysis = {
     confidence: number;
     strength: 'WAITING' | 'WEAK' | 'MEDIUM' | 'STRONG';
     hot: number | null;
+    secondHot: number | null;
     cold: number | null;
+    secondCold: number | null;
     evenPct: number;
     overPct: number;
     recentPressure: number;
@@ -53,7 +55,9 @@ const emptyAnalysis = (): Analysis => ({
     confidence: 0,
     strength: 'WAITING',
     hot: null,
+    secondHot: null,
     cold: null,
+    secondCold: null,
     evenPct: 0,
     overPct: 0,
     recentPressure: 0,
@@ -73,7 +77,9 @@ const analyseTicks = (ticks: Tick[], windowSize = DEFAULT_TICK_WINDOW, requested
 
     const ranked = counts.map((count, digit) => ({ count, digit })).sort((a, b) => b.count - a.count || a.digit - b.digit);
     const hot = ranked[0]?.digit ?? null;
+    const secondHot = ranked[1]?.digit ?? null;
     const cold = ranked[ranked.length - 1]?.digit ?? null;
+    const secondCold = ranked[ranked.length - 2]?.digit ?? null;
     const even = counts.filter((_, digit) => digit % 2 === 0).reduce((a, b) => a + b, 0);
     const over4 = counts.slice(5).reduce((a, b) => a + b, 0);
     const evenPct = even / total * 100;
@@ -103,7 +109,7 @@ const analyseTicks = (ticks: Tick[], windowSize = DEFAULT_TICK_WINDOW, requested
     const confidence = Math.round(Math.min(99, Math.max(0, selected.rate * 0.75 + recentRate * 0.25)));
     const strength = confidence >= 80 ? 'STRONG' : confidence >= 65 ? 'MEDIUM' : 'WEAK';
     return {
-        counts, total, signal: selected.side, confidence, strength, hot, cold, evenPct, overPct,
+        counts, total, signal: selected.side, confidence, strength, hot, secondHot, cold, secondCold, evenPct, overPct,
         recentPressure: Math.round(Math.abs(recentRate - selected.rate)),
         winRate: Math.round(selected.rate * 10) / 10, momentumBurst, missingDigits,
         rationale: selected.side + ' recorded ' + selected.rate.toFixed(1) + '% historical hits in the selected ' + total + '-tick sample; recent 20-tick hit rate ' + recentRate.toFixed(1) + '%.',
@@ -406,7 +412,7 @@ const FloatingAIScanner = () => {
                 <section className='ai-scanner__intro-card'>
                     <div>
                         <strong>{selectedTradeType === 'Over1 / Under8' ? 'Digits Scanner' : selectedTradeType === 'Over2 / Under7' ? 'Digits Scanner' : 'Over3 / Under6'}</strong>
-                        <p>{selectedTradeType === 'Over1 / Under8' ? 'Scans Over 1 and Under 8 with recovery confirmation.' : selectedTradeType === 'Over2 / Under7' ? 'Scans Over 2 and Under 7 with recovery confirmation.' : 'Scans Over 3 and Under 6 using the same recovery flow.'}</p>
+                        
                     </div>
                     <label className='ai-scanner__ticks'>TICKS
                         <select value={tickWindow} onChange={e => setTickWindow(Number(e.target.value))}>
@@ -441,12 +447,11 @@ const FloatingAIScanner = () => {
                 {scanComplete && <>
                     <div className='ai-scanner__result-summary'>
                         <strong>Best market: {market.name} · {analysis.signal} · AI score {analysis.confidence}% · observed win rate {analysis.winRate.toFixed(1)}%</strong>
-                        <p>Hottest digit: {analysis.hot ?? '—'} · Coldest digit: {analysis.cold ?? '—'} · No appearances: {analysis.missingDigits.length ? analysis.missingDigits.join(', ') : 'none'}</p>
-                        <p>Momentum burst (most frequent digit in latest 20 ticks): {analysis.momentumBurst}% · {analysis.total} of {tickWindow} selected ticks analysed.</p>
+                        
                     </div>
                     <div className='ai-scanner__digits'>
                         {analysis.counts.map((count, digit) => (
-                            <div key={digit} className={digit === analysis.hot ? 'is-hot' : digit === analysis.cold ? 'is-cold' : ''}>
+                            <div key={digit} className={digit === analysis.hot ? 'is-hot' : digit === analysis.secondHot ? 'is-second-hot' : digit === analysis.cold ? 'is-cold' : digit === analysis.secondCold ? 'is-second-cold' : ''}>
                                 <span>{digit}</span><b>{analysis.total ? ((count / analysis.total) * 100).toFixed(0) : 0}%</b>
                             </div>
                         ))}
