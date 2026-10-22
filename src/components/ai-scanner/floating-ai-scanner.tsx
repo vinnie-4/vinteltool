@@ -148,6 +148,7 @@ const FloatingAIScanner = () => {
     const [configStopLoss, setConfigStopLoss] = useState('10');
     const [configTakeProfit, setConfigTakeProfit] = useState('5');
     const [configRecoveryDigits, setConfigRecoveryDigits] = useState('2');
+    const [configRecoveryEnabled, setConfigRecoveryEnabled] = useState(true);
     const [selectedTradeType, setSelectedTradeType] = useState<(typeof SCAN_TRADE_TYPES)[number]>('Over1 / Under8');
     const [fabPosition, setFabPosition] = useState<{ x: number; y: number } | null>(null);
     const fabDragRef = useRef<{ pointerX: number; pointerY: number; left: number; top: number; moved: boolean } | null>(null);
@@ -401,6 +402,19 @@ const FloatingAIScanner = () => {
             // loadConfiguredQuickBot creates the trade-definition, purchase, and
             // Martingale result-handling blocks in the active Bot Builder workspace.
             dashboard.setActiveTab(DBOT_TABS.BOT_BUILDER);
+            if (configRecoveryEnabled) {
+                localStorage.setItem('vinteltool-analysis-recovery-settings', JSON.stringify({
+                    enabled: true,
+                    mode: 'even-odd',
+                    streak: Math.max(2, Math.min(30, Number(configRecoveryDigits) || 2)),
+                    recovery: true,
+                    recoveryOnlyAfterLoss: true,
+                    multiplier: Math.max(1, Number(configMartingale) || 2),
+                    maxStake: Math.max(Number(configStake) || 0.5, Number(configStake || 0.5) * (Number(configMartingale) || 2)),
+                }));
+            } else {
+                localStorage.setItem('vinteltool-analysis-recovery-settings', JSON.stringify({ enabled: false, recovery: false }));
+            }
             await quick_strategy.loadConfiguredQuickBot({
                 marketGroup: 'Derived',
                 marketType: 'Continuous Indices',
@@ -417,7 +431,11 @@ const FloatingAIScanner = () => {
                 profit: Math.max(0, Number(configTakeProfit) || 5),
                 loss: Math.max(0, Number(configStopLoss) || 10),
                 martingale: true,
-                recoveryMode: false,
+                recoveryMode: configRecoveryEnabled,
+                recoveryPurchase: 'Trade Even',
+                recoveryPrediction: 0,
+                analysisEnabled: configRecoveryEnabled,
+                analysisCondition: { mode: 'even-odd', streak: Math.max(2, Math.min(30, Number(configRecoveryDigits) || 2)), onlyAfterLoss: true },
             });
             setOpen(false);
             setShowLoadConfig(false);
@@ -426,7 +444,7 @@ const FloatingAIScanner = () => {
             console.error('AI Scanner Blockly load failed:', e);
             setError('Could not load the scanner bot into Blockly. Open Bot Builder and try Load Scanner Bot again.');
         }
-    }, [analysis.signal, configDuration, configMartingale, configStake, configStopLoss, configTakeProfit, dashboard, market, quick_strategy]);
+    }, [analysis.signal, configDuration, configMartingale, configStake, configStopLoss, configTakeProfit, configRecoveryDigits, configRecoveryEnabled, dashboard, market, quick_strategy]);
 
     if (isDuplicateInstance) return null;
 
@@ -455,8 +473,10 @@ const FloatingAIScanner = () => {
                         <button type='button' className={'ai-scanner__recovery-toggle' + (recoveryExpanded ? ' is-expanded' : '')} onClick={() => setRecoveryExpanded(value => !value)} aria-expanded={recoveryExpanded}>Recovery (Even) <span>{recoveryExpanded ? '−' : '+'}</span></button>
                     </div>
                     {recoveryExpanded && <div className='ai-scanner__recovery-options'>
-                        <strong>Recovery</strong>
-                        <label>Analyse last <input type='number' value={configRecoveryDigits} onChange={e => setConfigRecoveryDigits(e.target.value)} min='1' max='30' /> digits</label>
+                        <label className='ai-scanner__recovery-enable'><input type='checkbox' checked={configRecoveryEnabled} onChange={e => setConfigRecoveryEnabled(e.target.checked)} /> Enable recovery after a loss</label>
+                        <strong>Recovery — Even / Odd</strong>
+                        <p>If the last N digits are all odd, the recovery trade is Even. If they are all even, the recovery trade is Odd.</p>
+                        <label>Analyse last <input type='number' value={configRecoveryDigits} onChange={e => setConfigRecoveryDigits(e.target.value)} min='2' max='30' /> consecutive digits</label>
                     </div>}
                     <div className='ai-scanner__config-actions'>
                         <button type='button' onClick={() => setShowLoadConfig(false)}>Back</button>
