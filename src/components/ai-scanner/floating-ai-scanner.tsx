@@ -402,6 +402,12 @@ const FloatingAIScanner = () => {
             // loadConfiguredQuickBot creates the trade-definition, purchase, and
             // Martingale result-handling blocks in the active Bot Builder workspace.
             dashboard.setActiveTab(DBOT_TABS.BOT_BUILDER);
+            localStorage.setItem('vinteltool-scanner-risk-limits', JSON.stringify({
+                enabled: true,
+                takeProfit: Math.max(0, Number(configTakeProfit) || 0),
+                stopLoss: Math.max(0, Number(configStopLoss) || 0),
+                stopAfterRecoveryWin: configRecoveryEnabled,
+            }));
             if (configRecoveryEnabled) {
                 localStorage.setItem('vinteltool-analysis-recovery-settings', JSON.stringify({
                     enabled: true,
