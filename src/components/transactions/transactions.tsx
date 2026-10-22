@@ -15,6 +15,7 @@ import { Localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
 import ThemedScrollbars from '../shared_ui/themed-scrollbars';
 import Transaction from './transaction';
+import LastDigitLivePanel from '@/components/last-digit-live-panel/last-digit-live-panel';
 import AnalysisTool from '@/pages/analysis-tool';
 
 type TTransactions = {
@@ -111,6 +112,7 @@ const Transactions = observer(({ is_drawer_open }: TTransactions) => {
                 </button>
                 {is_last_digit_analysis_open && <AnalysisTool showLegend={false} showStreak showSubtabs={false} showControls={false} showPrice={false} showContractProbabilities={false} windowSize={20} />}
             </div>
+            <LastDigitLivePanel compact />
             <div className='download__container transaction-details__button-container'>
                 <Download tab='transactions' />
                 <Button
