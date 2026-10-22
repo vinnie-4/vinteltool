@@ -212,3 +212,27 @@
     height: 16px;
     animation: spin 1s linear infinite;
 }
+
+
+.db-toolbox__last-digit {
+    flex: 0 0 auto;
+    margin-top: 0.6rem;
+    border-top: 1px solid var(--general-section-1);
+    max-height: 42%;
+    overflow-y: auto;
+}
+.db-toolbox__last-digit-toggle,
+.transactions__last-digit-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--general-section-1);
+    border-radius: 8px;
+    background: var(--general-section-1);
+    color: var(--text-general);
+    font-weight: 600;
+    cursor: pointer;
+}
