@@ -906,3 +906,27 @@
         color: #fff !important;
     }
 }
+
+
+/* Final requested Load button treatment: solid teal with white text. */
+.qs .qs__body__content__footer [data-testid="qs-load-button"],
+.qs .qs__body__content__footer [data-testid="qs-load-button"]:hover,
+.qs .qs__body__content__footer [data-testid="qs-load-button"]:focus-visible,
+.qs .qs__body__content__footer button:last-child {
+    background: #008f8c !important;
+    background-image: none !important;
+    border: 1px solid #007a77 !important;
+    color: #fff !important;
+}
+.qs .qs__body__content__footer [data-testid="qs-load-button"] *,
+.qs .qs__body__content__footer button:last-child * {
+    color: #fff !important;
+}
+@media (max-width: 767px) {
+    .qs .qs__body__content__footer [data-testid="qs-load-button"],
+    .qs .qs__body__content__footer button:last-child {
+        background: #008f8c !important;
+        background-image: none !important;
+        color: #fff !important;
+    }
+}
