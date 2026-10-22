@@ -74,3 +74,52 @@
     .ai-scanner__body { padding:11px; }
     .ai-scanner__header { padding:12px 13px; }
 }
+
+
+/* Animated signal beacon: keep one compact floating scanner visually active. */
+.ai-scanner__fab {
+    isolation: isolate;
+    animation: ai-scanner-beacon 2.4s ease-in-out infinite;
+}
+.ai-scanner__fab::before,
+.ai-scanner__fab::after {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    border: 1.5px solid rgba(181, 139, 255, .72);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0;
+    animation: ai-scanner-signal-ring 2.4s ease-out infinite;
+}
+.ai-scanner__fab::after {
+    animation-delay: 1.2s;
+}
+.ai-scanner__fab-label {
+    position: relative;
+    z-index: 1;
+}
+.ai-scanner__fab-dot {
+    animation: ai-scanner-online-pulse 1.5s ease-in-out infinite;
+}
+@keyframes ai-scanner-signal-ring {
+    0% { transform: scale(.92); opacity: .75; }
+    75%, 100% { transform: scale(1.55); opacity: 0; }
+}
+@keyframes ai-scanner-beacon {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(162,119,255,.12), 0 0 12px rgba(153,106,255,.35), inset 0 1px 6px rgba(255,255,255,.25); }
+    50% { box-shadow: 0 0 0 4px rgba(162,119,255,.2), 0 0 22px rgba(153,106,255,.65), inset 0 1px 8px rgba(255,255,255,.4); }
+}
+@keyframes ai-scanner-online-pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(32,232,120,.45); }
+    50% { opacity: .72; box-shadow: 0 0 0 4px rgba(32,232,120,0); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ai-scanner__fab,
+    .ai-scanner__fab::before,
+    .ai-scanner__fab::after,
+    .ai-scanner__fab-dot {
+        animation: none !important;
+    }
+}
