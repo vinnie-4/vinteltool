@@ -79,7 +79,10 @@ export default Engine =>
             const matched = await checkStreak();
             if (matched) {
                 this.analysisRecoveryPending = false;
-                try { window.localStorage.removeItem('vinteltool-recovery-analysis-state'); } catch {}
+                try {
+                    window.localStorage.setItem('vinteltool-analysis-win-beep-eligible', 'true');
+                    window.localStorage.removeItem('vinteltool-recovery-analysis-state');
+                } catch {}
                 return matched;
             }
             return new Promise(resolve => {
@@ -92,7 +95,7 @@ export default Engine =>
                     if (state.scope === 'STOP') { finish(null); return; }
                     if (state.newTick === previousTick) return;
                     previousTick = state.newTick;
-                    checkStreak().then(type => { if (type) { this.analysisRecoveryPending = false; try { window.localStorage.removeItem('vinteltool-recovery-analysis-state'); } catch {} finish(type); } }).catch(() => {});
+                    checkStreak().then(type => { if (type) { this.analysisRecoveryPending = false; try { window.localStorage.setItem('vinteltool-analysis-win-beep-eligible', 'true'); window.localStorage.removeItem('vinteltool-recovery-analysis-state'); } catch {} finish(type); } }).catch(() => {});
                 });
             });
         }
