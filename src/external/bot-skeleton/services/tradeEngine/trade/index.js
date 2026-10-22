@@ -134,6 +134,8 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
         globalObserver.emit('bot.running');
         const validated_trade_options = this.validateTradeOptions(tradeOptions);
         this.tradeOptions = { ...validated_trade_options, symbol: this.options.symbol };
+        this.analysisRecoveryBaseStake = Number(validated_trade_options.amount) || 0;
+        this.analysisRecoveryLastContractId = null;
         this.store.dispatch(start());
         this.checkLimits(validated_trade_options);
         this.makeDirectPurchaseDecision();
