@@ -50,6 +50,7 @@ export const MobileQSFooter = observer(({ current_step, setCurrentStep }: TMobil
                     </Button>
                     <Button
                         secondary
+                        className='qs-load-button'
                         data-testid='qs-load-button'
                         onClick={e => {
                             e.preventDefault();
