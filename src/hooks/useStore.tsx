@@ -32,7 +32,9 @@ const StoreProvider: React.FC<TStoreProvider> = ({ children, mockStore }) => {
         }
     }, [store, mockStore]);
 
-    if (!store && mockStore) return null;
+    // The root store is created asynchronously in the effect above. Do not render
+    // descendants that destructure stores (for example quick_strategy) until it exists.
+    if (!store) return null;
 
     return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>;
 };
