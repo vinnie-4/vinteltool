@@ -493,9 +493,7 @@ const FloatingAIScanner = () => {
                     <div className='ai-scanner__scan-progress-track'><span style={{ width: Math.max(5, scanProgress) + '%' }} /></div>
                 </section>}
 
-                <div className={'ai-scanner__status ' + (scanning ? 'is-scanning' : scanComplete ? 'is-complete' : '')} aria-live='polite'>
-                    {scanning ? 'Scanning ' + (scanMessage || 'markets…') : scanComplete ? '' : error || 'Not scanned yet'}
-                </div>
+                {!scanning && !scanComplete && (error ? <p className='ai-scanner__error'>{error}</p> : <div className='ai-scanner__status' aria-live='polite'>Not scanned yet</div>)}
 
                 {scanComplete && <>
                     <div className='ai-scanner__result-table' role='table' aria-label='Best market scan result'>
