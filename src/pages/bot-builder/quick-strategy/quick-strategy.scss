@@ -818,3 +818,91 @@
         font-size: 1.55rem !important;
     }
 }
+
+
+/* Android recovery: keep Back/Load anchored to the viewport, not below the form. */
+@media (max-width: 767px) {
+    .qs {
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        min-height: 0 !important;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden !important;
+    }
+    .qs .qs__body {
+        height: auto !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+    }
+    .qs .qs__body__content {
+        height: 100% !important;
+        max-height: 100% !important;
+        min-height: 0 !important;
+        padding-bottom: calc(6.4rem + env(safe-area-inset-bottom, 0px)) !important;
+        overflow: hidden !important;
+        position: relative;
+    }
+    .qs .qs__body__content .qs__form__container--footer {
+        flex: 1 1 auto !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        padding-bottom: 1rem !important;
+    }
+    .qs .qs__body__content__footer {
+        position: fixed !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        z-index: 9999 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: stretch !important;
+        gap: .75rem !important;
+        width: 100% !important;
+        padding: .7rem .8rem calc(.7rem + env(safe-area-inset-bottom, 0px)) !important;
+        background: var(--general-main-1, #fff) !important;
+        border-top: 1px solid var(--general-section-1, #d8dce3) !important;
+        box-shadow: 0 -4px 18px rgba(0, 0, 0, .16) !important;
+    }
+    .qs .qs__body__content__footer [data-testid="qs-run-button"] {
+        display: none !important;
+    }
+    .qs .qs__body__content__footer button,
+    .qs .qs__body__content__footer [role="button"] {
+        display: inline-flex !important;
+        flex: 1 1 0 !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-width: 0 !important;
+        min-height: 3.8rem !important;
+        margin: 0 !important;
+        padding: 0 .8rem !important;
+        border-radius: .65rem !important;
+        font-family: inherit !important;
+        font-size: 1.4rem !important;
+        font-weight: 700 !important;
+        line-height: 1.1 !important;
+        white-space: nowrap !important;
+        color: #fff !important;
+        box-sizing: border-box !important;
+    }
+    .qs .qs__body__content__footer button:first-child,
+    .qs .qs__body__content__footer [role="button"]:first-child {
+        background: #263b59 !important;
+        border: 1px solid #354f74 !important;
+    }
+    .qs .qs__body__content__footer button:last-child,
+    .qs .qs__body__content__footer [data-testid="qs-load-button"] {
+        background: linear-gradient(110deg, #102e61 0%, #347df0 100%) !important;
+        border: 1px solid #173e7d !important;
+        box-shadow: 0 3px 10px rgba(24, 75, 157, .25) !important;
+    }
+    .qs .qs__body__content__footer button *,
+    .qs .qs__body__content__footer [role="button"] * {
+        color: #fff !important;
+    }
+}
