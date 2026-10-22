@@ -328,3 +328,26 @@
 .ai-scanner__result-table [role="cell"] { color:#153454; font-size:12px; font-weight:800; }
 .ai-scanner__status:empty { display:none; }
 .ai-scanner__result-summary { display:none !important; }
+
+
+.ai-scanner__config-layout { display:flex; flex-direction:column; gap:14px; width:100%; }
+.ai-scanner__config-row { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; align-items:stretch; }
+.ai-scanner__config-row > label { display:flex; flex-direction:column; gap:6px; min-width:0; color:#183653; font-size:12px; font-weight:800; }
+.ai-scanner__config-row input,
+.ai-scanner__recovery-options input { box-sizing:border-box; width:100%; min-width:0; height:40px; padding:7px 9px; border:1px solid #c8d8eb; border-radius:9px; background:#fff; color:#16334f; font:inherit; font-size:14px; }
+.ai-scanner__recovery-toggle { display:flex; align-items:center; justify-content:space-between; gap:5px; min-width:0; min-height:40px; padding:8px; border:1px solid #b9d1e9; border-radius:9px; background:#edf6ff; color:#173b5e; font-size:11px; font-weight:800; text-align:left; }
+.ai-scanner__recovery-toggle span { font-size:18px; }
+.ai-scanner__recovery-options { display:flex; flex-direction:column; gap:10px; padding:12px; border:1px solid #c9dff2; border-radius:10px; background:#f5faff; color:#173b5e; font-size:13px; }
+.ai-scanner__recovery-options label { display:grid; grid-template-columns:1fr 80px; align-items:center; gap:10px; font-weight:700; }
+.ai-scanner__recovery-options p { margin:0; line-height:1.4; }
+.ai-scanner__config-actions { display:grid; grid-template-columns:1fr 1.4fr; gap:10px; margin-top:4px; }
+.ai-scanner__config-actions button { min-height:44px; padding:10px; border:0; border-radius:10px; background:#123b63; color:#fff; font-size:14px; font-weight:800; }
+.ai-scanner__config-layout > small { color:#647991; font-size:11px; text-align:center; }
+@media(max-width:480px) {
+ .ai-scanner__config-layout { gap:10px; }
+ .ai-scanner__config-row { gap:6px; }
+ .ai-scanner__config-row > label { font-size:10px; }
+ .ai-scanner__config-row input { height:38px; padding:6px; font-size:13px; }
+ .ai-scanner__recovery-toggle { padding:6px; font-size:10px; }
+ .ai-scanner__config-actions button { min-height:42px; font-size:13px; }
+}
