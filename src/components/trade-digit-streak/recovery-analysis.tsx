@@ -4,7 +4,6 @@ import './recovery-analysis.scss';
 type RecoveryState = { pending: boolean; symbol: string; contractId: string; streak: number; mode: 'even-odd'; };
 type Tick = { epoch: number; digit: number };
 const KEY = 'vinteltool-recovery-analysis-state';
-const SETTINGS_KEY = 'vinteltool-analysis-recovery-settings';
 const WS_URL = 'wss://api.derivws.com/trading/v1/options/ws/public';
 
 const readState = (): RecoveryState | null => {
