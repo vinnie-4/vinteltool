@@ -4,13 +4,13 @@ import classNames from 'classnames';
 import { useFormikContext } from 'formik';
 import { observer } from 'mobx-react-lite';
 import Text from '@/components/shared_ui/text';
+import Button from '@/components/shared_ui/button';
 import ThemedScrollbars from '@/components/shared_ui/themed-scrollbars';
 import { useStore } from '@/hooks/useStore';
 import { localize } from '@deriv-com/translations';
 import { STRATEGIES } from '../config';
 import { TFormValues } from '../types';
 import QSStepper from './qs-stepper';
-import QuickStrategyStructure from '../quick-strategy-structure';
 import StrategyTabContent from './strategy-tab-content';
 import StrategyTemplatePicker from './strategy-template-picker';
 import { QsSteps } from './trade-constants';
@@ -25,9 +25,9 @@ type TMobileFormWrapper = {
 
 const MobileFormWrapper = observer(
     ({ children, current_step, selected_trade_type, setCurrentStep, setSelectedTradeType }: TMobileFormWrapper) => {
-        const { isValid, validateForm } = useFormikContext<TFormValues>();
+        const { isValid, validateForm, setFieldValue, submitForm } = useFormikContext<TFormValues>();
         const { quick_strategy } = useStore();
-        const { selected_strategy } = quick_strategy;
+        const { selected_strategy, onSubmit, is_options_loading } = quick_strategy;
         const selected_startegy_label = STRATEGIES()[selected_strategy as keyof typeof STRATEGIES].label;
         const is_verified_or_completed_step =
             current_step === QsSteps.StrategyVerified || current_step === QsSteps.StrategyCompleted;
@@ -56,7 +56,6 @@ const MobileFormWrapper = observer(
                             })}
                             autohide={false}
                         >
-                            <QuickStrategyStructure />
                             <QSStepper
                                 setCurrentStep={setCurrentStep}
                                 current_step={current_step}
