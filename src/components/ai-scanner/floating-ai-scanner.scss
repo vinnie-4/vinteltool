@@ -153,3 +153,72 @@
     .ai-scanner__panel { width: calc(100vw - 24px); max-height: calc(100dvh - 32px); }
     .ai-scanner__trade-type { padding: 11px 4px; font-size: 10px; }
 }
+
+
+/* Smart Scan lifecycle: consistent pale-blue cards before, during and after scanning. */
+.ai-scanner__scan-progress-card {
+    margin: 10px 0;
+    padding: 12px 14px;
+    border: 1px solid #d4e2f4;
+    border-radius: 15px;
+    background: #f7faff;
+    color: #244466;
+}
+.ai-scanner__scan-progress-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 9px;
+    font-size: 12px;
+    color: #607b9d;
+}
+.ai-scanner__scan-progress-heading strong {
+    color: #173b69;
+    font-size: 12px;
+    white-space: nowrap;
+}
+.ai-scanner__scan-progress-track {
+    height: 8px;
+    border-radius: 99px;
+    overflow: hidden;
+    background: #e1eaf8;
+}
+.ai-scanner__scan-progress-track span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(110deg, #2450e8 0%, #2eaff2 100%);
+    transition: width .25s ease;
+}
+.ai-scanner__scan-progress-card.is-scanning .ai-scanner__scan-progress-track span {
+    background-size: 200% 100%;
+    animation: ai-scan-progress-shimmer 1.2s linear infinite;
+}
+.ai-scanner__scan-progress-card.is-complete {
+    border-color: #b9d5f7;
+    background: linear-gradient(110deg, #f7faff, #e8f1ff);
+}
+.ai-scanner__status.is-scanning { color: #2450e8; }
+.ai-scanner__status.is-scanning span {
+    background: #2eaff2;
+    box-shadow: 0 0 0 4px rgba(46,175,242,.14);
+    animation: ai-scan-status-pulse 1s ease-in-out infinite;
+}
+.ai-scanner__scan-button {
+    background: linear-gradient(110deg, #2450e8 0%, #2eaff2 100%);
+    color: #fff;
+}
+.ai-scanner__scan-button:disabled { opacity: .65; }
+@keyframes ai-scan-progress-shimmer {
+    from { background-position: 100% 0; }
+    to { background-position: -100% 0; }
+}
+@keyframes ai-scan-status-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .55; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ai-scanner__scan-progress-track span,
+    .ai-scanner__status.is-scanning span { animation: none !important; }
+}
