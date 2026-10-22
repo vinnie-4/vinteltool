@@ -264,6 +264,8 @@ const FloatingAIScanner = () => {
     const [connected, setConnected] = useState(false);
     const [scanning, setScanning] = useState(false);
     const [scanMessage, setScanMessage] = useState('');
+    const [scanProgress, setScanProgress] = useState(0);
+    const [scanComplete, setScanComplete] = useState(false);
     const [error, setError] = useState('');
     const [confidence, setConfidence] = useState(0);
     const subscriptionRef = useRef<string | null>(null);
@@ -361,6 +363,8 @@ const FloatingAIScanner = () => {
         }
 
         setScanning(true);
+        setScanProgress(0);
+        setScanComplete(false);
         setError('');
         setConnected(false);
         setScanMessage('Scanning volatility markets…');
@@ -371,7 +375,8 @@ const FloatingAIScanner = () => {
         try {
             for (let index = 0; index < MARKETS.length; index += 1) {
                 const item = MARKETS[index];
-                setScanMessage('Scanning ' + (index + 1) + '/' + MARKETS.length + ' • ' + item.name);
+                setScanProgress(Math.round(((index + 1) / MARKETS.length) * 100));
+                setScanMessage('Scanning ' + item.name + ' (' + (index + 1) + '/' + MARKETS.length + ')');
                 const response: any = await api_base.api.send({
                     ticks_history: item.symbol,
                     count: MAX_TICKS,
@@ -399,6 +404,8 @@ const FloatingAIScanner = () => {
             const winner = results[0];
             setMarket(winner.market);
             setTicks(winner.ticks);
+            setScanProgress(100);
+            setScanComplete(true);
             setScanMessage(winner.market.name + ' • ' + winner.analysis.signal + ' • ' + winner.analysis.confidence + '% heuristic confidence');
             await connectMarket(winner.market.symbol);
         } catch (e: any) {
@@ -457,12 +464,19 @@ const FloatingAIScanner = () => {
                         </select>
                     </label>
                     <button type='button' className='ai-scanner__scan-button' disabled={scanning} onClick={() => void scanMarkets()}>
-                        {scanning ? 'SCANNING…' : 'SCAN MARKETS'}
+                        {scanning ? 'SCANNING MARKETS…' : scanComplete ? 'SCAN AGAIN' : 'SCAN MARKETS'}
                     </button>
                 </div>
 
-                <div className={'ai-scanner__status ' + (connected ? 'is-live' : '')}>
-                    <span />{scanning ? scanMessage : connected ? 'LIVE SCANNING' : 'CONNECTING TO DERIV'}
+                <section className={'ai-scanner__scan-progress-card ' + (scanning ? 'is-scanning' : scanComplete ? 'is-complete' : '')} aria-live='polite'>
+                    <div className='ai-scanner__scan-progress-heading'>
+                        <span>{scanning ? scanMessage : scanComplete ? 'Best market found' : connected ? 'Ready to scan markets' : 'Ready to scan markets'}</span>
+                        <strong>{scanning ? Math.max(1, scanProgress) + '%' : scanComplete ? 'DONE' : '0/' + MARKETS.length}</strong>
+                    </div>
+                    <div className='ai-scanner__scan-progress-track'><span style={{ width: (scanning ? Math.max(5, scanProgress) : scanComplete ? 100 : 0) + '%' }} /></div>
+                </section>
+                <div className={'ai-scanner__status ' + (connected ? 'is-live' : '') + (scanning ? ' is-scanning' : '')}>
+                    <span />{scanning ? 'Scanning markets… ' + scanMessage : scanComplete ? 'Best market: ' + market.name + ' • ' + analysis.confidence + '% heuristic confidence' : connected ? 'Connected to Deriv · Ready' : 'Not scanned yet'}
                 </div>
 
                 <div className='ai-scanner__signal'>
