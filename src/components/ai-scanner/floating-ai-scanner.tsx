@@ -385,7 +385,7 @@ const FloatingAIScanner = () => {
     }, [disconnect, connectMarket, tickWindow, selectedTradeType]);
 
     const loadScannerBot = useCallback(() => {
-        const match = /^(Over|Under) (\\d)$/.exec(analysis.signal);
+        const match = /^(Over|Under) (\d)$/.exec(analysis.signal);
         if (!match || analysis.signal === 'Waiting') {
             setError('Collecting more ticks before configuring a scanner bot.');
             return;
