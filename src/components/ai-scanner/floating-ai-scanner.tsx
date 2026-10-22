@@ -290,7 +290,7 @@ const FloatingAIScanner = () => {
             if (data?.msg_type === 'tick' && data.tick?.symbol === symbol && data.tick?.quote !== undefined) {
                 const quote = Number(data.tick.quote);
                 if (!Number.isFinite(quote)) return;
-                setTicks(previous => [...previous, { quote, digit: digitOf(quote, decimalsRef.current) }].slice(-MAX_TICKS));
+                setTicks(previous => [...previous, { quote, digit: digitOf(quote, decimalsRef.current) }].slice(-tickWindow));
                 setConnected(true);
                 if (data.tick.id) subscriptionRef.current = data.tick.id;
             }
@@ -303,7 +303,7 @@ const FloatingAIScanner = () => {
         listenerRef.current = listener;
 
         try {
-            await api_base.api.send({ ticks_history: symbol, count: MAX_TICKS, end: 'latest', style: 'ticks', req_id: historyReqId });
+            await api_base.api.send({ ticks_history: symbol, count: tickWindow, end: 'latest', style: 'ticks', req_id: historyReqId });
             const response: any = await api_base.api.send({ ticks: symbol, subscribe: 1, req_id: tickReqId });
             if (response?.subscription?.id) subscriptionRef.current = response.subscription.id;
             setConnected(true);
@@ -311,7 +311,7 @@ const FloatingAIScanner = () => {
             setConnected(false);
             setError(e?.error?.message || 'Unable to connect scanner to Deriv');
         }
-    }, [disconnect]);
+    }, [disconnect, tickWindow]);
 
     useEffect(() => {
         if (!open) return;
@@ -326,7 +326,8 @@ const FloatingAIScanner = () => {
         return () => { cancelled = true; void disconnect(); };
     }, [open, market.symbol, connectMarket, disconnect]);
 
-    const analysis = useMemo(() => analyseTicks(ticks, tickWindow, selectedTradeType), [ticks, tickWindow, selectedTradeType]);
+    const analysis = useMemo(() => analyseTicks(ticks.slice(-tickWindow), tickWindow, selectedTradeType), [ticks, tickWindow, selectedTradeType]);
+    const recentDigitStreak = useMemo(() => ticks.slice(-30).map(tick => tick.digit), [ticks]);
 
     useEffect(() => setConfidence(analysis.confidence), [analysis.confidence]);
 
@@ -353,7 +354,7 @@ const FloatingAIScanner = () => {
                 setScanMessage('Scanning ' + item.name + ' (' + (index + 1) + '/' + MARKETS.length + ')');
                 const response: any = await api_base.api.send({
                     ticks_history: item.symbol,
-                    count: MAX_TICKS,
+                    count: tickWindow,
                     end: 'latest',
                     style: 'ticks',
                     req_id: ++requestIdRef.current,
@@ -363,7 +364,7 @@ const FloatingAIScanner = () => {
 
                 const decimals = Number(response?.pip_size);
                 const precision = Number.isFinite(decimals) && decimals >= 0 ? decimals : 2;
-                const history = response.history.prices.map(Number).filter(Number.isFinite).slice(-MAX_TICKS).map((quote: number) => ({
+                const history = response.history.prices.map(Number).filter(Number.isFinite).slice(-tickWindow).map((quote: number) => ({
                     quote,
                     digit: digitOf(quote, precision),
                 }));
@@ -445,7 +446,7 @@ const FloatingAIScanner = () => {
                         <div><label>AI SCORE</label><strong>{analysis.confidence}%</strong></div>
                         <div><label>OBSERVED WIN RATE</label><strong>{analysis.winRate.toFixed(1)}%</strong></div>
                         <div><label>MOMENTUM BURST</label><strong>{analysis.momentumBurst}%</strong></div>
-                        <div><label>TICKS ANALYSED</label><strong>{analysis.total}</strong></div>
+                        <div><label>LAST TICKS ANALYSED</label><strong>{analysis.total}/{tickWindow}</strong></div>
                     </div>}
                 </section>
 
@@ -462,6 +463,9 @@ const FloatingAIScanner = () => {
                 </div>
 
                 {scanComplete && <>
+                    <div className='ai-scanner__recent-streak' aria-label='Last 30 tick digits'>
+                        {recentDigitStreak.map((digit, index) => <span key={index}>{digit}</span>)}
+                    </div>
                     <div className='ai-scanner__result-summary'>
                         <strong>Best market: {market.name} · {analysis.signal} · AI score {analysis.confidence}% · observed win rate {analysis.winRate.toFixed(1)}%</strong>
                         
