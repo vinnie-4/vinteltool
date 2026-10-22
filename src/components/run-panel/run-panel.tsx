@@ -12,6 +12,7 @@ import Text from '@/components/shared_ui/text';
 import Summary from '@/components/summary';
 import TradeAnimation from '@/components/trade-animation';
 import Transactions from '@/components/transactions';
+import RecoveryAnalysis from '@/components/trade-digit-streak/recovery-analysis';
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { popover_zindex } from '@/constants/z-indexes';
 import { useStore } from '@/hooks/useStore';
@@ -59,6 +60,7 @@ const DrawerContent = ({ active_index, is_drawer_open, active_tour, setActiveTab
     }, [is_drawer_open, isDesktop]);
     return (
         <>
+            <RecoveryAnalysis />
             <Tabs active_index={active_index} onTabItemClick={setActiveTabIndex} top>
                 <div id='db-run-panel-tab__summary' label={<Localize i18n_default_text='Summary' />}><Summary is_drawer_open={is_drawer_open} /></div>
                 <div id='db-run-panel-tab__transactions' label={<Localize i18n_default_text='Transactions' />}><Transactions is_drawer_open={is_drawer_open} /></div>
