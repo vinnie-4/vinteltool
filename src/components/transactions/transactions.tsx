@@ -15,8 +15,6 @@ import { Localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
 import ThemedScrollbars from '../shared_ui/themed-scrollbars';
 import Transaction from './transaction';
-import LastDigitLivePanel from '@/components/last-digit-live-panel/last-digit-live-panel';
-import AnalysisTool from '@/pages/analysis-tool';
 
 type TTransactions = {
     is_drawer_open: boolean;
@@ -58,7 +56,6 @@ const TransactionItem = ({ row = false, onClickTransaction, active_transaction_i
 
 const Transactions = observer(({ is_drawer_open }: TTransactions) => {
     const [active_transaction_id, setActiveTransactionId] = React.useState<number | null>(null);
-    const [is_last_digit_analysis_open, setLastDigitAnalysisOpen] = React.useState(false);
     const { run_panel, transactions } = useStore();
     const { contract_stage } = run_panel;
     const { transactions: transaction_list, toggleTransactionDetailsModal, recoverPendingContracts } = transactions;
@@ -106,13 +103,6 @@ const Transactions = observer(({ is_drawer_open }: TTransactions) => {
                 'run-panel-tab__content--mobile': !isDesktop && is_drawer_open,
             })}
         >
-            <div className='transactions__last-digit-analysis'>
-                <button type='button' className='transactions__last-digit-toggle' aria-expanded={is_last_digit_analysis_open} onClick={() => setLastDigitAnalysisOpen(open => !open)}>
-                    <span>Last digit · Even/Odd analysis</span><span>{is_last_digit_analysis_open ? 'Hide analysis −' : 'Analyze live ticks +'}</span>
-                </button>
-                {is_last_digit_analysis_open && <AnalysisTool showLegend={false} showStreak showSubtabs={false} showControls={false} showPrice={false} showContractProbabilities={false} windowSize={20} />}
-            </div>
-            <LastDigitLivePanel compact />
             <div className='download__container transaction-details__button-container'>
                 <Download tab='transactions' />
                 <Button
