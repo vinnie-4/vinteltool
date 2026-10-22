@@ -208,11 +208,28 @@ const FloatingAIScanner = () => {
     const onFabPointerUp = () => {
         fabDragRef.current = null;
     };
+    const resetScan = useCallback(() => {
+        setScanComplete(false);
+        setScanning(false);
+        setScanProgress(0);
+        setScanMessage('');
+        setError('');
+        setTicks([]);
+        setConnected(false);
+        setMarket(MARKETS[8]);
+    }, []);
+
+    const closeScanner = useCallback(() => {
+        setOpen(false);
+        resetScan();
+    }, [resetScan]);
+
     const onFabClick = () => {
         if (fabMovedRef.current) {
             fabMovedRef.current = false;
             return;
         }
+        resetScan();
         setOpen(true);
     };
     const [market, setMarket] = useState(MARKETS[8]);
@@ -390,7 +407,7 @@ const FloatingAIScanner = () => {
     if (isDuplicateInstance) return null;
 
     return <>
-        {open && <div className='ai-scanner__backdrop' onClick={() => setOpen(false)} aria-hidden='true' />}
+        {open && <div className='ai-scanner__backdrop' onClick={closeScanner} aria-hidden='true' />}
 
         {open && <section className='ai-scanner__panel' aria-label='AI Scanner'>
             <header className='ai-scanner__header'>
@@ -399,13 +416,13 @@ const FloatingAIScanner = () => {
                     <strong>AI SCANNER</strong>
                     <small>Live Deriv Options signal scanner</small>
                 </div>
-                <button type='button' onClick={() => setOpen(false)} aria-label='Close scanner'>×</button>
+                <button type='button' onClick={closeScanner} aria-label='Close scanner'>×</button>
             </header>
 
             <div className='ai-scanner__body'>
                 <div className='ai-scanner__trade-types' role='group' aria-label='Trade type to scan'>
                     {SCAN_TRADE_TYPES.map(type => (
-                        <button key={type} type='button' className={'ai-scanner__trade-type' + (selectedTradeType === type ? ' is-active' : '')} aria-pressed={selectedTradeType === type} onClick={() => setSelectedTradeType(type)}>{type}</button>
+                        <button key={type} type='button' className={'ai-scanner__trade-type' + (selectedTradeType === type ? ' is-active' : '')} aria-pressed={selectedTradeType === type} onClick={() => { if (selectedTradeType !== type) { setSelectedTradeType(type); resetScan(); } }}>{type}</button>
                     ))}
                 </div>
 
