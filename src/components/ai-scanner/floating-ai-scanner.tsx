@@ -460,7 +460,7 @@ const FloatingAIScanner = () => {
                     </div>}
                     <div className='ai-scanner__config-actions'>
                         <button type='button' onClick={() => setShowLoadConfig(false)}>Back</button>
-                        <button type='button' onClick={() => void loadScannerBot()}>Load Scanner Bot</button>
+                        <button type='button' onClick={() => void loadScannerBot()}>Load</button>
                     </div>
                 </section> : <>
                 <div className='ai-scanner__trade-types' role='group' aria-label='Trade type to scan'>
@@ -518,7 +518,7 @@ const FloatingAIScanner = () => {
                     <button type='button' className='ai-scanner__scan-button' disabled={scanning} onClick={() => void scanMarkets()}>
                         {scanning ? 'Scanning Markets…' : scanComplete ? 'Scan Again' : 'Scan Markets'}
                     </button>
-                    <button type='button' className='ai-scanner__load-button' disabled={!scanComplete || analysis.signal === 'Waiting'} onClick={() => loadScannerBot()}>
+                    <button type='button' className='ai-scanner__load-button' disabled={!scanComplete || analysis.signal === 'Waiting'} onClick={() => { setError(''); setShowLoadConfig(true); }}>
                         Load Scanner Bot
                     </button>
                 </div>
