@@ -179,6 +179,8 @@ const FloatingAIScanner = () => {
         };
     }, []);
     const [open, setOpen] = useState(false);
+    const [showLoadConfig, setShowLoadConfig] = useState(false);
+    const [recoveryExpanded, setRecoveryExpanded] = useState(false);
     const [selectedTradeType, setSelectedTradeType] = useState<(typeof SCAN_TRADE_TYPES)[number]>('Over3 / Under6');
     const [fabPosition, setFabPosition] = useState<{ x: number; y: number } | null>(null);
     const fabDragRef = useRef<{ pointerX: number; pointerY: number; left: number; top: number; moved: boolean } | null>(null);
@@ -222,6 +224,8 @@ const FloatingAIScanner = () => {
 
     const closeScanner = useCallback(() => {
         setOpen(false);
+        setShowLoadConfig(false);
+        setRecoveryExpanded(false);
         resetScan();
     }, [resetScan]);
 
@@ -231,6 +235,8 @@ const FloatingAIScanner = () => {
             return;
         }
         resetScan();
+        setShowLoadConfig(false);
+        setRecoveryExpanded(false);
         setOpen(true);
     };
     const [market, setMarket] = useState(MARKETS[8]);
@@ -421,13 +427,35 @@ const FloatingAIScanner = () => {
             <header className='ai-scanner__header'>
                 <div>
                     <span className='ai-scanner__spark'>✦</span>
-                    <strong>AI SCANNER</strong>
+                    <strong>{showLoadConfig ? 'SCANNER BOT CONFIGURATION' : 'AI SCANNER'}</strong>
                     <small>Live Deriv Options signal scanner</small>
                 </div>
                 <button type='button' onClick={closeScanner} aria-label='Close scanner'>×</button>
             </header>
 
             <div className='ai-scanner__body'>
+                {showLoadConfig ? <section className='ai-scanner__config-layout' aria-label='Scanner bot configuration'>
+                    <div className='ai-scanner__config-row'>
+                        <label>Stake<input type='number' defaultValue='0.5' min='0.01' step='0.01' /></label>
+                        <label>Ticks<input type='number' defaultValue='1' min='1' step='1' /></label>
+                        <label>No. of wins<input type='number' defaultValue='4' min='1' step='1' /></label>
+                    </div>
+                    <div className='ai-scanner__config-row'>
+                        <label>Martingale<input type='number' defaultValue='2' min='1' step='0.1' /></label>
+                        <label>Stop loss<input type='number' defaultValue='10' min='0' step='0.1' /></label>
+                        <button type='button' className={'ai-scanner__recovery-toggle' + (recoveryExpanded ? ' is-expanded' : '')} onClick={() => setRecoveryExpanded(value => !value)} aria-expanded={recoveryExpanded}>Recovery (Even/Odd) <span>{recoveryExpanded ? '−' : '+'}</span></button>
+                    </div>
+                    {recoveryExpanded && <div className='ai-scanner__recovery-options'>
+                        <strong>Recovery condition</strong>
+                        <label>Analyse last <input type='number' defaultValue='2' min='1' max='30' /> digits</label>
+                        <p>If the last selected digits are odd, trade Even. If they are even, trade Odd.</p>
+                    </div>}
+                    <div className='ai-scanner__config-actions'>
+                        <button type='button' onClick={() => setShowLoadConfig(false)}>Back</button>
+                        <button type='button' onClick={() => {}}>Load Scanner Bot</button>
+                    </div>
+                    <small>Layout preview only — these settings are not connected to trading.</small>
+                </section> : <>
                 <div className='ai-scanner__trade-types' role='group' aria-label='Trade type to scan'>
                     {SCAN_TRADE_TYPES.map(type => (
                         <button key={type} type='button' className={'ai-scanner__trade-type' + (selectedTradeType === type ? ' is-active' : '')} aria-pressed={selectedTradeType === type} onClick={() => { if (selectedTradeType !== type) { setSelectedTradeType(type); resetScan(); } }}>{type}</button>
@@ -487,11 +515,12 @@ const FloatingAIScanner = () => {
                     <button type='button' className='ai-scanner__scan-button' disabled={scanning} onClick={() => void scanMarkets()}>
                         {scanning ? 'Scanning Markets…' : scanComplete ? 'Scan Again' : 'Scan Markets'}
                     </button>
-                    <button type='button' className='ai-scanner__load-button' disabled={!scanComplete || analysis.signal === 'Waiting'} onClick={() => void loadScannerBot()}>
+                    <button type='button' className='ai-scanner__load-button' disabled={!scanComplete || analysis.signal === 'Waiting'} onClick={() => setShowLoadConfig(true)}>
                         Load Scanner Bot
                     </button>
                 </div>
                 {error && <p className='ai-scanner__error'>{error}</p>}
+                </>}
             </div>
         </section>}
 
