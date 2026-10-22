@@ -77,7 +77,11 @@ export default Engine =>
                 return null;
             };
             const matched = await checkStreak();
-            if (matched) { this.analysisRecoveryPending = false; return matched; }
+            if (matched) {
+                this.analysisRecoveryPending = false;
+                try { window.localStorage.removeItem('vinteltool-recovery-analysis-state'); } catch {}
+                return matched;
+            }
             return new Promise(resolve => {
                 let finished = false;
                 let previousTick = this.store.getState().newTick;
@@ -88,7 +92,7 @@ export default Engine =>
                     if (state.scope === 'STOP') { finish(null); return; }
                     if (state.newTick === previousTick) return;
                     previousTick = state.newTick;
-                    checkStreak().then(type => { if (type) { this.analysisRecoveryPending = false; finish(type); } }).catch(() => {});
+                    checkStreak().then(type => { if (type) { this.analysisRecoveryPending = false; try { window.localStorage.removeItem('vinteltool-recovery-analysis-state'); } catch {} finish(type); } }).catch(() => {});
                 });
             });
         }
