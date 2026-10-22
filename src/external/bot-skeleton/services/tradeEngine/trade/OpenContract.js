@@ -95,6 +95,39 @@ export default Engine =>
                         this.contractId = '';
                         clearTimeout(this.transaction_recovery_timeout);
                         this.updateTotals(contract);
+
+                        // Scanner-only session risk controls. Stop on cumulative take-profit,
+                        // cumulative stop-loss, or the first winning recovery trade after analysis.
+                        let scannerStopReason = '';
+                        if (this.scannerRiskLimits && !this.scannerRiskStopTriggered) {
+                            const settledProfit = Number.isFinite(Number(contract.profit))
+                                ? Number(contract.profit)
+                                : Number(contract.sell_price) - Number(contract.buy_price);
+                            if (Number.isFinite(settledProfit)) {
+                                this.scannerSessionProfit = Number((this.scannerSessionProfit + settledProfit).toFixed(8));
+                                const limits = this.scannerRiskLimits;
+                                if (limits.stopAfterRecoveryWin && this.analysisRecoveryTradeInProgress && settledProfit > 0) {
+                                    scannerStopReason = 'Recovery analysis win';
+                                } else if (limits.takeProfit > 0 && this.scannerSessionProfit >= limits.takeProfit) {
+                                    scannerStopReason = 'Take profit reached';
+                                } else if (limits.stopLoss > 0 && this.scannerSessionProfit <= -limits.stopLoss) {
+                                    scannerStopReason = 'Stop loss reached';
+                                }
+                            }
+                            this.analysisRecoveryTradeInProgress = false;
+                            if (scannerStopReason) {
+                                this.scannerRiskStopTriggered = true;
+                                try {
+                                    window.localStorage.setItem('vinteltool-scanner-risk-stop', JSON.stringify({
+                                        reason: scannerStopReason,
+                                        sessionProfit: this.scannerSessionProfit,
+                                        contractId: String(contract.contract_id),
+                                    }));
+                                } catch {}
+                                this.observer?.emit?.('bot.stop');
+                            }
+                        }
+
                         contractStatus({
                             id: 'contract.sold',
                             data: contract.transaction_ids.sell,
