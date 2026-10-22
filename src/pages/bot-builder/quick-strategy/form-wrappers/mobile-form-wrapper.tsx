@@ -14,6 +14,7 @@ import QSStepper from './qs-stepper';
 import StrategyTabContent from './strategy-tab-content';
 import StrategyTemplatePicker from './strategy-template-picker';
 import { QsSteps } from './trade-constants';
+import useQsSubmitHandler from './useQsSubmitHandler';
 
 type TMobileFormWrapper = {
     children: React.ReactNode;
@@ -28,6 +29,7 @@ const MobileFormWrapper = observer(
         const { isValid, validateForm, setFieldValue, submitForm } = useFormikContext<TFormValues>();
         const { quick_strategy } = useStore();
         const { selected_strategy, onSubmit, is_options_loading } = quick_strategy;
+        const { handleSubmit } = useQsSubmitHandler();
         const selected_startegy_label = STRATEGIES()[selected_strategy as keyof typeof STRATEGIES].label;
         const is_verified_or_completed_step =
             current_step === QsSteps.StrategyVerified || current_step === QsSteps.StrategyCompleted;
@@ -92,6 +94,37 @@ const MobileFormWrapper = observer(
                                 </>
                             )}
                         </ThemedScrollbars>
+                        {is_verified_or_completed_step && (
+                            <div className='qs__body__content__footer'>
+                                <Button secondary onClick={() => setCurrentStep(QsSteps.StrategySelect)}>
+                                    {localize('Back')}
+                                </Button>
+                                <Button
+                                    secondary
+                                    disabled={!isValid || is_options_loading}
+                                    onClick={async () => {
+                                        await setFieldValue('action', 'EDIT');
+                                        validateForm();
+                                        submitForm().then((form_data: TFormValues | void) => {
+                                            if (isValid && form_data) onSubmit(form_data);
+                                        });
+                                    }}
+                                >
+                                    {localize('Load')}
+                                </Button>
+                                <Button
+                                    primary
+                                    data-testid='qs-run-button'
+                                    disabled={!isValid || is_options_loading}
+                                    onClick={e => {
+                                        e.preventDefault();
+                                        handleSubmit();
+                                    }}
+                                >
+                                    {localize('Run')}
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
