@@ -418,9 +418,9 @@ const FloatingAIScanner = () => {
                     <div><label>TRADE TYPE</label><strong>{scanComplete ? analysis.signal : 'Waiting for scan'}</strong></div>
                     {scanComplete && <div className='ai-scanner__result-metrics'>
                         <div><label>AI SCORE</label><strong>{analysis.confidence}%</strong></div>
-                        <div><label>WIN RATE</label><strong>{analysis.total ? analysis.overPct.toFixed(1) + '%' : '—'}</strong></div>
-                        <div><label>RECENT</label><strong>{analysis.total ? analysis.recentPressure : '—'}</strong></div>
-                        <div><label>SAMPLES</label><strong>{analysis.total}</strong></div>
+                        <div><label>OBSERVED WIN RATE</label><strong>{analysis.winRate.toFixed(1)}%</strong></div>
+                        <div><label>MOMENTUM BURST</label><strong>{analysis.momentumBurst}%</strong></div>
+                        <div><label>TICKS ANALYSED</label><strong>{analysis.total}</strong></div>
                     </div>}
                 </section>
 
@@ -438,7 +438,9 @@ const FloatingAIScanner = () => {
 
                 {scanComplete && <>
                     <div className='ai-scanner__result-summary'>
-                        <strong>Best market: {market.name} | {analysis.signal} | AI {analysis.confidence}%</strong>
+                        <strong>Best market: {market.name} · {analysis.signal} · AI score {analysis.confidence}% · observed win rate {analysis.winRate.toFixed(1)}%</strong>
+                        <p>Hottest digit: {analysis.hot ?? '—'} · Coldest digit: {analysis.cold ?? '—'} · No appearances: {analysis.missingDigits.length ? analysis.missingDigits.join(', ') : 'none'}</p>
+                        <p>Momentum burst (most frequent digit in latest 20 ticks): {analysis.momentumBurst}% · {analysis.total} of {tickWindow} selected ticks analysed.</p>
                     </div>
                     <div className='ai-scanner__digits'>
                         {analysis.counts.map((count, digit) => (
