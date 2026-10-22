@@ -30,7 +30,22 @@ export default Engine =>
                             const multiplier = Math.max(1, Math.min(5, Number(settings.multiplier) || 2));
                             const maxStake = Math.max(baseStake, Number(settings.maxStake) || baseStake);
                             const profit = Number(contract.profit);
-                            if (settings.recoveryOnlyAfterLoss) this.analysisRecoveryPending = profit < 0;
+                            if (settings.recoveryOnlyAfterLoss) {
+                                this.analysisRecoveryPending = profit < 0;
+                                try {
+                                    if (profit < 0) {
+                                        window.localStorage.setItem('vinteltool-recovery-analysis-state', JSON.stringify({
+                                            pending: true,
+                                            symbol: String(contract.underlying_symbol || contract.underlying || this.symbol || ''),
+                                            contractId: String(contract.contract_id),
+                                            streak: Math.max(2, Math.min(30, Number(settings.streak) || 2)),
+                                            mode: 'even-odd',
+                                        }));
+                                    } else {
+                                        window.localStorage.removeItem('vinteltool-recovery-analysis-state');
+                                    }
+                                } catch {}
+                            }
                             this.tradeOptions.amount = profit < 0 ? Math.min(baseStake * multiplier, maxStake) : baseStake;
                         }
                     }
