@@ -13,6 +13,7 @@ import ToolbarButton from '../toolbar/toolbar-button';
 import SearchBox from './search-box';
 import AnalysisTool from '@/pages/analysis-tool';
 import { ToolboxItems } from './toolbox-items';
+import LastDigitLivePanel from '@/components/last-digit-live-panel/last-digit-live-panel';
 
 const Toolbox = observer(() => {
     const { isDesktop } = useDevice();
@@ -177,6 +178,7 @@ const Toolbox = observer(() => {
                             </button>
                             {is_last_digit_open && <AnalysisTool showLegend={false} showStreak showSubtabs={false} showControls={false} showPrice={false} showContractProbabilities={false} windowSize={20} />}
                         </div>
+                        <LastDigitLivePanel compact />
                     </div>
                 </div>
             </div>
