@@ -202,6 +202,42 @@ const scannerXml = (market: Market, signal: Signal) => {
 const FloatingAIScanner = () => {
     const { quick_strategy, dashboard } = useStore();
     const [open, setOpen] = useState(false);
+    const [fabPosition, setFabPosition] = useState<{ x: number; y: number } | null>(null);
+    const fabDragRef = useRef<{ pointerX: number; pointerY: number; left: number; top: number; moved: boolean } | null>(null);
+    const fabMovedRef = useRef(false);
+
+    const onFabPointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        fabDragRef.current = { pointerX: event.clientX, pointerY: event.clientY, left: rect.left, top: rect.top, moved: false };
+        fabMovedRef.current = false;
+        event.currentTarget.setPointerCapture?.(event.pointerId);
+    };
+    const onFabPointerMove = (event: React.PointerEvent<HTMLButtonElement>) => {
+        const drag = fabDragRef.current;
+        if (!drag || !(event.buttons & 1)) return;
+        const dx = event.clientX - drag.pointerX;
+        const dy = event.clientY - drag.pointerY;
+        if (!drag.moved && Math.hypot(dx, dy) < 6) return;
+        drag.moved = true;
+        fabMovedRef.current = true;
+        const rect = event.currentTarget.getBoundingClientRect();
+        const maxX = Math.max(0, window.innerWidth - rect.width);
+        const maxY = Math.max(0, window.innerHeight - rect.height);
+        setFabPosition({
+            x: Math.min(maxX, Math.max(0, drag.left + dx)),
+            y: Math.min(maxY, Math.max(0, drag.top + dy)),
+        });
+    };
+    const onFabPointerUp = () => {
+        fabDragRef.current = null;
+    };
+    const onFabClick = () => {
+        if (fabMovedRef.current) {
+            fabMovedRef.current = false;
+            return;
+        }
+        setOpen(true);
+    };
     const [market, setMarket] = useState(MARKETS[8]);
     const [tickWindow, setTickWindow] = useState(DEFAULT_TICK_WINDOW);
     const [ticks, setTicks] = useState<Tick[]>([]);
@@ -448,8 +484,19 @@ const FloatingAIScanner = () => {
             </div>
         </section>}
 
-        {!open && <button type='button' className='ai-scanner__fab' onClick={() => setOpen(true)} aria-label='Open AI Scanner'>
-            <span>✦</span><b>AI</b>
+        {!open && <button
+            type='button'
+            className={'ai-scanner__fab' + (fabPosition ? ' is-positioned' : '')}
+            style={fabPosition ? { left: fabPosition.x, top: fabPosition.y, right: 'auto', bottom: 'auto' } : undefined}
+            onPointerDown={onFabPointerDown}
+            onPointerMove={onFabPointerMove}
+            onPointerUp={onFabPointerUp}
+            onPointerCancel={onFabPointerUp}
+            onClick={onFabClick}
+            aria-label='Open AI Scanner'
+            title='Drag to move • Tap to open'
+        >
+            <span className='ai-scanner__fab-label'>AI</span><i className='ai-scanner__fab-dot' />
         </button>}
     </>;
 };
