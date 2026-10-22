@@ -199,8 +199,26 @@ const scannerXml = (market: Market, signal: Signal) => {
     return new XMLSerializer().serializeToString(doc);
 };
 
+// Nested routes/layouts may mount the shared widget more than once.
+const AI_SCANNER_OWNER_KEY = '__vinteltoolFloatingAiScannerOwner';
+
 const FloatingAIScanner = () => {
     const { quick_strategy, dashboard } = useStore();
+    const [isDuplicateInstance, setIsDuplicateInstance] = useState(false);
+    useEffect(() => {
+        const host = window as any;
+        if (host[AI_SCANNER_OWNER_KEY]) {
+            setIsDuplicateInstance(true);
+            return;
+        }
+        const owner = {};
+        host[AI_SCANNER_OWNER_KEY] = owner;
+        return () => {
+            if (host[AI_SCANNER_OWNER_KEY] === owner) {
+                delete host[AI_SCANNER_OWNER_KEY];
+            }
+        };
+    }, []);
     const [open, setOpen] = useState(false);
     const [fabPosition, setFabPosition] = useState<{ x: number; y: number } | null>(null);
     const fabDragRef = useRef<{ pointerX: number; pointerY: number; left: number; top: number; moved: boolean } | null>(null);
@@ -401,6 +419,8 @@ const FloatingAIScanner = () => {
         await new Promise<void>(resolve => window.setTimeout(resolve, 80));
         await quick_strategy.loadFreeBotXml(xml, 'AI Scanner • ' + market.name + ' • ' + analysis.signal);
     }, [analysis.signal, dashboard, market, quick_strategy]);
+
+    if (isDuplicateInstance) return null;
 
     return <>
         {open && <div className='ai-scanner__backdrop' onClick={() => setOpen(false)} aria-hidden='true' />}
