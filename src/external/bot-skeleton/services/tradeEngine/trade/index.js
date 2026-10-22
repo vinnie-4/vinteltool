@@ -136,6 +136,19 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
         this.tradeOptions = { ...validated_trade_options, symbol: this.options.symbol };
         this.analysisRecoveryBaseStake = Number(validated_trade_options.amount) || 0;
         this.analysisRecoveryLastContractId = null;
+        this.scannerRiskLimits = null;
+        this.scannerSessionProfit = 0;
+        try {
+            const scannerLimits = JSON.parse(window.localStorage.getItem('vinteltool-scanner-risk-limits') || 'null');
+            if (scannerLimits?.enabled) {
+                this.scannerRiskLimits = {
+                    takeProfit: Math.max(0, Number(scannerLimits.takeProfit) || 0),
+                    stopLoss: Math.max(0, Number(scannerLimits.stopLoss) || 0),
+                    stopAfterRecoveryWin: Boolean(scannerLimits.stopAfterRecoveryWin),
+                };
+                window.localStorage.removeItem('vinteltool-scanner-risk-limits');
+            }
+        } catch { /* optional scanner limits must not prevent normal bot startup */ }
         this.store.dispatch(start());
         this.checkLimits(validated_trade_options);
         this.makeDirectPurchaseDecision();
