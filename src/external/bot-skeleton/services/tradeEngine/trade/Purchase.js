@@ -8,10 +8,59 @@ import { BEFORE_PURCHASE } from './state/constants';
 
 let delayIndex = 0;
 let purchase_reference;
+const ANALYSIS_SETTINGS_KEY = 'vinteltool-analysis-recovery-settings';
+const readAnalysisSettings = () => {
+    try {
+        if (typeof window === 'undefined') return null;
+        const value = JSON.parse(window.localStorage.getItem(ANALYSIS_SETTINGS_KEY) || 'null');
+        return value && value.enabled ? value : null;
+    } catch { return null; }
+};
+const getDigitClass = (digit, mode) => mode === 'over-under' ? (digit > 4 ? 'over' : 'under') : (digit % 2 === 0 ? 'even' : 'odd');
+const contractMatchesSignal = (contractType, tradeOptions, mode, signal) => {
+    const type = String(contractType || '').toUpperCase();
+    if (mode === 'even-odd') return (signal === 'even' && type === 'DIGITEVEN') || (signal === 'odd' && type === 'DIGITODD');
+    const barrier = Number(tradeOptions?.barrier);
+    return (signal === 'over' && type === 'DIGITOVER' && (!Number.isFinite(barrier) || barrier === 4)) || (signal === 'under' && type === 'DIGITUNDER' && (!Number.isFinite(barrier) || barrier === 5));
+};
+
 
 export default Engine =>
     class Purchase extends Engine {
+        async waitForAnalysisSignal(contract_type) {
+            const settings = readAnalysisSettings();
+            const type = String(contract_type || '').toUpperCase();
+            if (!settings || !this.symbol || !['DIGITEVEN', 'DIGITODD', 'DIGITOVER', 'DIGITUNDER'].includes(type)) return true;
+            const mode = settings.mode === 'over-under' ? 'over-under' : 'even-odd';
+            const streakLength = Math.max(2, Math.min(10, Number(settings.streak) || 3));
+            const checkSignal = async () => {
+                const digits = await this.getLastDigitList();
+                if (!Array.isArray(digits) || digits.length < streakLength) return false;
+                const recent = digits.slice(-streakLength);
+                const firstClass = getDigitClass(Number(recent[0]), mode);
+                if (!recent.every(digit => getDigitClass(Number(digit), mode) === firstClass)) return false;
+                const opposite = mode === 'over-under' ? (firstClass === 'over' ? 'under' : 'over') : (firstClass === 'even' ? 'odd' : 'even');
+                return contractMatchesSignal(contract_type, this.tradeOptions, mode, opposite);
+            };
+            if (await checkSignal()) return true;
+            return new Promise(resolve => {
+                let finished = false;
+                let previousTick = this.store.getState().newTick;
+                let unsubscribe;
+                const finish = value => { if (finished) return; finished = true; unsubscribe?.(); resolve(value); };
+                unsubscribe = this.store.subscribe(() => {
+                    const state = this.store.getState();
+                    if (state.scope === 'STOP') { finish(false); return; }
+                    if (state.newTick === previousTick) return;
+                    previousTick = state.newTick;
+                    checkSignal().then(matched => { if (matched) finish(true); }).catch(() => {});
+                });
+            });
+        }
+
         async purchase(contract_type) {
+            // Analysis mode waits for the configured live streak before allowing the opposite-side digit contract.
+            if (!(await this.waitForAnalysisSignal(contract_type))) return Promise.resolve();
             // Prevent calling purchase twice
             if (this.store.getState().scope !== BEFORE_PURCHASE) {
                 return Promise.resolve();
