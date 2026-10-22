@@ -92,7 +92,7 @@ const RecoveryAnalysis = () => {
     }
     const recentWindows = windows.slice(-18);
     return <section className='recovery-analysis' aria-live='polite'>
-        <div className='recovery-analysis__windows'>
+        <div className='recovery-analysis__windows'><strong className='recovery-analysis__label'>Analysis</strong>
             {recentWindows.map(window => <div key={window.key} className={'recovery-analysis__window' + (window.ok ? ' is-match' : ' is-miss')}>
                 <span className='recovery-analysis__digits'>{'[' + window.digits.join(',') + ']'}</span>
                 <span className='recovery-analysis__mark'>{window.ok ? '☑' : '✕'}</span>
