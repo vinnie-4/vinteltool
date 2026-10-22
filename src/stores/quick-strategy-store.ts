@@ -86,12 +86,10 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
 
     loadFreeBotXml = async (xml: string, botName = 'Free Bot') => {
         if (!xml?.trim()) return;
-        // Free Bot XML imports always use the Martingale Quick Strategy context.
-        // The XML is still converted into native Blockly blocks; it is not replaced
-        // with a generated Quick Strategy template.
-        this.selected_strategy = 'MARTINGALE';
+        // Free Bots load directly into the main Blockly workspace. Do not open
+        // Quick Strategy or force any strategy selection (including Martingale).
         this.pending_free_bot = { xml, name: botName };
-        this.setFormVisibility(true);
+        this.setFormVisibility(false);
         await this.importPendingFreeBot();
     };
 
