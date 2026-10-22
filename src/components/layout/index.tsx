@@ -11,6 +11,7 @@ import Footer from './footer';
 import AppHeader from './header';
 import Body from './main-body';
 import './layout.scss';
+import FloatingAIScanner from '@/components/ai-scanner/floating-ai-scanner';
 
 const Layout = observer(() => {
     const { isDesktop } = useDevice();
@@ -154,6 +155,7 @@ const Layout = observer(() => {
                 <Outlet />
             </Body>
             {!isCallbackPage && isDesktop && <Footer />}
+            {!isCallbackPage && <FloatingAIScanner />}
         </div>
     );
 });
