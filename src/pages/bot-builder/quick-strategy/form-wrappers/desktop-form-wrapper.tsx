@@ -196,17 +196,6 @@ const FormWrapper = observer(
                                     <Button secondary disabled={!isValid} onClick={onEdit}>
                                         {localize('Load')}
                                     </Button>
-                                    <Button
-                                        data-testid='qs-run-button'
-                                        primary
-                                        onClick={e => {
-                                            e.preventDefault();
-                                            onRun();
-                                        }}
-                                        disabled={!isValid || quick_strategy.is_options_loading}
-                                    >
-                                        {localize('Run')}
-                                    </Button>
                                 </div>
                             )}
                         </div>
