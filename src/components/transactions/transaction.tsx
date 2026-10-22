@@ -14,6 +14,7 @@ import { MarketIcon } from '../market/market-icon';
 import { convertDateFormat } from '../shared';
 import Popover from '../shared_ui/popover';
 import { TradeTypeIcon } from '../trade-type/trade-type-icon';
+import TradeDigitStreak from '@/components/trade-digit-streak/trade-digit-streak';
 
 type TTransactionIconWithText = {
     icon: React.ReactElement;
@@ -88,7 +89,7 @@ const PopoverItem = ({ icon, title, children }: TPopoverItem) => (
     </div>
 );
 
-const PopoverContent = ({ contract }: TPopoverContent) => (
+const PopoverContent = ({ contract, active }: TPopoverContent & { active: boolean }) => (
     <div className='transactions__popover-content'>
         {contract.transaction_ids && (
             <PopoverItem title={<Localize i18n_default_text='Reference IDs' />}>
@@ -156,6 +157,7 @@ const PopoverContent = ({ contract }: TPopoverContent) => (
                     <div className='transactions__popover-value'>{contract.exit_spot}</div>
                 </PopoverItem>
             ))}
+        <TradeDigitStreak contract={contract} active={active} />
     </div>
 );
 
@@ -166,7 +168,7 @@ const Transaction = ({ contract, active_transaction_id, onClickTransaction }: TT
             alignment={isDbotRTL() ? 'right' : 'left'}
             className='transactions__item-wrapper'
             is_open={!!(contract && active_transaction_id === contract?.transaction_ids?.buy)}
-            message={contract && <PopoverContent contract={contract} />}
+            message={contract && <PopoverContent contract={contract} active={active_transaction_id === contract?.transaction_ids?.buy} />}
         >
             <div
                 data-testid='dt_transactions_item'
