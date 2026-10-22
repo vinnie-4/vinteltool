@@ -359,31 +359,37 @@ const FloatingAIScanner = () => {
             while (true) {
                 cycle += 1;
                 const results: Array<{ market: Market; ticks: Tick[]; analysis: Analysis }> = [];
-                for (let index = 0; index < MARKETS.length; index += 1) {
-                    const item = MARKETS[index];
-                    setScanProgress(Math.round(((index + 1) / MARKETS.length) * 100));
+                let completed = 0;
+                await Promise.all(MARKETS.map(async (item, index) => {
                     setScanMessage(item.name + '|' + (index + 1) + '/' + MARKETS.length);
-                    const response: any = await api_base.api.send({
-                        ticks_history: item.symbol,
-                        count: tickWindow,
-                        end: 'latest',
-                        style: 'ticks',
-                        req_id: ++requestIdRef.current,
-                    });
-                    if (response?.error || !Array.isArray(response?.history?.prices)) continue;
-                    const decimals = Number(response?.pip_size);
-                    const precision = Number.isFinite(decimals) && decimals >= 0 ? decimals : 2;
-                    const history = response.history.prices.map(Number).filter(Number.isFinite).slice(-tickWindow).map((quote: number) => ({
-                        quote,
-                        digit: digitOf(quote, precision),
-                    }));
-                    if (history.length >= tickWindow) {
-                        const result = analyseTicks(history, tickWindow, selectedTradeType);
-                        results.push({ market: item, ticks: history, analysis: result });
+                    try {
+                        const response: any = await api_base.api.send({
+                            ticks_history: item.symbol,
+                            count: tickWindow,
+                            end: 'latest',
+                            style: 'ticks',
+                            req_id: ++requestIdRef.current,
+                        });
+                        if (!response?.error && Array.isArray(response?.history?.prices)) {
+                            const decimals = Number(response?.pip_size);
+                            const precision = Number.isFinite(decimals) && decimals >= 0 ? decimals : 2;
+                            const history = response.history.prices.map(Number).filter(Number.isFinite).slice(-tickWindow).map((quote: number) => ({
+                                quote,
+                                digit: digitOf(quote, precision),
+                            }));
+                            if (history.length >= tickWindow) {
+                                const result = analyseTicks(history, tickWindow, selectedTradeType);
+                                results.push({ market: item, ticks: history, analysis: result });
+                            }
+                        }
+                    } catch {
+                        // One unavailable market should not delay the rest of the scan.
+                    } finally {
+                        completed += 1;
+                        setScanProgress(Math.round((completed / MARKETS.length) * 100));
+                        setScanMessage(item.name + '|' + completed + '/' + MARKETS.length);
                     }
-                    await new Promise(resolve => window.setTimeout(resolve, 250));
-                }
-
+                }));
                 const qualified = results
                     .filter(result => result.analysis.winRate >= 80 && result.analysis.confidence >= 80)
                     .sort((a, b) => b.analysis.winRate - a.analysis.winRate || b.analysis.confidence - a.analysis.confidence || b.analysis.momentumBurst - a.analysis.momentumBurst);
