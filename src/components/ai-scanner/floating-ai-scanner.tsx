@@ -204,10 +204,9 @@ const FloatingAIScanner = () => {
     const [recoveryExpanded, setRecoveryExpanded] = useState(false);
     const [configStake, setConfigStake] = useState('0.5');
     const [configDuration, setConfigDuration] = useState('1');
-    const [configWins, setConfigWins] = useState('4');
     const [configMartingale, setConfigMartingale] = useState('2');
     const [configStopLoss, setConfigStopLoss] = useState('10');
-    const [configTakeProfit, setConfigTakeProfit] = useState('10');
+    const [configTakeProfit, setConfigTakeProfit] = useState('5');
     const [configRecoveryDigits, setConfigRecoveryDigits] = useState('2');
     const [selectedTradeType, setSelectedTradeType] = useState<(typeof SCAN_TRADE_TYPES)[number]>('Over1 / Under8');
     const [fabPosition, setFabPosition] = useState<{ x: number; y: number } | null>(null);
@@ -479,13 +478,12 @@ const FloatingAIScanner = () => {
                     <div className='ai-scanner__config-row'>
                         <label>Stake<input type='number' value={configStake} onChange={e => setConfigStake(e.target.value)} min='0.01' step='0.01' /></label>
                         <label>Ticks<input type='number' value={configDuration} onChange={e => setConfigDuration(e.target.value)} min='1' step='1' /></label>
-                        <label>No. of wins<input type='number' value={configWins} onChange={e => setConfigWins(e.target.value)} min='1' step='1' /></label>
                     </div>
                     <div className='ai-scanner__config-row'>
                         <label>Martingale<input type='number' value={configMartingale} onChange={e => setConfigMartingale(e.target.value)} min='1' step='0.1' /></label>
                         <label>Stop loss<input type='number' value={configStopLoss} onChange={e => setConfigStopLoss(e.target.value)} min='0' step='0.1' /></label>
                         <label>Take profit<input type='number' value={configTakeProfit} onChange={e => setConfigTakeProfit(e.target.value)} min='0' step='0.1' /></label>
-                        <button type='button' className={'ai-scanner__recovery-toggle' + (recoveryExpanded ? ' is-expanded' : '')} onClick={() => setRecoveryExpanded(value => !value)} aria-expanded={recoveryExpanded}>Recovery (Even/Odd) <span>{recoveryExpanded ? '−' : '+'}</span></button>
+                        <button type='button' className={'ai-scanner__recovery-toggle' + (recoveryExpanded ? ' is-expanded' : '')} onClick={() => setRecoveryExpanded(value => !value)} aria-expanded={recoveryExpanded}>Recovery (Even) <span>{recoveryExpanded ? '−' : '+'}</span></button>
                     </div>
                     {recoveryExpanded && <div className='ai-scanner__recovery-options'>
                         <strong>Recovery</strong>
