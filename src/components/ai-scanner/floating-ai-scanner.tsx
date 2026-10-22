@@ -6,7 +6,7 @@ import martingaleXml from '@/xml/martingale.xml';
 import './floating-ai-scanner.scss';
 
 type Tick = { quote: number; digit: number };
-type Signal = 'Even' | 'Odd' | 'Over 4' | 'Under 5' | 'Waiting';
+type Signal = (typeof SCAN_TRADE_TYPES)[number] | 'Waiting';
 type Market = { name: string; symbol: string };
 type Analysis = {
     counts: number[];
@@ -57,146 +57,95 @@ const emptyAnalysis = (): Analysis => ({
     rationale: 'Waiting for enough live tick data.',
 });
 
-const analyseTicks = (ticks: Tick[], windowSize = DEFAULT_TICK_WINDOW): Analysis => {
+const analyseTicks = (ticks: Tick[], windowSize = DEFAULT_TICK_WINDOW, requestedType?: (typeof SCAN_TRADE_TYPES)[number]): Analysis => {
     const values = ticks.slice(-Math.min(MAX_TICKS, Math.max(30, windowSize)));
     const counts = Array(10).fill(0) as number[];
-    values.forEach(tick => {
-        if (tick.digit >= 0 && tick.digit <= 9) counts[tick.digit] += 1;
-    });
-
+    values.forEach(tick => { if (tick.digit >= 0 && tick.digit <= 9) counts[tick.digit] += 1; });
     const total = values.length;
-    if (total < 20) return { ...emptyAnalysis(), counts, total };
+    const missingDigits = counts.map((count, digit) => count === 0 ? digit : -1).filter(digit => digit >= 0);
+    if (total < 20) return { ...emptyAnalysis(), counts, total, missingDigits };
 
-    const even = counts.filter((_, digit) => digit % 2 === 0).reduce((a, b) => a + b, 0);
-    const over4 = counts.slice(5).reduce((a, b) => a + b, 0);
-    const evenPct = (even / total) * 100;
-    const overPct = (over4 / total) * 100;
-
-    const recent = values.slice(-20);
-    const recentEvenPct = (recent.filter(tick => tick.digit % 2 === 0).length / recent.length) * 100;
-    const recentOverPct = (recent.filter(tick => tick.digit >= 5).length / recent.length) * 100;
-    const recentParityPressure = Math.abs(recentEvenPct - 50);
-    const recentOverPressure = Math.abs(recentOverPct - 50);
-
-    const ranked = counts
-        .map((count, digit) => ({ count, digit }))
-        .sort((a, b) => b.count - a.count || a.digit - b.digit);
+    const ranked = counts.map((count, digit) => ({ count, digit })).sort((a, b) => b.count - a.count || a.digit - b.digit);
     const hot = ranked[0]?.digit ?? null;
     const cold = ranked[ranked.length - 1]?.digit ?? null;
+    const even = counts.filter((_, digit) => digit % 2 === 0).reduce((a, b) => a + b, 0);
+    const over4 = counts.slice(5).reduce((a, b) => a + b, 0);
+    const evenPct = even / total * 100;
+    const overPct = over4 / total * 100;
+    const recent = values.slice(-Math.min(100, values.length));
+    const last20 = recent.slice(-Math.min(20, recent.length));
+    const recentCounts = Array(10).fill(0) as number[];
+    last20.forEach(tick => { recentCounts[tick.digit] += 1; });
+    const recentTop = Math.max(...recentCounts);
+    const momentumBurst = last20.length ? Math.round(recentTop / last20.length * 100) : 0;
 
-    const parityEdge = Math.abs(evenPct - 50);
-    const overEdge = Math.abs(overPct - 50);
-    const recentEdge = Math.max(recentParityPressure, recentOverPressure);
-    const hotEdge = hot === null ? 0 : Math.abs((counts[hot] / total) * 100 - 10);
-    const score = Math.min(42, parityEdge * 0.65 + overEdge * 0.35 + recentEdge * 0.45 + hotEdge * 0.2);
-    const confidence = Math.round(Math.min(92, 50 + score));
-
-    const candidates: Array<{ signal: Signal; edge: number; reason: string }> = [
-        {
-            signal: evenPct >= 50 ? 'Even' : 'Odd',
-            edge: parityEdge,
-            reason: evenPct >= 50 ? 'Even digits have higher observed frequency.' : 'Odd digits have higher observed frequency.',
-        },
-        {
-            signal: overPct >= 50 ? 'Over 4' : 'Under 5',
-            edge: overEdge,
-            reason: overPct >= 50 ? 'Digits 5–9 have higher observed frequency.' : 'Digits 0–4 have higher observed frequency.',
-        },
-    ];
-
-    const best = candidates.sort((a, b) => b.edge - a.edge)[0];
-    let signal = best.signal;
-    let rationale = best.reason;
-
-    if (recentEdge >= best.edge + 3) {
-        signal = recentParityPressure >= recentOverPressure
-            ? (recentEvenPct >= 50 ? 'Even' : 'Odd')
-            : (recentOverPct >= 50 ? 'Over 4' : 'Under 5');
-        rationale = 'Recent 20-tick pressure is stronger than the full-window bias.';
-    }
-
-    const strength = confidence >= 75 ? 'STRONG' : confidence >= 62 ? 'MEDIUM' : 'WEAK';
-
+    const pairs = requestedType ? [requestedType] : [...SCAN_TRADE_TYPES];
+    const contractOptions = pairs.flatMap(pair => {
+        const pairIndex = SCAN_TRADE_TYPES.indexOf(pair);
+        const overThreshold = pairIndex + 1;
+        const underThreshold = 9 - pairIndex;
+        const overWins = counts.slice(overThreshold + 1).reduce((sum, n) => sum + n, 0);
+        const underWins = counts.slice(0, underThreshold).reduce((sum, n) => sum + n, 0);
+        const overRate = overWins / total * 100;
+        const underRate = underWins / total * 100;
+        return [
+            { pair, rate: overRate, side: 'Over ' + overThreshold, threshold: overThreshold, isOver: true },
+            { pair, rate: underRate, side: 'Under ' + underThreshold, threshold: underThreshold, isOver: false },
+        ];
+    }).sort((x, y) => y.rate - x.rate);
+    const best = contractOptions[0];
+    const signal = requestedType || best.pair;
+    const selected = contractOptions.find(item => item.pair === signal) || best;
+    const recentWinCount = last20.filter(tick => selected.isOver ? tick.digit > selected.threshold : tick.digit < selected.threshold).length;
+    const recentRate = last20.length ? recentWinCount / last20.length * 100 : 0;
+    const recentPressure = Math.round(Math.abs(recentRate - selected.rate));
+    // This is an observed historical hit rate, not a forecast or guaranteed probability.
+    const confidence = Math.round(Math.min(99, Math.max(0, selected.rate * 0.75 + recentRate * 0.25)));
+    const strength = confidence >= 80 ? 'STRONG' : confidence >= 65 ? 'MEDIUM' : 'WEAK';
     return {
-        counts,
-        total,
-        signal,
-        confidence,
-        strength,
-        hot,
-        cold,
-        evenPct,
-        overPct,
-        recentPressure: Math.round(recentEdge),
-        rationale,
+        counts, total, signal, confidence, strength, hot, cold, evenPct, overPct, recentPressure,
+        winRate: Math.round(selected.rate * 10) / 10, momentumBurst, missingDigits,
+        rationale: selected.side + ' recorded ' + selected.rate.toFixed(1) + '% hits in the selected ' + total + '-tick sample; recent 20-tick hit rate ' + recentRate.toFixed(1) + '%.',
     };
 };
 
 const scannerXml = (market: Market, signal: Signal) => {
-    const isEvenOdd = signal === 'Even' || signal === 'Odd';
-    const contract = signal === 'Even' ? 'DIGITEVEN' : signal === 'Odd' ? 'DIGITODD' : signal === 'Over 4' ? 'DIGITOVER' : 'DIGITUNDER';
-    const tradeType = isEvenOdd ? 'evenodd' : 'overunder';
-    const prediction = signal === 'Over 4' ? 4 : signal === 'Under 5' ? 5 : 0;
-
+    const pairIndex = SCAN_TRADE_TYPES.indexOf(signal as (typeof SCAN_TRADE_TYPES)[number]);
+    const contract = pairIndex === 0 ? 'DIGITOVER' : pairIndex === 1 ? 'DIGITOVER' : 'DIGITOVER';
+    const prediction = pairIndex + 1;
     const doc = new DOMParser().parseFromString(martingaleXml, 'text/xml');
     const field = (name: string, value: string, previous?: string) => {
         const nodes = Array.from(doc.querySelectorAll(`field[name="${name}"]`));
         const node = previous ? nodes.find(item => item.textContent === previous) : nodes[0];
         if (node) node.textContent = value;
     };
-
     field('MARKET_LIST', 'synthetic_index', 'basket_index');
     field('SUBMARKET_LIST', 'random_index', 'forex_basket');
     field('SYMBOL_LIST', market.symbol, 'WLDAUD');
     field('TRADETYPECAT_LIST', 'digits', 'callput');
-    field('TRADETYPE_LIST', tradeType, 'callput');
+    field('TRADETYPE_LIST', 'overunder', 'callput');
     field('TYPE_LIST', contract, 'both');
     field('DURATIONTYPE_LIST', 't', 'm');
     field('PURCHASE_LIST', contract, 'CALL');
-
     const duration = doc.querySelector('block[type="trade_definition_tradeoptions"] value[name="DURATION"] field[name="NUM"]');
     if (duration) duration.textContent = '1';
-
-    const predictionMutation = doc.querySelector('block[type="trade_definition_tradeoptions"] > mutation');
-    if (predictionMutation) predictionMutation.setAttribute('has_prediction', isEvenOdd ? 'false' : 'true');
-
+    const mutation = doc.querySelector('block[type="trade_definition_tradeoptions"] > mutation');
+    if (mutation) mutation.setAttribute('has_prediction', 'true');
     const tradeOptions = doc.querySelector('block[type="trade_definition_tradeoptions"]');
-    if (tradeOptions) {
-        const predictionValue = tradeOptions.querySelector('value[name="PREDICTION"]');
-        if (isEvenOdd) {
-            predictionValue?.remove();
-        } else if (predictionValue) {
-            const num = predictionValue.querySelector('field[name="NUM"]');
-            if (num) num.textContent = String(prediction);
-        }
-
-        if (!isEvenOdd && !predictionValue) {
-            const value = doc.createElement('value');
-            value.setAttribute('name', 'PREDICTION');
-            const shadow = doc.createElement('shadow');
-            shadow.setAttribute('type', 'math_number_positive');
-            const num = doc.createElement('field');
-            num.setAttribute('name', 'NUM');
-            num.textContent = String(prediction);
-            shadow.appendChild(num);
-            value.appendChild(shadow);
-            tradeOptions.appendChild(value);
-        }
+    let predictionValue = tradeOptions?.querySelector('value[name="PREDICTION"]');
+    if (!predictionValue && tradeOptions) {
+        predictionValue = doc.createElement('value');
+        predictionValue.setAttribute('name', 'PREDICTION');
+        const shadow = doc.createElement('shadow');
+        shadow.setAttribute('type', 'math_number_positive');
+        const num = doc.createElement('field');
+        num.setAttribute('name', 'NUM');
+        shadow.appendChild(num);
+        predictionValue.appendChild(shadow);
+        tradeOptions.appendChild(predictionValue);
     }
-
-    const initialization = doc.querySelector('statement[name="INITIALIZATION"]');
-    if (initialization) {
-        const initialStakeSet = Array.from(initialization.querySelectorAll('block[type="variables_set"]'))
-            .find(block => block.querySelector('field[name="VAR"]')?.textContent === 'martingale:initialStake');
-        const initialStakeNum = initialStakeSet?.querySelector('value[name="VALUE"] field[name="NUM"]');
-        if (initialStakeNum) initialStakeNum.textContent = '1';
-
-        const multiplierSet = Array.from(initialization.querySelectorAll('block[type="variables_set"]'))
-            .find(block => block.querySelector('field[name="VAR"]')?.textContent === 'martingale:multiplier');
-        const multiplierNum = multiplierSet?.querySelector('value[name="VALUE"] field[name="NUM"]');
-        if (multiplierNum) multiplierNum.textContent = '2';
-    }
-
+    const num = predictionValue?.querySelector('field[name="NUM"]');
+    if (num) num.textContent = String(prediction);
     return new XMLSerializer().serializeToString(doc);
 };
 
