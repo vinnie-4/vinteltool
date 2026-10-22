@@ -452,7 +452,7 @@ const FloatingAIScanner = () => {
                     {scanComplete && <div className='ai-scanner__result-metrics'>
                         <div><label>AI SCORE</label><strong>{analysis.confidence}%</strong></div>
                         <div><label>OBSERVED WIN RATE</label><strong>{analysis.winRate.toFixed(1)}%</strong></div>
-                        <div><label>MOMENTUM BURST</label><strong>{analysis.momentumBurst}%</strong></div>
+                        <div><label>MOMENTUM</label><strong>{analysis.momentumBurst}%</strong></div>
                         <div><label>LAST TICKS ANALYSED</label><strong>{analysis.total}/{tickWindow}</strong></div>
                     </div>}
                 </section>
