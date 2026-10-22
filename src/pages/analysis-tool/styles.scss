@@ -417,3 +417,68 @@ svg.dcircles__outcome-symbol {
   grid-row: auto !important;
   margin: 0 !important;
 }
+
+
+/* Compact live last-digit panel used inside Blockly and Transactions. */
+.last-digit-live-panel {
+    width: 100%;
+    max-width: 100%;
+    padding: 10px;
+    margin: 0;
+    border: 1px solid var(--general-section-1, #d8dce1);
+    border-radius: 10px;
+    background: var(--general-main-1, #fff);
+    color: var(--text-general, #20252b);
+    font: inherit;
+    box-sizing: border-box;
+}
+.last-digit-live-panel * { box-sizing: border-box; }
+.last-digit-live-panel__header,
+.last-digit-live-panel__latest,
+.last-digit-live-panel__streak {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.last-digit-live-panel__header { font-size: 11px; color: var(--text-less-prominent, #777d84); }
+.last-digit-live-panel__live { font-weight: 800; color: #c28b12; }
+.last-digit-live-panel__live.is-live { color: #20a464; }
+.last-digit-live-panel__latest { justify-content: flex-start; margin: 10px 0; }
+.last-digit-live-panel__latest > span { font-size: 12px; color: var(--text-less-prominent, #777d84); }
+.last-digit-live-panel__latest > strong {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--general-section-1, #edf0f3);
+    color: var(--text-general, #20252b);
+    font-size: 22px;
+}
+.last-digit-live-panel__latest > b { font-size: 12px; }
+.last-digit-live-panel .is-even { color: #168a50; }
+.last-digit-live-panel .is-odd { color: #d54451; }
+.last-digit-live-panel__streak { padding: 8px 0; border-top: 1px solid var(--general-section-1, #e7eaee); font-size: 12px; }
+.last-digit-live-panel__streak strong { text-align: right; }
+.last-digit-live-panel__sequence-label { margin: 4px 0 6px; font-size: 11px; color: var(--text-less-prominent, #777d84); }
+.last-digit-live-panel__sequence { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 3px; }
+.last-digit-live-panel__sequence > span {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    padding: 4px 0;
+    border-radius: 5px;
+    background: var(--general-section-1, #edf0f3);
+    font-size: 12px;
+    font-weight: 800;
+}
+.last-digit-live-panel__sequence > span small { font-size: 8px; line-height: 1.1; }
+.last-digit-live-panel__status { margin-top: 8px; text-align: center; font-size: 10px; color: var(--text-less-prominent, #777d84); overflow-wrap: anywhere; }
+@media (max-width: 420px) {
+    .last-digit-live-panel { padding: 7px; }
+    .last-digit-live-panel__sequence { gap: 2px; }
+    .last-digit-live-panel__sequence > span { font-size: 10px; }
+}
