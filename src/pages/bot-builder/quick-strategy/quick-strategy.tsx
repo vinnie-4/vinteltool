@@ -208,9 +208,8 @@ const FormikWrapper: React.FC<TFormikWrapper> = observer(({ children }) => {
 const QuickStrategy = observer(() => {
     const { quick_strategy } = useStore();
     const { isDesktop } = useDevice();
-    const { is_open, setFormVisibility, selected_strategy, form_data } = quick_strategy;
+    const { is_open, setFormVisibility } = quick_strategy;
 
-    const active_tab_ref = useRef<HTMLDivElement>(null);
     const [current_step, setCurrentStep] = useState(QsSteps.StrategySelect);
     const [selected_trade_type, setSelectedTradeType] = useState('');
 
