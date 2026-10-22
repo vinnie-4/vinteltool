@@ -33,7 +33,7 @@
     <block type="trade_definition_tradeoptions" id="under6_options"><mutation has_first_barrier="false" has_second_barrier="false" has_prediction="true"></mutation>
       <field name="DURATIONTYPE_LIST">t</field><value name="DURATION"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
       <value name="AMOUNT"><shadow type="math_number"><field name="NUM">0.35</field></shadow><block type="variables_get"><field name="VAR" id="under6_stake">Stake</field></block></value>
-      <value name="PREDICTION"><shadow type="math_number_positive"><field name="NUM">6</field></shadow><block type="variables_get"><field name="VAR" id="under6_prediction">Prediction</field></block></value>
+      <value name="PREDICTION"><shadow type="math_number"><field name="NUM">6</field></shadow><block type="variables_get"><field name="VAR" id="under6_prediction">Prediction</field></block></value>
     </block>
   </statement>
 </block>
