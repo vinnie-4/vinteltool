@@ -120,7 +120,7 @@ const analyseTicks = (ticks: Tick[], windowSize = DEFAULT_TICK_WINDOW, requested
     };
 };
 
-const scannerXml = (market: Market, signal: Signal) => {
+const scannerXml = (market: Market, signal: Signal, config: { stake: number; duration: number; martingale: number; stopLoss: number; takeProfit: number }) => {
     const match = /^(Over|Under) (\\d)$/.exec(signal);
     const side = match?.[1] ?? 'Under';
     const prediction = Number(match?.[2] ?? 6);
@@ -139,8 +139,27 @@ const scannerXml = (market: Market, signal: Signal) => {
     field('TYPE_LIST', contract, 'both');
     field('DURATIONTYPE_LIST', 't', 'm');
     field('PURCHASE_LIST', contract, 'CALL');
-    const duration = doc.querySelector('block[type="trade_definition_tradeoptions"] value[name="DURATION"] field[name="NUM"]');
-    if (duration) duration.textContent = '1';
+    const durationField = doc.querySelector('block[type="trade_definition_tradeoptions"] value[name="DURATION"] field[name="NUM"]');
+    if (durationField) durationField.textContent = String(config.duration);
+    const setNumericValue = (strategyValue: string, amount: number) => {
+        const value = doc.querySelector(`value[strategy_value="${strategyValue}"]`);
+        if (!value) return;
+        const block = doc.createElement('block');
+        block.setAttribute('type', 'math_number');
+        const fieldNode = doc.createElement('field');
+        fieldNode.setAttribute('name', 'NUM');
+        fieldNode.textContent = String(amount);
+        block.appendChild(fieldNode);
+        value.replaceChildren(block);
+    };
+    setNumericValue('stake', config.stake);
+    setNumericValue('loss', config.stopLoss);
+    setNumericValue('profit', config.takeProfit);
+    const multiplierValue = doc.querySelector('value:has(field[name="VAR"][variabletype=""])');
+    const multiplierVar = Array.from(doc.querySelectorAll('field[name="VAR"]')).find(node => node.textContent === 'martingale:multiplier');
+    const multiplierBlock = multiplierVar?.closest('block[type="variables_set"]');
+    const multiplierNum = multiplierBlock?.querySelector('value[name="VALUE"] shadow[type="math_number"] field[name="NUM"]');
+    if (multiplierNum) multiplierNum.textContent = String(config.martingale);
     const mutation = doc.querySelector('block[type="trade_definition_tradeoptions"] > mutation');
     if (mutation) mutation.setAttribute('has_prediction', 'true');
     const tradeOptions = doc.querySelector('block[type="trade_definition_tradeoptions"]');
@@ -184,6 +203,13 @@ const FloatingAIScanner = () => {
     const [open, setOpen] = useState(false);
     const [showLoadConfig, setShowLoadConfig] = useState(false);
     const [recoveryExpanded, setRecoveryExpanded] = useState(false);
+    const [configStake, setConfigStake] = useState('0.5');
+    const [configDuration, setConfigDuration] = useState('1');
+    const [configWins, setConfigWins] = useState('4');
+    const [configMartingale, setConfigMartingale] = useState('2');
+    const [configStopLoss, setConfigStopLoss] = useState('10');
+    const [configTakeProfit, setConfigTakeProfit] = useState('10');
+    const [configRecoveryDigits, setConfigRecoveryDigits] = useState('2');
     const [selectedTradeType, setSelectedTradeType] = useState<(typeof SCAN_TRADE_TYPES)[number]>('Over1 / Under8');
     const [fabPosition, setFabPosition] = useState<{ x: number; y: number } | null>(null);
     const fabDragRef = useRef<{ pointerX: number; pointerY: number; left: number; top: number; moved: boolean } | null>(null);
@@ -422,12 +448,18 @@ const FloatingAIScanner = () => {
             return;
         }
 
-        const xml = scannerXml(market, analysis.signal);
+        const xml = scannerXml(market, analysis.signal, {
+            stake: Math.max(0.01, Number(configStake) || 0.5),
+            duration: Math.max(1, Math.floor(Number(configDuration) || 1)),
+            martingale: Math.max(1, Number(configMartingale) || 2),
+            stopLoss: Math.max(0, Number(configStopLoss) || 0),
+            takeProfit: Math.max(0, Number(configTakeProfit) || 0),
+        });
         setOpen(false);
         dashboard.setActiveTab(DBOT_TABS.BOT_BUILDER);
         await new Promise<void>(resolve => window.setTimeout(resolve, 80));
         await quick_strategy.loadFreeBotXml(xml, 'AI Scanner • ' + market.name + ' • ' + analysis.signal);
-    }, [analysis.signal, dashboard, market, quick_strategy]);
+    }, [analysis.signal, configDuration, configMartingale, configStake, configStopLoss, configTakeProfit, dashboard, market, quick_strategy]);
 
     if (isDuplicateInstance) return null;
 
@@ -446,18 +478,19 @@ const FloatingAIScanner = () => {
             <div className='ai-scanner__body'>
                 {showLoadConfig ? <section className='ai-scanner__config-layout' aria-label='Scanner bot configuration'>
                     <div className='ai-scanner__config-row'>
-                        <label>Stake<input type='number' defaultValue='0.5' min='0.01' step='0.01' /></label>
-                        <label>Ticks<input type='number' defaultValue='1000' min='1' step='1' /></label>
-                        <label>No. of wins<input type='number' defaultValue='4' min='1' step='1' /></label>
+                        <label>Stake<input type='number' value={configStake} onChange={e => setConfigStake(e.target.value)} min='0.01' step='0.01' /></label>
+                        <label>Ticks<input type='number' value={configDuration} onChange={e => setConfigDuration(e.target.value)} min='1' step='1' /></label>
+                        <label>No. of wins<input type='number' value={configWins} onChange={e => setConfigWins(e.target.value)} min='1' step='1' /></label>
                     </div>
                     <div className='ai-scanner__config-row'>
-                        <label>Martingale<input type='number' defaultValue='2' min='1' step='0.1' /></label>
-                        <label>Stop loss<input type='number' defaultValue='10' min='0' step='0.1' /></label>
+                        <label>Martingale<input type='number' value={configMartingale} onChange={e => setConfigMartingale(e.target.value)} min='1' step='0.1' /></label>
+                        <label>Stop loss<input type='number' value={configStopLoss} onChange={e => setConfigStopLoss(e.target.value)} min='0' step='0.1' /></label>
+                        <label>Take profit<input type='number' value={configTakeProfit} onChange={e => setConfigTakeProfit(e.target.value)} min='0' step='0.1' /></label>
                         <button type='button' className={'ai-scanner__recovery-toggle' + (recoveryExpanded ? ' is-expanded' : '')} onClick={() => setRecoveryExpanded(value => !value)} aria-expanded={recoveryExpanded}>Recovery (Even/Odd) <span>{recoveryExpanded ? '−' : '+'}</span></button>
                     </div>
                     {recoveryExpanded && <div className='ai-scanner__recovery-options'>
                         <strong>Recovery</strong>
-                        <label>Analyse last <input type='number' defaultValue='2' min='1' max='30' /> digits</label>
+                        <label>Analyse last <input type='number' value={configRecoveryDigits} onChange={e => setConfigRecoveryDigits(e.target.value)} min='1' max='30' /> digits</label>
                     </div>}
                     <div className='ai-scanner__config-actions'>
                         <button type='button' onClick={() => setShowLoadConfig(false)}>Back</button>
