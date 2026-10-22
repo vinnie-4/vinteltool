@@ -289,3 +289,29 @@
     .ai-scanner__result-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
     .ai-scanner__actions button { min-height:50px; font-size:12px !important; }
 }
+
+
+/* Digit rank colours: solid circles, white numerals, no explanatory copy. */
+.ai-scanner__digits > div {
+    display:flex !important;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    aspect-ratio:1 / 1;
+    min-width:0;
+    padding:3px !important;
+    border-radius:50% !important;
+    background:#65758b !important;
+    border:2px solid rgba(255,255,255,.9) !important;
+    color:#fff !important;
+    box-shadow:none !important;
+}
+.ai-scanner__digits > div span,
+.ai-scanner__digits > div b { color:#fff !important; }
+.ai-scanner__digits > div.is-hot { background:#009b72 !important; }
+.ai-scanner__digits > div.is-second-hot { background:#1677e8 !important; }
+.ai-scanner__digits > div.is-cold { background:#e53935 !important; }
+.ai-scanner__digits > div.is-second-cold { background:#8b5a2b !important; }
+.ai-scanner__intro-card p,
+.ai-scanner__result-summary p { display:none !important; }
+.ai-scanner__result-summary { display:grid; gap:0; }
