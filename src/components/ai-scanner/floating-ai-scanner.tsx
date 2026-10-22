@@ -470,7 +470,7 @@ const FloatingAIScanner = () => {
                         <label>Martingale<input type='number' value={configMartingale} onChange={e => setConfigMartingale(e.target.value)} min='1' step='0.1' /></label>
                         <label>Stop loss<input type='number' value={configStopLoss} onChange={e => setConfigStopLoss(e.target.value)} min='0' step='0.1' /></label>
                         <label>Take profit<input type='number' value={configTakeProfit} onChange={e => setConfigTakeProfit(e.target.value)} min='0' step='0.1' /></label>
-                        <button type='button' className={'ai-scanner__recovery-toggle' + (recoveryExpanded ? ' is-expanded' : '')} onClick={() => setRecoveryExpanded(value => !value)} aria-expanded={recoveryExpanded}>Recovery (Even) <span>{recoveryExpanded ? '−' : '+'}</span></button>
+                        <button type='button' className={'ai-scanner__recovery-toggle' + (recoveryExpanded ? ' is-expanded' : '')} onClick={() => setRecoveryExpanded(value => !value)} aria-expanded={recoveryExpanded} >Recovery (Even/Odd) <span>{recoveryExpanded ? '−' : '+'}</span></button>
                     </div>
                     {recoveryExpanded && <div className='ai-scanner__recovery-options'>
                         <label className='ai-scanner__recovery-enable'><input type='checkbox' checked={configRecoveryEnabled} onChange={e => setConfigRecoveryEnabled(e.target.checked)} /> Enable recovery after a loss</label>
@@ -538,7 +538,7 @@ const FloatingAIScanner = () => {
                     <button type='button' className='ai-scanner__scan-button' disabled={scanning} onClick={() => void scanMarkets()}>
                         {scanning ? 'Scanning Markets…' : scanComplete ? 'Scan Again' : 'Scan Markets'}
                     </button>
-                    <button type='button' className='ai-scanner__load-button' disabled={!scanComplete || analysis.signal === 'Waiting'} onClick={() => { setError(''); setShowLoadConfig(true); }}>
+                    <button type='button' className='ai-scanner__load-button' disabled={!scanComplete || analysis.signal === 'Waiting'} onClick={() => { setError(''); setRecoveryExpanded(true); setShowLoadConfig(true); }}>
                         Load Scanner Bot
                     </button>
                 </div>
