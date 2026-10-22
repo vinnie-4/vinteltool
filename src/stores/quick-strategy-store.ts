@@ -3,7 +3,7 @@ import { action, makeObservable, observable, reaction } from 'mobx';
 import { ApiHelpers, config as qs_config } from '@/external/bot-skeleton';
 import { save_types } from '@/external/bot-skeleton/constants/save-type';
 import { addDynamicBlockToDOM } from '@/utils/xml-dom-quick-strategy';
-import { loadBlocks } from '@/external/bot-skeleton/scratch/utils';
+import { load as loadStrategyXml, loadBlocks } from '@/external/bot-skeleton/scratch/utils';
 import { removeLimitedBlocks } from '@/external/bot-skeleton/utils/workspace';
 import { STRATEGIES } from '../pages/bot-builder/quick-strategy/config';
 import { TFormData } from '../pages/bot-builder/quick-strategy/types';
@@ -86,6 +86,10 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
 
     loadFreeBotXml = async (xml: string, botName = 'Free Bot') => {
         if (!xml?.trim()) return;
+        // Free Bot XML imports always use the Martingale Quick Strategy context.
+        // The XML is still converted into native Blockly blocks; it is not replaced
+        // with a generated Quick Strategy template.
+        this.selected_strategy = 'MARTINGALE';
         this.pending_free_bot = { xml, name: botName };
         this.setFormVisibility(true);
         await this.importPendingFreeBot();
@@ -106,12 +110,20 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
         const runImport = async () => {
             try {
                 const workspace = await this.waitForWorkspace();
-                const strategy_dom = window.Blockly.utils.xml.textToDom(pending.xml);
-                const blockTypes = Array.from(strategy_dom.querySelectorAll('block'))
-                    .map(block => block.getAttribute('type'))
-                    .filter(Boolean);
-                removeLimitedBlocks(workspace, blockTypes);
-                loadBlocks(strategy_dom, null, `quick-strategy-free-bot-${Date.now()}`, workspace);
+                // Reuse the official strategy importer so legacy XML is converted
+                // to the block types registered in VintelTool's available Blocks menu.
+                // This also validates XML and rejects files with genuinely unsupported blocks.
+                const result = await loadStrategyXml({
+                    block_string: pending.xml,
+                    file_name: pending.name,
+                    from: 'free-bots',
+                    workspace,
+                    show_snackbar: false,
+                });
+                if (result?.error) throw new Error(result.error);
+                if (!workspace.getAllBlocks(false).length) {
+                    throw new Error('The XML did not produce any editable Bot Builder blocks.');
+                }
                 this.pending_free_bot = null;
                 this.setAdditionalData({ free_bot_name: pending.name });
                 this.setFormVisibility(false);
