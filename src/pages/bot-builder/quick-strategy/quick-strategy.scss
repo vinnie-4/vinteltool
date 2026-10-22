@@ -679,3 +679,44 @@
         margin-bottom: 0.8rem;
     }
 }
+
+
+/* Quick Strategy: Load is the sole primary action and matches the blue login treatment. */
+.qs__body__content__footer [data-testid='qs-run-button'] {
+    display: none !important;
+}
+.qs__body__content__footer [data-testid='qs-load-button'] {
+    min-width: 7.5rem;
+    min-height: 3.6rem;
+    padding: 0 2rem;
+    border: 1px solid #173e7d !important;
+    border-radius: .6rem !important;
+    background: linear-gradient(110deg, #102e61 0%, #347df0 100%) !important;
+    color: #fff !important;
+    font-weight: 700;
+    box-shadow: 0 3px 10px rgba(24, 75, 157, .25);
+    box-sizing: border-box;
+}
+.qs__body__content__footer [data-testid='qs-load-button']:hover,
+.qs__body__content__footer [data-testid='qs-load-button']:focus-visible {
+    background: linear-gradient(110deg, #0b244b 0%, #2868d4 100%) !important;
+    color: #fff !important;
+}
+.qs__body__content__footer [data-testid='qs-load-button']:disabled {
+    opacity: .55;
+}
+@media (max-width: 767px) {
+    .quick-strategy__wrapper .qs__body__content__footer {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        flex-wrap: nowrap;
+        padding-inline: .75rem;
+    }
+    .quick-strategy__wrapper .qs__body__content__footer [data-testid='qs-load-button'] {
+        flex: 1 1 auto;
+        min-width: 0;
+        padding-inline: 1rem;
+        white-space: nowrap;
+    }
+}
