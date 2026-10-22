@@ -121,7 +121,7 @@ const analyseTicks = (ticks: Tick[], windowSize = DEFAULT_TICK_WINDOW, requested
 };
 
 const scannerXml = (market: Market, signal: Signal, config: { stake: number; duration: number; martingale: number; stopLoss: number; takeProfit: number }) => {
-    const match = /^(Over|Under) (\\d)$/.exec(signal);
+    const match = /^(Over|Under) (\d)$/.exec(signal);
     const side = match?.[1] ?? 'Under';
     const prediction = Number(match?.[2] ?? 6);
     const contract = side === 'Over' ? 'DIGITOVER' : 'DIGITUNDER';
@@ -155,10 +155,9 @@ const scannerXml = (market: Market, signal: Signal, config: { stake: number; dur
     setNumericValue('stake', config.stake);
     setNumericValue('loss', config.stopLoss);
     setNumericValue('profit', config.takeProfit);
-    const multiplierValue = doc.querySelector('value:has(field[name="VAR"][variabletype=""])');
     const multiplierVar = Array.from(doc.querySelectorAll('field[name="VAR"]')).find(node => node.textContent === 'martingale:multiplier');
     const multiplierBlock = multiplierVar?.closest('block[type="variables_set"]');
-    const multiplierNum = multiplierBlock?.querySelector('value[name="VALUE"] shadow[type="math_number"] field[name="NUM"]');
+    const multiplierNum = multiplierBlock?.querySelector('value[name="VALUE"] shadow[type="math_number"] field[name="NUM"], value[name="VALUE"] block[type="math_number"] field[name="NUM"]');
     if (multiplierNum) multiplierNum.textContent = String(config.martingale);
     const mutation = doc.querySelector('block[type="trade_definition_tradeoptions"] > mutation');
     if (mutation) mutation.setAttribute('has_prediction', 'true');
