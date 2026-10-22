@@ -6,7 +6,7 @@ import martingaleXml from '@/xml/martingale.xml';
 import './floating-ai-scanner.scss';
 
 type Tick = { quote: number; digit: number };
-type Signal = (typeof SCAN_TRADE_TYPES)[number] | 'Waiting';
+type Signal = 'Over 1' | 'Over 2' | 'Over 3' | 'Under 6' | 'Under 7' | 'Under 8' | 'Waiting';
 type Market = { name: string; symbol: string };
 type Analysis = {
     counts: number[];
@@ -20,6 +20,9 @@ type Analysis = {
     overPct: number;
     recentPressure: number;
     rationale: string;
+    winRate: number;
+    momentumBurst: number;
+    missingDigits: number[];
 };
 
 const MARKETS: Market[] = [
@@ -55,6 +58,9 @@ const emptyAnalysis = (): Analysis => ({
     overPct: 0,
     recentPressure: 0,
     rationale: 'Waiting for enough live tick data.',
+    winRate: 0,
+    momentumBurst: 0,
+    missingDigits: [],
 });
 
 const analyseTicks = (ticks: Tick[], windowSize = DEFAULT_TICK_WINDOW, requestedType?: (typeof SCAN_TRADE_TYPES)[number]): Analysis => {
@@ -83,36 +89,32 @@ const analyseTicks = (ticks: Tick[], windowSize = DEFAULT_TICK_WINDOW, requested
     const contractOptions = pairs.flatMap(pair => {
         const pairIndex = SCAN_TRADE_TYPES.indexOf(pair);
         const overThreshold = pairIndex + 1;
-        const underThreshold = 9 - pairIndex;
-        const overWins = counts.slice(overThreshold + 1).reduce((sum, n) => sum + n, 0);
-        const underWins = counts.slice(0, underThreshold).reduce((sum, n) => sum + n, 0);
-        const overRate = overWins / total * 100;
-        const underRate = underWins / total * 100;
+        const underThreshold = 8 - pairIndex;
+        const overWins = counts.filter((_, digit) => digit > overThreshold).reduce((sum, n) => sum + n, 0);
+        const underWins = counts.filter((_, digit) => digit < underThreshold).reduce((sum, n) => sum + n, 0);
         return [
-            { pair, rate: overRate, side: 'Over ' + overThreshold, threshold: overThreshold, isOver: true },
-            { pair, rate: underRate, side: 'Under ' + underThreshold, threshold: underThreshold, isOver: false },
+            { rate: overWins / total * 100, side: ('Over ' + overThreshold) as Signal, threshold: overThreshold, isOver: true },
+            { rate: underWins / total * 100, side: ('Under ' + underThreshold) as Signal, threshold: underThreshold, isOver: false },
         ];
     }).sort((x, y) => y.rate - x.rate);
-    const best = contractOptions[0];
-    const signal = requestedType || best.pair;
-    const selected = requestedType ? (contractOptions.filter(item => item.pair === requestedType).sort((x, y) => y.rate - x.rate)[0] || best) : best;
+    const selected = contractOptions[0];
     const recentWinCount = last20.filter(tick => selected.isOver ? tick.digit > selected.threshold : tick.digit < selected.threshold).length;
     const recentRate = last20.length ? recentWinCount / last20.length * 100 : 0;
-    const recentPressure = Math.round(Math.abs(recentRate - selected.rate));
-    // This is an observed historical hit rate, not a forecast or guaranteed probability.
     const confidence = Math.round(Math.min(99, Math.max(0, selected.rate * 0.75 + recentRate * 0.25)));
     const strength = confidence >= 80 ? 'STRONG' : confidence >= 65 ? 'MEDIUM' : 'WEAK';
     return {
-        counts, total, signal, confidence, strength, hot, cold, evenPct, overPct, recentPressure,
+        counts, total, signal: selected.side, confidence, strength, hot, cold, evenPct, overPct,
+        recentPressure: Math.round(Math.abs(recentRate - selected.rate)),
         winRate: Math.round(selected.rate * 10) / 10, momentumBurst, missingDigits,
-        rationale: selected.side + ' recorded ' + selected.rate.toFixed(1) + '% hits in the selected ' + total + '-tick sample; recent 20-tick hit rate ' + recentRate.toFixed(1) + '%.',
+        rationale: selected.side + ' recorded ' + selected.rate.toFixed(1) + '% historical hits in the selected ' + total + '-tick sample; recent 20-tick hit rate ' + recentRate.toFixed(1) + '%.',
     };
 };
 
 const scannerXml = (market: Market, signal: Signal) => {
-    const pairIndex = SCAN_TRADE_TYPES.indexOf(signal as (typeof SCAN_TRADE_TYPES)[number]);
-    const contract = pairIndex === 0 ? 'DIGITOVER' : pairIndex === 1 ? 'DIGITOVER' : 'DIGITOVER';
-    const prediction = pairIndex + 1;
+    const match = /^(Over|Under) (\\d)$/.exec(signal);
+    const side = match?.[1] ?? 'Under';
+    const prediction = Number(match?.[2] ?? 6);
+    const contract = side === 'Over' ? 'DIGITOVER' : 'DIGITUNDER';
     const doc = new DOMParser().parseFromString(martingaleXml, 'text/xml');
     const field = (name: string, value: string, previous?: string) => {
         const nodes = Array.from(doc.querySelectorAll(`field[name="${name}"]`));
@@ -344,7 +346,7 @@ const FloatingAIScanner = () => {
                 }));
 
                 if (history.length < 20) continue;
-                results.push({ market: item, ticks: history, analysis: analyseTicks(history, tickWindow) });
+                results.push({ market: item, ticks: history, analysis: analyseTicks(history, tickWindow, selectedTradeType) });
             }
 
             if (!results.length) throw new Error('No usable tick history was returned by Deriv.');
@@ -352,7 +354,7 @@ const FloatingAIScanner = () => {
             results.sort((a, b) => Number(b.analysis.winRate >= 80) - Number(a.analysis.winRate >= 80) || b.analysis.winRate - a.analysis.winRate || b.analysis.momentumBurst - a.analysis.momentumBurst || b.analysis.confidence - a.analysis.confidence);
             const winner = results[0];
             setMarket(winner.market);
-            if (winner.analysis.signal !== 'Waiting') setSelectedTradeType(winner.analysis.signal);
+            if (winner.analysis.signal !== 'Waiting') setSelectedTradeType(winner.analysis.signal === 'Over 1' || winner.analysis.signal === 'Under 8' ? 'Over1 / Under8' : winner.analysis.signal === 'Over 2' || winner.analysis.signal === 'Under 7' ? 'Over2 / Under7' : 'Over3 / Under6');
             setTicks(winner.ticks);
             setScanProgress(100);
             setScanComplete(true);
@@ -364,7 +366,7 @@ const FloatingAIScanner = () => {
         } finally {
             setScanning(false);
         }
-    }, [disconnect, connectMarket]);
+    }, [disconnect, connectMarket, tickWindow, selectedTradeType]);
 
     const loadScannerBot = useCallback(async () => {
         if (analysis.signal === 'Waiting') {
