@@ -32,6 +32,9 @@ export default Engine =>
             const type = String(contract_type || '').toUpperCase();
             if (!settings || !this.symbol || !['DIGITEVEN', 'DIGITODD', 'DIGITOVER', 'DIGITUNDER'].includes(type)) return true;
             const mode = settings.mode === 'over-under' ? 'over-under' : 'even-odd';
+            const isEvenOddType = type === 'DIGITEVEN' || type === 'DIGITODD';
+            const isOverUnderType = type === 'DIGITOVER' || type === 'DIGITUNDER';
+            if ((mode === 'even-odd' && !isEvenOddType) || (mode === 'over-under' && !isOverUnderType)) return true;
             const streakLength = Math.max(2, Math.min(10, Number(settings.streak) || 3));
             const checkSignal = async () => {
                 const digits = await this.getLastDigitList();
