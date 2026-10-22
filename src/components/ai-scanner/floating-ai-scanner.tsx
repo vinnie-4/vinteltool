@@ -315,65 +315,69 @@ const FloatingAIScanner = () => {
         setScanComplete(false);
         setError('');
         setConnected(false);
-        setScanMessage('Scanning volatility markets…');
+        setScanMessage('Scanning recent tick history…');
         await disconnect();
 
         try {
-            let cycle = 0;
-            while (true) {
-                cycle += 1;
-                const results: Array<{ market: Market; ticks: Tick[]; analysis: Analysis }> = [];
-                let completed = 0;
-                await Promise.all(MARKETS.map(async (item, index) => {
-                    setScanMessage(item.name + '|' + (index + 1) + '/' + MARKETS.length);
-                    try {
-                        const response: any = await api_base.api.send({
-                            ticks_history: item.symbol,
-                            count: tickWindow,
-                            end: 'latest',
-                            style: 'ticks',
-                            req_id: ++requestIdRef.current,
-                        });
-                        if (!response?.error && Array.isArray(response?.history?.prices)) {
-                            const decimals = Number(response?.pip_size);
-                            const precision = Number.isFinite(decimals) && decimals >= 0 ? decimals : 2;
-                            const history = response.history.prices.map(Number).filter(Number.isFinite).slice(-tickWindow).map((quote: number) => ({
-                                quote,
-                                digit: digitOf(quote, precision),
-                            }));
-                            if (history.length >= tickWindow) {
-                                const result = analyseTicks(history, tickWindow, selectedTradeType);
-                                results.push({ market: item, ticks: history, analysis: result });
-                            }
+            const results: Array<{ market: Market; ticks: Tick[]; analysis: Analysis }> = [];
+            let completed = 0;
+
+            // Fetch each market once per scan, sequentially. Never poll ticks_history
+            // in a tight loop; live ticks keep the selected market continuously updated.
+            for (const item of MARKETS) {
+                setScanMessage(item.name + '|' + (completed + 1) + '/' + MARKETS.length);
+                try {
+                    const response: any = await api_base.api.send({
+                        ticks_history: item.symbol,
+                        count: tickWindow,
+                        end: 'latest',
+                        style: 'ticks',
+                        req_id: ++requestIdRef.current,
+                    });
+                    if (!response?.error && Array.isArray(response?.history?.prices)) {
+                        const decimals = Number(response?.pip_size);
+                        const precision = Number.isFinite(decimals) && decimals >= 0 ? decimals : 2;
+                        const history = response.history.prices.map(Number).filter(Number.isFinite).slice(-tickWindow).map((quote: number) => ({
+                            quote,
+                            digit: digitOf(quote, precision),
+                        }));
+                        if (history.length >= Math.min(20, tickWindow)) {
+                            results.push({ market: item, ticks: history, analysis: analyseTicks(history, tickWindow, selectedTradeType) });
                         }
-                    } catch {
-                        // One unavailable market should not delay the rest of the scan.
-                    } finally {
-                        completed += 1;
-                        setScanProgress(Math.round((completed / MARKETS.length) * 100));
-                        setScanMessage(item.name + '|' + completed + '/' + MARKETS.length);
                     }
-                }));
-                const qualified = results
-                    .filter(result => result.analysis.winRate >= 80 && result.analysis.confidence >= 80)
-                    .sort((a, b) => b.analysis.winRate - a.analysis.winRate || b.analysis.confidence - a.analysis.confidence || b.analysis.momentumBurst - a.analysis.momentumBurst);
-
-                if (qualified.length) {
-                    const winner = qualified[0];
-                    setMarket(winner.market);
-                    setTicks(winner.ticks);
-                    setScanProgress(100);
-                    setScanComplete(true);
-                    setScanMessage(winner.market.name + ' · ' + winner.analysis.signal + ' · ' + winner.analysis.winRate.toFixed(1) + '% observed win rate');
-                    break;
+                } catch {
+                    // Skip unavailable markets without exposing API rate-limit messages.
                 }
-
-                setScanMessage('Volatility · cycle ' + (cycle + 1));
-                setScanProgress(0);
-                await new Promise(resolve => window.setTimeout(resolve, 250));
+                completed += 1;
+                setScanProgress(Math.round((completed / MARKETS.length) * 100));
+                // Small spacing avoids bursting the history endpoint.
+                if (completed < MARKETS.length) await new Promise(resolve => window.setTimeout(resolve, 180));
             }
+
+            if (!results.length) {
+                setError('No recent tick history is available yet. Please try again shortly.');
+                setScanMessage('No market data available');
+                return;
+            }
+
+            const ranked = [...results].sort((a, b) =>
+                b.analysis.confidence - a.analysis.confidence ||
+                b.analysis.winRate - a.analysis.winRate ||
+                b.analysis.momentumBurst - a.analysis.momentumBurst
+            );
+            const qualified = ranked.filter(result => result.analysis.winRate >= 80 && result.analysis.confidence >= 80);
+            const winner = qualified[0] ?? ranked[0];
+
+            setMarket(winner.market);
+            setTicks(winner.ticks);
+            setScanProgress(100);
+            setScanComplete(true);
+            setScanMessage(winner.market.name + ' · ' + winner.analysis.signal + ' · ' + winner.analysis.winRate.toFixed(1) + '% observed hit rate');
+            // Continue from this recent sample using live ticks; do not repeatedly
+            // request ticks_history while the scanner is open.
+            void connectMarket(winner.market.symbol);
         } catch (e: any) {
-            setError(e?.message || 'Unable to scan the volatility markets');
+            setError('Unable to scan recent market ticks. Please retry.');
             setScanMessage('Market scan failed');
         } finally {
             setScanning(false);
