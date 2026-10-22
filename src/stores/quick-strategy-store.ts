@@ -49,6 +49,7 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
         tradetype: qs_config().QUICK_STRATEGY.DEFAULT.tradetype,
         durationtype: qs_config().QUICK_STRATEGY.DEFAULT.durationtype,
         action: 'RUN',
+        recovery_even: true,
     };
     is_contract_dialog_open = false;
     is_stop_bot_dialog_open = false;
@@ -302,6 +303,53 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
                 if (!isNaN(value as number) && key !== 'growthrate') modifyValueInputs(key, value as number);
                 else if (typeof value === 'string') modifyFieldDropdownValues(key, value);
             });
+            // Martingale-only Even recovery, applied to the native Quick Strategy XML.
+            if (selected_strategy.name === 'martingale_max-stake' && Boolean(data.recovery_even)) {
+                const xmlNs = 'http://www.w3.org/1999/xhtml';
+                const parseBlock = (markup: string): Element => {
+                    const wrapper = window.Blockly.utils.xml.textToDom(`<xml xmlns="${xmlNs}">${markup}</xml>`);
+                    const block = wrapper.querySelector('block');
+                    if (!block) throw new Error('Unable to create Martingale recovery block.');
+                    return block;
+                };
+                const directBlock = (parent: Element | null): Element | null =>
+                    parent ? (Array.from(parent.children).find(child => child.tagName.toLowerCase() === 'block') as Element | undefined) ?? null : null;
+                const variables = strategy_dom.querySelector('variables');
+                if (variables && !variables.querySelector('variable[id="vintel_qs_recovery_even"]')) {
+                    const variable = window.Blockly.utils.xml.textToDom(
+                        `<xml xmlns="${xmlNs}"><variables><variable type="" id="vintel_qs_recovery_even">Recovery Even</variable></variables></xml>`
+                    ).querySelector('variable');
+                    if (variable) variables.appendChild(variable);
+                }
+                const initStatement = strategy_dom.querySelector('block[type="trade_definition"] statement[name="INITIALIZATION"]');
+                if (initStatement && !strategy_dom.querySelector('block[type="variables_set"] field[name="VAR"][id="vintel_qs_recovery_even"]')) {
+                    const priorInit = directBlock(initStatement);
+                    const initSet = parseBlock('<block type="variables_set" id="vintel_qs_recovery_init"><field name="VAR" id="vintel_qs_recovery_even">Recovery Even</field><value name="VALUE"><block type="logic_boolean"><field name="BOOL">FALSE</field></block></value></block>');
+                    if (priorInit) {
+                        const next = window.Blockly.utils.xml.textToDom(`<xml xmlns="${xmlNs}"><next></next></xml>`).querySelector('next')!;
+                        next.appendChild(priorInit);
+                        initSet.appendChild(next);
+                    }
+                    initStatement.appendChild(initSet);
+                }
+                const beforeStatement = strategy_dom.querySelector('block[type="before_purchase"] statement[name="BEFOREPURCHASE_STACK"]');
+                const originalPurchase = directBlock(beforeStatement);
+                if (beforeStatement && originalPurchase && originalPurchase.getAttribute('type') === 'purchase') {
+                    const conditional = parseBlock('<block type="controls_if" id="vintel_qs_recovery_purchase"><mutation else="1"></mutation><value name="IF0"><block type="variables_get"><field name="VAR" id="vintel_qs_recovery_even">Recovery Even</field></block></value><statement name="DO0"><block type="purchase" id="vintel_qs_purchase_even"><field name="PURCHASE_LIST">EVEN</field></block></statement><statement name="ELSE"></statement></block>');
+                    conditional.querySelector('statement[name="ELSE"]')!.appendChild(originalPurchase);
+                    beforeStatement.appendChild(conditional);
+                }
+                const afterStatement = strategy_dom.querySelector('block[type="after_purchase"] statement[name="AFTERPURCHASE_STACK"]');
+                const originalAfter = directBlock(afterStatement);
+                if (afterStatement && originalAfter && originalAfter.getAttribute('id') !== 'vintel_qs_recovery_result') {
+                    const recoveryResult = parseBlock('<block type="controls_if" id="vintel_qs_recovery_result"><mutation else="1"></mutation><value name="IF0"><block type="contract_check_result"><field name="CHECK_RESULT">win</field></block></value><statement name="DO0"><block type="variables_set" id="vintel_qs_recovery_reset"><field name="VAR" id="vintel_qs_recovery_even">Recovery Even</field><value name="VALUE"><block type="logic_boolean"><field name="BOOL">FALSE</field></block></value></statement><statement name="ELSE"><block type="variables_set" id="vintel_qs_recovery_enable"><field name="VAR" id="vintel_qs_recovery_even">Recovery Even</field><value name="VALUE"><block type="logic_boolean"><field name="BOOL">TRUE</field></block></value></statement></block>');
+                    const next = window.Blockly.utils.xml.textToDom(`<xml xmlns="${xmlNs}"><next></next></xml>`).querySelector('next')!;
+                    next.appendChild(originalAfter);
+                    recoveryResult.appendChild(next);
+                    afterStatement.appendChild(recoveryResult);
+                }
+            }
+
             const workspace = await this.waitForWorkspace();
             const blockly_xml = strategy_dom.querySelectorAll('block');
             const blockTypes = Array.from(blockly_xml)

@@ -276,6 +276,14 @@ const UNIT = (): TConfigItem => ({
     validation: ['number', 'required', 'ceil', NUMBER_DEFAULT_VALIDATION()],
 });
 
+const CHECKBOX_RECOVERY_EVEN = (): TConfigItem => ({
+    type: 'checkbox',
+    name: 'recovery_even',
+    label: localize('Recovery Even'),
+    description: localize('After a losing trade, make the next contract Even, then return to the selected contract after a win.'),
+    attached: true,
+});
+
 const CHECKBOX_MAX_STAKE = (): TConfigItem => ({
     type: 'checkbox',
     name: 'boolean_max_stake',
@@ -342,6 +350,7 @@ export const STRATEGIES = (): TStrategies => ({
                 SIZE(),
                 CHECKBOX_MAX_STAKE(),
                 MAX_STAKE(),
+                CHECKBOX_RECOVERY_EVEN(),
             ],
         ],
     },

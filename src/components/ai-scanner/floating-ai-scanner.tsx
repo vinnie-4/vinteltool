@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api_base } from '@/external/bot-skeleton';
 import { useStore } from '@/hooks/useStore';
 import { DBOT_TABS } from '@/constants/bot-contents';
-import martingaleXml from '@/xml/martingale.xml';
 import './floating-ai-scanner.scss';
 
 type Tick = { quote: number; digit: number };
@@ -118,65 +117,6 @@ const analyseTicks = (ticks: Tick[], windowSize = DEFAULT_TICK_WINDOW, requested
         winRate: Math.round(selected.rate * 10) / 10, momentumBurst, missingDigits,
         rationale: selected.side + ' recorded ' + selected.rate.toFixed(1) + '% historical hits in the selected ' + total + '-tick sample; recent 20-tick hit rate ' + recentRate.toFixed(1) + '%.',
     };
-};
-
-const scannerXml = (market: Market, signal: Signal, config: { stake: number; duration: number; martingale: number; stopLoss: number; takeProfit: number }) => {
-    const match = /^(Over|Under) (\d)$/.exec(signal);
-    const side = match?.[1] ?? 'Under';
-    const prediction = Number(match?.[2] ?? 6);
-    const contract = side === 'Over' ? 'DIGITOVER' : 'DIGITUNDER';
-    const doc = new DOMParser().parseFromString(martingaleXml, 'text/xml');
-    const field = (name: string, value: string, previous?: string) => {
-        const nodes = Array.from(doc.querySelectorAll(`field[name="${name}"]`));
-        const node = previous ? nodes.find(item => item.textContent === previous) : nodes[0];
-        if (node) node.textContent = value;
-    };
-    field('MARKET_LIST', 'synthetic_index', 'basket_index');
-    field('SUBMARKET_LIST', 'random_index', 'forex_basket');
-    field('SYMBOL_LIST', market.symbol, 'WLDAUD');
-    field('TRADETYPECAT_LIST', 'digits', 'callput');
-    field('TRADETYPE_LIST', 'overunder', 'callput');
-    field('TYPE_LIST', contract, 'both');
-    field('DURATIONTYPE_LIST', 't', 'm');
-    field('PURCHASE_LIST', contract, 'CALL');
-    const durationField = doc.querySelector('block[type="trade_definition_tradeoptions"] value[name="DURATION"] field[name="NUM"]');
-    if (durationField) durationField.textContent = String(config.duration);
-    const setNumericValue = (strategyValue: string, amount: number) => {
-        const value = doc.querySelector(`value[strategy_value="${strategyValue}"]`);
-        if (!value) return;
-        const block = doc.createElement('block');
-        block.setAttribute('type', 'math_number');
-        const fieldNode = doc.createElement('field');
-        fieldNode.setAttribute('name', 'NUM');
-        fieldNode.textContent = String(amount);
-        block.appendChild(fieldNode);
-        value.replaceChildren(block);
-    };
-    setNumericValue('stake', config.stake);
-    setNumericValue('loss', config.stopLoss);
-    setNumericValue('profit', config.takeProfit);
-    const multiplierVar = Array.from(doc.querySelectorAll('field[name="VAR"]')).find(node => node.textContent === 'martingale:multiplier');
-    const multiplierBlock = multiplierVar?.closest('block[type="variables_set"]');
-    const multiplierNum = multiplierBlock?.querySelector('value[name="VALUE"] shadow[type="math_number"] field[name="NUM"], value[name="VALUE"] block[type="math_number"] field[name="NUM"]');
-    if (multiplierNum) multiplierNum.textContent = String(config.martingale);
-    const mutation = doc.querySelector('block[type="trade_definition_tradeoptions"] > mutation');
-    if (mutation) mutation.setAttribute('has_prediction', 'true');
-    const tradeOptions = doc.querySelector('block[type="trade_definition_tradeoptions"]');
-    let predictionValue = tradeOptions?.querySelector('value[name="PREDICTION"]');
-    if (!predictionValue && tradeOptions) {
-        predictionValue = doc.createElement('value');
-        predictionValue.setAttribute('name', 'PREDICTION');
-        const shadow = doc.createElement('shadow');
-        shadow.setAttribute('type', 'math_number_positive');
-        const num = doc.createElement('field');
-        num.setAttribute('name', 'NUM');
-        shadow.appendChild(num);
-        predictionValue.appendChild(shadow);
-        tradeOptions.appendChild(predictionValue);
-    }
-    const num = predictionValue?.querySelector('field[name="NUM"]');
-    if (num) num.textContent = String(prediction);
-    return new XMLSerializer().serializeToString(doc);
 };
 
 // Nested routes/layouts may mount the shared widget more than once.
@@ -440,23 +380,36 @@ const FloatingAIScanner = () => {
         }
     }, [disconnect, connectMarket, tickWindow, selectedTradeType]);
 
-    const loadScannerBot = useCallback(async () => {
-        if (analysis.signal === 'Waiting') {
-            setError('Collecting more ticks before loading a scanner bot.');
+    const loadScannerBot = useCallback(() => {
+        const match = /^(Over|Under) (\\d)$/.exec(analysis.signal);
+        if (!match || analysis.signal === 'Waiting') {
+            setError('Collecting more ticks before configuring a scanner bot.');
             return;
         }
-
-        const xml = scannerXml(market, analysis.signal, {
-            stake: Math.max(0.01, Number(configStake) || 0.5),
-            duration: Math.max(1, Math.floor(Number(configDuration) || 1)),
-            martingale: Math.max(1, Number(configMartingale) || 2),
-            stopLoss: Math.max(0, Number(configStopLoss) || 0),
-            takeProfit: Math.max(0, Number(configTakeProfit) || 0),
-        });
+        const side = match[1];
+        const prediction = Number(match[2]);
+        // Send the AI-selected market and exact barrier into native Quick Strategy.
+        quick_strategy.setSelectedStrategy('MARTINGALE');
+        const values: Record<string, string | boolean> = {
+            symbol: market.symbol,
+            tradetype: 'overunder',
+            type: side === 'Over' ? 'DIGITOVER' : 'DIGITUNDER',
+            last_digit_prediction: String(prediction),
+            stake: '0.5',
+            durationtype: 't',
+            duration: '1',
+            profit: '5',
+            loss: '10',
+            size: '2',
+            recovery_even: true,
+            action: 'EDIT',
+        };
+        Object.entries(values).forEach(([key, value]) => quick_strategy.setValue(key, value as string));
         setOpen(false);
+        setShowLoadConfig(false);
         dashboard.setActiveTab(DBOT_TABS.BOT_BUILDER);
-        await quick_strategy.loadFreeBotXml(xml, 'AI Scanner • ' + market.name + ' • ' + analysis.signal);
-    }, [analysis.signal, configDuration, configMartingale, configStake, configStopLoss, configTakeProfit, dashboard, market, quick_strategy]);
+        quick_strategy.setFormVisibility(true);
+    }, [analysis.signal, dashboard, market, quick_strategy]);
 
     if (isDuplicateInstance) return null;
 
@@ -548,7 +501,7 @@ const FloatingAIScanner = () => {
                     <button type='button' className='ai-scanner__scan-button' disabled={scanning} onClick={() => void scanMarkets()}>
                         {scanning ? 'Scanning Markets…' : scanComplete ? 'Scan Again' : 'Scan Markets'}
                     </button>
-                    <button type='button' className='ai-scanner__load-button' disabled={!scanComplete || analysis.signal === 'Waiting'} onClick={() => setShowLoadConfig(true)}>
+                    <button type='button' className='ai-scanner__load-button' disabled={!scanComplete || analysis.signal === 'Waiting'} onClick={() => loadScannerBot()}>
                         Load Scanner Bot
                     </button>
                 </div>
