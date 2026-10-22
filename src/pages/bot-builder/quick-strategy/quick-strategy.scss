@@ -930,3 +930,27 @@
         color: #fff !important;
     }
 }
+
+
+/* Definitive Load styling: class is applied to the real .dc-btn element by Button. */
+.qs .qs__body__content__footer button.dc-btn.qs-load-button,
+.qs .qs__body__content__footer .dc-btn.qs-load-button,
+.qs .qs__body__content__footer button.dc-btn.qs-load-button:hover,
+.qs .qs__body__content__footer button.dc-btn.qs-load-button:focus,
+.qs .qs__body__content__footer button.dc-btn.qs-load-button:active,
+.qs .qs__body__content__footer button.dc-btn.qs-load-button:disabled {
+    background: #008f8c !important;
+    background-color: #008f8c !important;
+    background-image: none !important;
+    border: 1px solid #007a77 !important;
+    color: #ffffff !important;
+    opacity: 1;
+}
+.qs .qs__body__content__footer button.dc-btn.qs-load-button .dc-btn__text,
+.qs .qs__body__content__footer button.dc-btn.qs-load-button span,
+.qs .qs__body__content__footer button.dc-btn.qs-load-button * {
+    color: #ffffff !important;
+}
+.qs .qs__body__content__footer button.dc-btn.qs-load-button {
+    box-shadow: 0 3px 10px rgba(0, 143, 140, .28) !important;
+}
