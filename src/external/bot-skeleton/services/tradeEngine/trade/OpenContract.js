@@ -30,6 +30,7 @@ export default Engine =>
                             const multiplier = Math.max(1, Math.min(5, Number(settings.multiplier) || 2));
                             const maxStake = Math.max(baseStake, Number(settings.maxStake) || baseStake);
                             const profit = Number(contract.profit);
+                            if (settings.recoveryOnlyAfterLoss) this.analysisRecoveryPending = profit < 0;
                             this.tradeOptions.amount = profit < 0 ? Math.min(baseStake * multiplier, maxStake) : baseStake;
                         }
                     }
