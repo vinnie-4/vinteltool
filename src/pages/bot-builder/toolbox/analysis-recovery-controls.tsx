@@ -1,5 +1,4 @@
 import React from 'react';
-import AnalysisTool from '@/pages/analysis-tool';
 import './analysis-recovery-controls.scss';
 
 type Mode = 'even-odd' | 'over-under';
@@ -46,7 +45,7 @@ const AnalysisRecoveryControls = () => {
                         : `${settings.streak} consecutive digits Over 4 (5–9) → candidate Under 5 (0–4); ${settings.streak} consecutive digits Under 5 (0–4) → candidate Over 4 (5–9).`
                     : 'Analysis mode is disabled. Enable it to configure the signal rule.'}
             </div>
-            <small>Settings are saved on this device. This panel configures the rule only; it does not yet alter trade execution or activate a Blockly strategy block. Verify and connect the rule to the bot before running live trades.</small>
+            <small>Settings are saved on this device. When enabled, digit purchases wait for the selected live-tick streak and only proceed for the opposite-side contract. Recovery increases the next digit stake after a loss, capped by Maximum stake; a win resets it to the base stake.</small>
         </>}
     </section>;
 };
