@@ -14,6 +14,7 @@ import SearchBox from './search-box';
 import AnalysisTool from '@/pages/analysis-tool';
 import { ToolboxItems } from './toolbox-items';
 import LastDigitLivePanel from '@/components/last-digit-live-panel/last-digit-live-panel';
+import AnalysisRecoveryControls from './analysis-recovery-controls';
 
 const Toolbox = observer(() => {
     const { isDesktop } = useDevice();
@@ -179,6 +180,7 @@ const Toolbox = observer(() => {
                             {is_last_digit_open && <AnalysisTool showLegend={false} showStreak showSubtabs={false} showControls={false} showPrice={false} showContractProbabilities={false} windowSize={20} />}
                         </div>
                         <LastDigitLivePanel compact />
+                        <AnalysisRecoveryControls />
                     </div>
                 </div>
             </div>
