@@ -32,11 +32,16 @@ const TICK_WINDOWS = [3000, 1000, 500, 300, 100, 60];
 const MAX_TICKS = 3000;
 const WS_URL = 'wss://api.derivws.com/trading/v1/options/ws/public';
 
+const normalizePipSize = (pipSize: number | undefined | null, fallback = 2) => {
+    const parsed = Number(pipSize);
+    return Number.isFinite(parsed) && parsed >= 0 ? Math.min(8, Math.floor(parsed)) : fallback;
+};
 const getLastDigit = (quote: number, pipSize = 2) => {
-    const decimals = Math.max(0, Math.min(8, Number(pipSize) || 2));
+    const decimals = normalizePipSize(pipSize);
+    // toFixed preserves trailing zeros, so the final displayed decimal is extracted consistently.
     return Number(quote.toFixed(decimals).replace('.', '').slice(-1));
 };
-const formatPrice = (quote: number | null, pipSize: number) => quote === null ? '—' : quote.toFixed(Math.max(0, Math.min(8, Number(pipSize) || 2)));
+const formatPrice = (quote: number | null, pipSize: number) => quote === null ? '—' : quote.toFixed(normalizePipSize(pipSize));
 
 type AnalysisToolProps = {
     showLegend?: boolean;
@@ -104,6 +109,8 @@ const AnalysisTool = ({
         let historyPrices: number[] = [];
         let historyTimes: number[] = [];
         let historyPagePending = false;
+        let historyPageCount = 0;
+        let lastRequestedEnd: number | null = null;
         wsRef.current = ws;
         ws.onopen = () => {
             if (stoppedRef.current || connectionId !== connectionIdRef.current || wsRef.current !== ws) return;
@@ -116,7 +123,14 @@ const AnalysisTool = ({
             if (connectionId !== connectionIdRef.current || wsRef.current !== ws) return;
             try {
                 const data = JSON.parse(event.data);
-                if (data.error || Array.isArray(data.errors)) { setConnected(false); setConnectionError(data.error?.message || data.errors?.[0]?.message || 'Deriv public WebSocket rejected the request'); return; }
+                if (data.error || Array.isArray(data.errors)) {
+                    const message = data.error?.message || data.errors?.[0]?.message || 'Deriv public WebSocket rejected the request';
+                    setConnected(false);
+                    setConnectionError(message);
+                    // Re-open a clean connection so a rejected history request cannot leave the view stuck.
+                    if (ws.readyState === WebSocket.OPEN) ws.close();
+                    return;
+                }
                 const receivedPipSize = Number(data.pip_size ?? data.tick?.pip_size);
                 if (Number.isFinite(receivedPipSize) && receivedPipSize >= 0) { pipSizeRef.current = receivedPipSize; setPipSize(receivedPipSize); }
                 const decimals = Number.isFinite(receivedPipSize) && receivedPipSize >= 0 ? receivedPipSize : pipSizeRef.current;
@@ -138,24 +152,31 @@ const AnalysisTool = ({
                         .sort((a, b) => a.time - b.time);
                     historyTimes = combined.map(item => item.time);
                     historyPrices = combined.map(item => item.quote);
-                    if (historyPrices.length < windowSize && valid.length && ws.readyState === WebSocket.OPEN) {
+                    if (historyPrices.length < windowSize && valid.length && ws.readyState === WebSocket.OPEN && historyPageCount < 5) {
                         const oldestTime = Math.min(...valid.map(item => item.time));
-                        const remaining = windowSize - historyPrices.length;
-                        historyPagePending = true;
-                        ws.send(JSON.stringify({
-                            ticks_history: selectedSymbol,
-                            count: Math.min(remaining + 1, 1000),
-                            end: Math.max(1, oldestTime - 1),
-                            style: 'ticks',
-                            req_id: 1
-                        }));
-                        return;
+                        const nextEnd = Math.max(1, oldestTime - 1);
+                        // Stop paging if the API cannot move further back; this prevents repeated identical requests.
+                        if (lastRequestedEnd !== nextEnd && oldestTime > 1) {
+                            const remaining = windowSize - historyPrices.length;
+                            historyPagePending = true;
+                            historyPageCount += 1;
+                            lastRequestedEnd = nextEnd;
+                            ws.send(JSON.stringify({
+                                ticks_history: selectedSymbol,
+                                count: Math.min(remaining + 1, 1000),
+                                end: nextEnd,
+                                style: 'ticks',
+                                req_id: 1
+                            }));
+                            return;
+                        }
                     }
                     const historyTicks = historyPrices.slice(-windowSize).map(quote => ({ quote, digit: getLastDigit(quote, decimals) }));
                     setTicks(historyTicks);
                     const last = historyTicks[historyTicks.length - 1];
                     if (last) { setLatestPrice(last.quote); setLatestDigit(last.digit); }
-                    setConnected(true); setConnectionError('');
+                    setConnected(true);
+                    setConnectionError(historyTicks.length < windowSize ? `Using ${historyTicks.length} available historical ticks; continuing with live updates.` : '');
                     historyPagePending = false;
                     // Subscribe only after the full selected historical window has been installed.
                     if (ws.readyState === WebSocket.OPEN) {
@@ -190,7 +211,7 @@ const AnalysisTool = ({
                 setConnectionError('Unable to open Deriv public WebSocket');
             }
         };
-    }, [selectedSymbol]);
+    }, [selectedSymbol, windowSize]);
 
     useEffect(() => {
         setTicks([]);
