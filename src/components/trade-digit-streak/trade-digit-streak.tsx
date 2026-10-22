@@ -6,6 +6,11 @@ type Tick = { digit: number; epoch: number };
 const WS_URL = 'wss://api.derivws.com/trading/v1/options/ws/public';
 const isDigitContract = (contract?: TContractInfo | null) => /^DIGIT/.test(String(contract?.contract_type || '').toUpperCase());
 const getDigit = (quote: number, precision: number) => Number(quote.toFixed(Math.max(0, Math.min(8, precision))).replace('.', '').slice(-1));
+const getSpotDigit = (spot: unknown) => {
+    if (spot === null || spot === undefined || spot === '') return null;
+    const digits = String(spot).replace(/[^0-9]/g, '');
+    return digits ? Number(digits.slice(-1)) : null;
+};
 
 /** Contextual live analysis for an already-issued digit contract. It never places trades. */
 const TradeDigitStreak = ({ contract, active = true }: { contract?: TContractInfo | null; active?: boolean }) => {
@@ -89,6 +94,8 @@ const TradeDigitStreak = ({ contract, active = true }: { contract?: TContractInf
     if (!active || !isDigitContract(contract) || !contractKey) return null;
     const parities = ticks.map(t => t.digit % 2 === 0 ? 'Even' : 'Odd');
     const latest = ticks[ticks.length - 1];
+    const entryDigit = getSpotDigit((contract as any)?.entry_spot);
+    const exitDigit = getSpotDigit((contract as any)?.exit_spot);
     const latestParity = parities[parities.length - 1];
     let streak = 0;
     for (let i = parities.length - 1; i >= 0 && parities[i] === latestParity; i--) streak++;
@@ -97,6 +104,10 @@ const TradeDigitStreak = ({ contract, active = true }: { contract?: TContractInf
 
     return <section className='trade-digit-streak' aria-live='polite'>
         <div className='trade-digit-streak__heading'><strong>Live last-digit analysis</strong><span className={status === 'Live' ? 'is-live' : ''}>● {status}</span></div>
+        <div className='trade-digit-streak__spots'>
+            <span>Entry spot digit <b>{entryDigit === null ? '—' : entryDigit + ' · ' + (entryDigit % 2 === 0 ? 'Even' : 'Odd')}</b></span>
+            <span>Exit spot digit <b>{exitDigit === null ? 'Pending' : exitDigit + ' · ' + (exitDigit % 2 === 0 ? 'Even' : 'Odd')}</b></span>
+        </div>
         <div className='trade-digit-streak__stats'>
             <span>Last digit <b>{latest ? latest.digit : '—'}</b></span>
             <span>Even <b>{even}/20</b></span>
