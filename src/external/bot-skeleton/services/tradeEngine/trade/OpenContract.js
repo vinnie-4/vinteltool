@@ -24,7 +24,7 @@ export default Engine =>
                             catch { return null; }
                         })();
                         const isDigitContract = /^DIGIT/.test(String(contract.contract_type || '').toUpperCase());
-                        if (settings?.enabled && settings?.recovery && isDigitContract && this.tradeOptions && contract.contract_id !== this.analysisRecoveryLastContractId) {
+                        if (settings?.enabled && settings?.recovery && isDigitContract && this.tradeOptions && Number.isFinite(Number(contract.profit)) && contract.contract_id !== this.analysisRecoveryLastContractId) {
                             this.analysisRecoveryLastContractId = contract.contract_id;
                             const baseStake = Number(this.analysisRecoveryBaseStake) || Number(this.tradeOptions.amount) || 0;
                             const multiplier = Math.max(1, Math.min(5, Number(settings.multiplier) || 2));
