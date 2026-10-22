@@ -385,7 +385,7 @@ const FloatingAIScanner = () => {
     }, [disconnect, connectMarket, tickWindow, selectedTradeType]);
 
     const loadScannerBot = useCallback(async () => {
-        const match = /^(Over|Under) (\\d)$/.exec(analysis.signal);
+        const match = /^(Over|Under) (\d)$/.exec(analysis.signal);
         if (!match || analysis.signal === 'Waiting') {
             setError('The current tick sample has no usable Over/Under signal yet. Try scanning again.');
             return;
