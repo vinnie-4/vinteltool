@@ -289,3 +289,15 @@
         }
     }
 }
+
+
+.transactions__last-digit-analysis {
+    margin: 0 0 12px;
+    padding: 8px;
+    border: 1px solid var(--general-section-1);
+    border-radius: 10px;
+    background: var(--general-main-1);
+}
+.transactions__last-digit-analysis .last-digit-live-panel {
+    margin-top: 8px;
+}
