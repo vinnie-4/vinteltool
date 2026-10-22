@@ -53,6 +53,36 @@ const BotBuilder = observer(() => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [is_running]);
 
+    React.useEffect(() => {
+        const handleLastDigitContract = async (event: Event) => {
+            const detail = (event as CustomEvent).detail;
+            if (!detail || !['Even', 'Odd'].includes(detail.contract)) return;
+            try {
+                await quick_strategy.loadConfiguredQuickBot({
+                    marketGroup: 'Derived',
+                    marketType: 'Continuous Indices',
+                    symbol: detail.symbol || '1HZ100V',
+                    tradeFamily: 'Digits',
+                    tradeType: 'Even/Odd',
+                    purchase: detail.contract,
+                    contract: detail.contract,
+                    durationType: 't',
+                    duration: 1,
+                    stake: 0.5,
+                    multiplier: 2,
+                    profit: 5,
+                    loss: 10,
+                    martingale: false,
+                    recoveryMode: false,
+                });
+            } catch (error) {
+                console.error('Unable to prepare last-digit trade blocks:', error);
+            }
+        };
+        window.addEventListener('vinteltool:last-digit-contract-selected', handleLastDigitContract);
+        return () => window.removeEventListener('vinteltool:last-digit-contract-selected', handleLastDigitContract);
+    }, [quick_strategy]);
+
     const handleBlockChangeOnBotRun = (e: Event) => {
         const { is_reset_button_clicked } = toolbar;
         if (e.type !== 'selected' && !is_reset_button_clicked) {
