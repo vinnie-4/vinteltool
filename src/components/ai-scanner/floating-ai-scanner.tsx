@@ -381,7 +381,7 @@ const FloatingAIScanner = () => {
                         const result = analyseTicks(history, tickWindow, selectedTradeType);
                         results.push({ market: item, ticks: history, analysis: result });
                     }
-                    await new Promise(resolve => window.setTimeout(resolve, 650));
+                    await new Promise(resolve => window.setTimeout(resolve, 250));
                 }
 
                 const qualified = results
@@ -400,7 +400,7 @@ const FloatingAIScanner = () => {
 
                 setScanMessage('Volatility · cycle ' + (cycle + 1));
                 setScanProgress(0);
-                await new Promise(resolve => window.setTimeout(resolve, 700));
+                await new Promise(resolve => window.setTimeout(resolve, 250));
             }
         } catch (e: any) {
             setError(e?.message || 'Unable to scan the volatility markets');
