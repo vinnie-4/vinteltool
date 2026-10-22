@@ -211,13 +211,8 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
         </block>
       </statement>
       <statement name="ELSE">
-        <block type="controls_if" id="vintel_qbb_recovery_gate">
-          <value name="IF0"><block type="logic_boolean"><field name="BOOL">${recoveryEnabled ? 'TRUE' : 'FALSE'}</field></block></value>
-          <statement name="DO0">
-            <block type="variables_set" id="vintel_qbb_loss_stake"><field name="VAR" id="vintel_qbb_stake">Stake</field><value name="VALUE"><block type="math_arithmetic"><field name="OP">MULTIPLY</field><value name="A"><block type="variables_get"><field name="VAR" id="vintel_qbb_stake">Stake</field></block></value><value name="B"><block type="variables_get"><field name="VAR" id="vintel_qbb_martingale">Martingale</field></block></value></block></value>
-              <next><block type="variables_set" id="vintel_qbb_loss_prediction"><field name="VAR" id="vintel_qbb_prediction">Prediction</field><value name="VALUE"><block type="math_number"><field name="NUM">${recoveryPrediction}</field></block></value></block></next>
-            </block>
-          </statement>
+        <block type="variables_set" id="vintel_qbb_loss_stake"><field name="VAR" id="vintel_qbb_stake">Stake</field><value name="VALUE"><block type="math_arithmetic"><field name="OP">MULTIPLY</field><value name="A"><block type="variables_get"><field name="VAR" id="vintel_qbb_stake">Stake</field></block></value><value name="B"><block type="variables_get"><field name="VAR" id="vintel_qbb_martingale">Martingale</field></block></value></block></value>
+          <next><block type="controls_if" id="vintel_qbb_recovery_gate"><value name="IF0"><block type="logic_boolean"><field name="BOOL">${recoveryEnabled ? 'TRUE' : 'FALSE'}</field></block></value><statement name="DO0"><block type="variables_set" id="vintel_qbb_loss_prediction"><field name="VAR" id="vintel_qbb_prediction">Prediction</field><value name="VALUE"><block type="math_number"><field name="NUM">${recoveryPrediction}</field></block></value></block></statement></block></next>
         </block>
       </statement>
       <next><block type="trade_again" id="vintel_qbb_trade_again"></block></next>
