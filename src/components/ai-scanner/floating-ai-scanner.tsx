@@ -28,16 +28,19 @@ type Analysis = {
 };
 
 const MARKETS: Market[] = [
-    { name: 'Volatility 10', symbol: 'R_10' },
-    { name: 'Volatility 10 (1s)', symbol: '1HZ10V' },
-    { name: 'Volatility 25', symbol: 'R_25' },
-    { name: 'Volatility 25 (1s)', symbol: '1HZ25V' },
-    { name: 'Volatility 50', symbol: 'R_50' },
-    { name: 'Volatility 50 (1s)', symbol: '1HZ50V' },
-    { name: 'Volatility 75', symbol: 'R_75' },
-    { name: 'Volatility 75 (1s)', symbol: '1HZ75V' },
-    { name: 'Volatility 100', symbol: 'R_100' },
-    { name: 'Volatility 100 (1s)', symbol: '1HZ100V' },
+    { name: 'Volatility Index 10', symbol: 'R_10' },
+    { name: 'Volatility Index 10 (1s)', symbol: '1HZ10V' },
+    { name: 'Volatility Index 15 (1s)', symbol: '1HZ15V' },
+    { name: 'Volatility Index 25', symbol: 'R_25' },
+    { name: 'Volatility Index 25 (1s)', symbol: '1HZ25V' },
+    { name: 'Volatility Index 30 (1s)', symbol: '1HZ30V' },
+    { name: 'Volatility Index 50', symbol: 'R_50' },
+    { name: 'Volatility Index 50 (1s)', symbol: '1HZ50V' },
+    { name: 'Volatility Index 75', symbol: 'R_75' },
+    { name: 'Volatility Index 75 (1s)', symbol: '1HZ75V' },
+    { name: 'Volatility Index 90 (1s)', symbol: '1HZ90V' },
+    { name: 'Volatility Index 100', symbol: 'R_100' },
+    { name: 'Volatility Index 100 (1s)', symbol: '1HZ100V' },
 ];
 
 const TICK_WINDOWS = [3000, 1000, 500, 300, 100, 60, 30];
@@ -359,7 +362,7 @@ const FloatingAIScanner = () => {
                 for (let index = 0; index < MARKETS.length; index += 1) {
                     const item = MARKETS[index];
                     setScanProgress(Math.round(((index + 1) / MARKETS.length) * 100));
-                    setScanMessage('Volatility ' + (index + 1) + '/' + MARKETS.length);
+                    setScanMessage(item.name + '|' + (index + 1) + '/' + MARKETS.length);
                     const response: any = await api_base.api.send({
                         ticks_history: item.symbol,
                         count: tickWindow,
@@ -378,7 +381,7 @@ const FloatingAIScanner = () => {
                         const result = analyseTicks(history, tickWindow, selectedTradeType);
                         results.push({ market: item, ticks: history, analysis: result });
                     }
-                    await new Promise(resolve => window.setTimeout(resolve, 1500));
+                    await new Promise(resolve => window.setTimeout(resolve, 650));
                 }
 
                 const qualified = results
@@ -485,11 +488,9 @@ const FloatingAIScanner = () => {
                 </section>
 
                 {scanning && <section className='ai-scanner__scan-progress-card is-scanning' aria-live='polite'>
-                    <div className='ai-scanner__scan-progress-heading'>
-                        <span>{scanMessage || 'Scanning volatility'}</span>
-                        <strong>{Math.max(1, scanProgress)}%</strong>
-                    </div>
-                    <div className='ai-scanner__scan-progress-track'><span style={{ width: Math.max(5, scanProgress) + '%' }} /></div>
+                    <div className='ai-scanner__scan-market-name'>{(scanMessage.split('|')[0] || 'Volatility Index 10')}</div>
+                    <div className='ai-scanner__scan-progress-track'><span style={{ width: Math.max(0, scanProgress) + '%' }} /></div>
+                    <div className='ai-scanner__scan-market-count'>Scanning markets {scanMessage.split('|')[1] || '1/' + MARKETS.length}</div>
                 </section>}
 
                 {!scanning && !scanComplete && (error ? <p className='ai-scanner__error'>{error}</p> : <div className='ai-scanner__status' aria-live='polite'>Not scanned yet</div>)}
