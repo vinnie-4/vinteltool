@@ -286,7 +286,21 @@ const AnalysisTool = ({
                 <label>Market<select value={selectedIndex} onChange={event => changeIndex(event.target.value)}>{VOLATILITY_INDICES.map(([name]) => <option key={name} value={name}>{name}</option>)}</select></label>
                 <label>Ticks<select value={windowSize} onChange={event => changeWindow(Number(event.target.value))}>{TICK_WINDOWS.map(size => <option key={size} value={size}>{size}</option>)}</select></label>
             </div>}
-            <div className='dcircles__circle-panel'>
+            {showStreak ? <div className='last-digit-live-panel' aria-live='polite'>
+                <div className='last-digit-live-panel__header'>
+                    <span className={connected ? 'last-digit-live-panel__live is-live' : 'last-digit-live-panel__live'}>{connected ? '● LIVE' : '○ CONNECTING'}</span>
+                    <span>{selectedIndex}</span>
+                </div>
+                <div className='last-digit-live-panel__latest'>
+                    <span>Last digit</span>
+                    <strong>{latestDigit === null ? '—' : latestDigit}</strong>
+                    <b className={latestDigit === null ? '' : latestDigit % 2 === 0 ? 'is-even' : 'is-odd'}>{latestDigit === null ? 'Waiting' : latestDigit % 2 === 0 ? 'EVEN' : 'ODD'}</b>
+                </div>
+                <div className='last-digit-live-panel__streak'>Current parity streak: <strong>{analysisTicks.length ? contractProbabilities.streak : 0} {contractProbabilities.lastClass === 'first' ? 'EVEN' : contractProbabilities.lastClass === 'second' ? 'ODD' : ''}</strong></div>
+                <div className='last-digit-live-panel__sequence-label'>Last {analysisTicks.length} ticks · newest on the right</div>
+                <div className='last-digit-live-panel__sequence'>{analysisTicks.map((tick, index) => <span key={index} className={tick.digit % 2 === 0 ? 'is-even' : 'is-odd'} title={'Digit ' + tick.digit + ' · ' + (tick.digit % 2 === 0 ? 'Even' : 'Odd')}>{tick.digit}<small>{tick.digit % 2 === 0 ? 'E' : 'O'}</small></span>)}</div>
+                <div className='last-digit-live-panel__status'>{Math.min(analysisTicks.length, windowSize)} / {windowSize} ticks{connectionError && <span> · {connectionError}</span>}</div>
+            </div> : <>
                 <div className='dcircles__market-heading'><span>{formatPrice(latestPrice, pipSize)}</span><strong>{selectedIndex} Index</strong></div>
                 <div className='dcircles__circles'>{stats.map(item => <div className={`dcircles__digit dcircles__digit--${item.digit} dcircles__digit--rank-${item.rankTone}${item.digit === latestDigit ? ' dcircles__digit--latest' : ''}${item.digit === selectedBarrierDigit ? ' dcircles__digit--selected-barrier' : ''}`} key={item.digit}>
                     <button type='button' className='dcircles__circle' onClick={() => onDigitSelect?.(item.digit)} aria-pressed={item.digit === selectedBarrierDigit} aria-label={`Select barrier digit ${item.digit}; ${item.percentage.toFixed(1)} percent, ${item.count} appearances${item.digit === latestDigit ? ', latest tick' : ''}`}><span>{item.digit}</span><b>{item.percentage.toFixed(1)}%</b>{item.digit === latestDigit && <i className='dcircles__pointer' aria-label='Latest tick cursor'>▲</i>}</button>
@@ -321,6 +335,7 @@ const AnalysisTool = ({
                 <div className='dcircles__contract-streak'>Current {contractProbabilities.lastClass === 'first' ? contractProbabilities.firstName : contractProbabilities.lastClass === 'second' ? contractProbabilities.secondName : 'outcome'} streak: <strong>{analysisTicks.length ? contractProbabilities.streak : 0}</strong></div>
                 
             </div>}
+            </>}
         </>}
     </section>;
 };
