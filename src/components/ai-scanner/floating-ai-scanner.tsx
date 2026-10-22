@@ -279,7 +279,7 @@ const FloatingAIScanner = () => {
             if (Number.isFinite(pipSize) && pipSize >= 0) decimalsRef.current = pipSize;
 
             if (data?.msg_type === 'history' && data?.echo_req?.req_id === historyReqId && Array.isArray(data.history?.prices)) {
-                const history = data.history.prices.map(Number).filter(Number.isFinite).slice(-MAX_TICKS).map((quote: number) => ({
+                const history = data.history.prices.map(Number).filter(Number.isFinite).slice(-tickWindow).map((quote: number) => ({
                     quote,
                     digit: digitOf(quote, decimalsRef.current),
                 }));
@@ -314,7 +314,7 @@ const FloatingAIScanner = () => {
     }, [disconnect, tickWindow]);
 
     useEffect(() => {
-        if (!open) return;
+        if (!open || scanComplete) return;
         let cancelled = false;
         const start = async () => {
             for (let attempt = 0; attempt < 8 && !cancelled && !api_base.api; attempt += 1) {
@@ -324,7 +324,7 @@ const FloatingAIScanner = () => {
         };
         void start();
         return () => { cancelled = true; void disconnect(); };
-    }, [open, market.symbol, connectMarket, disconnect]);
+    }, [open, scanComplete, market.symbol, connectMarket, disconnect]);
 
     const analysis = useMemo(() => analyseTicks(ticks.slice(-tickWindow), tickWindow, selectedTradeType), [ticks, tickWindow, selectedTradeType]);
     const recentDigitStreak = useMemo(() => ticks.slice(-30).map(tick => tick.digit), [ticks]);
@@ -383,7 +383,7 @@ const FloatingAIScanner = () => {
             setScanProgress(100);
             setScanComplete(true);
             setScanMessage(winner.market.name + ' • ' + winner.analysis.signal + ' • observed hit rate ' + winner.analysis.winRate.toFixed(1) + '%');
-            await connectMarket(winner.market.symbol);
+
         } catch (e: any) {
             setError(e?.message || 'Unable to scan the volatility markets');
             setScanMessage('Market scan failed');
@@ -459,16 +459,16 @@ const FloatingAIScanner = () => {
                 </section>}
 
                 <div className={'ai-scanner__status ' + (scanning ? 'is-scanning' : scanComplete ? 'is-complete' : '')} aria-live='polite'>
-                    {scanning ? 'Scanning ' + (scanMessage || 'markets…') : scanComplete ? 'Best market: ' + market.name + ' · ' + analysis.confidence + '% heuristic confidence' : error || 'Not scanned yet'}
+                    {scanning ? 'Scanning ' + (scanMessage || 'markets…') : scanComplete ? '' : error || 'Not scanned yet'}
                 </div>
 
                 {scanComplete && <>
                     <div className='ai-scanner__recent-streak' aria-label='Last 30 tick digits'>
                         {recentDigitStreak.map((digit, index) => <span key={index}>{digit}</span>)}
                     </div>
-                    <div className='ai-scanner__result-summary'>
-                        <strong>Best market: {market.name} · {analysis.signal} · AI score {analysis.confidence}% · observed win rate {analysis.winRate.toFixed(1)}%</strong>
-                        
+                    <div className='ai-scanner__result-table' role='table' aria-label='Best market scan result'>
+                        <div role='row'><span role='columnheader'>BEST MARKET</span><span role='columnheader'>TRADE TYPE</span><span role='columnheader'>AI SCORE</span><span role='columnheader'>WIN RATE</span><span role='columnheader'>TICKS</span></div>
+                        <div role='row'><strong role='cell'>{market.name}</strong><strong role='cell'>{analysis.signal}</strong><strong role='cell'>{analysis.confidence}%</strong><strong role='cell'>{analysis.winRate.toFixed(1)}%</strong><strong role='cell'>{analysis.total}/{tickWindow}</strong></div>
                     </div>
                     <div className='ai-scanner__digits'>
                         {analysis.counts.map((count, digit) => (
