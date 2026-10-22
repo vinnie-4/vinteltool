@@ -86,10 +86,11 @@ const analyseTicks = (ticks: Tick[], windowSize = DEFAULT_TICK_WINDOW, requested
     const overPct = over4 / total * 100;
     const recent = values.slice(-Math.min(100, values.length));
     const last20 = recent.slice(-Math.min(20, recent.length));
+    const last30 = values.slice(-Math.min(30, values.length));
     const recentCounts = Array(10).fill(0) as number[];
-    last20.forEach(tick => { recentCounts[tick.digit] += 1; });
+    last30.forEach(tick => { recentCounts[tick.digit] += 1; });
     const recentTop = Math.max(...recentCounts);
-    const momentumBurst = last20.length ? Math.round(recentTop / last20.length * 100) : 0;
+    const momentumBurst = last30.length ? Math.round(recentTop / last30.length * 100) : 0;
 
     const pairs = requestedType ? [requestedType] : [...SCAN_TRADE_TYPES];
     const contractOptions = pairs.flatMap(pair => {
@@ -327,7 +328,6 @@ const FloatingAIScanner = () => {
     }, [open, scanComplete, market.symbol, connectMarket, disconnect]);
 
     const analysis = useMemo(() => analyseTicks(ticks.slice(-tickWindow), tickWindow, selectedTradeType), [ticks, tickWindow, selectedTradeType]);
-    const recentDigitStreak = useMemo(() => ticks.slice(-30).map(tick => tick.digit), [ticks]);
 
     useEffect(() => setConfidence(analysis.confidence), [analysis.confidence]);
 
@@ -345,45 +345,52 @@ const FloatingAIScanner = () => {
         setScanMessage('Scanning volatility markets…');
         await disconnect();
 
-        const results: Array<{ market: Market; ticks: Tick[]; analysis: Analysis }> = [];
-
         try {
-            for (let index = 0; index < MARKETS.length; index += 1) {
-                const item = MARKETS[index];
-                setScanProgress(Math.round(((index + 1) / MARKETS.length) * 100));
-                setScanMessage('Scanning ' + item.name + ' (' + (index + 1) + '/' + MARKETS.length + ')');
-                const response: any = await api_base.api.send({
-                    ticks_history: item.symbol,
-                    count: tickWindow,
-                    end: 'latest',
-                    style: 'ticks',
-                    req_id: ++requestIdRef.current,
-                });
+            let cycle = 0;
+            while (true) {
+                cycle += 1;
+                const results: Array<{ market: Market; ticks: Tick[]; analysis: Analysis }> = [];
+                for (let index = 0; index < MARKETS.length; index += 1) {
+                    const item = MARKETS[index];
+                    setScanProgress(Math.round(((index + 1) / MARKETS.length) * 100));
+                    setScanMessage('Cycle ' + cycle + ' · scanning ' + item.name + ' (' + (index + 1) + '/' + MARKETS.length + ')');
+                    const response: any = await api_base.api.send({
+                        ticks_history: item.symbol,
+                        count: tickWindow,
+                        end: 'latest',
+                        style: 'ticks',
+                        req_id: ++requestIdRef.current,
+                    });
+                    if (response?.error || !Array.isArray(response?.history?.prices)) continue;
+                    const decimals = Number(response?.pip_size);
+                    const precision = Number.isFinite(decimals) && decimals >= 0 ? decimals : 2;
+                    const history = response.history.prices.map(Number).filter(Number.isFinite).slice(-tickWindow).map((quote: number) => ({
+                        quote,
+                        digit: digitOf(quote, precision),
+                    }));
+                    if (history.length < tickWindow) continue;
+                    const result = analyseTicks(history, tickWindow, selectedTradeType);
+                    results.push({ market: item, ticks: history, analysis: result });
+                }
 
-                if (response?.error || !Array.isArray(response?.history?.prices)) continue;
+                const qualified = results
+                    .filter(result => result.analysis.winRate >= 80 && result.analysis.confidence >= 80)
+                    .sort((a, b) => b.analysis.winRate - a.analysis.winRate || b.analysis.confidence - a.analysis.confidence || b.analysis.momentumBurst - a.analysis.momentumBurst);
 
-                const decimals = Number(response?.pip_size);
-                const precision = Number.isFinite(decimals) && decimals >= 0 ? decimals : 2;
-                const history = response.history.prices.map(Number).filter(Number.isFinite).slice(-tickWindow).map((quote: number) => ({
-                    quote,
-                    digit: digitOf(quote, precision),
-                }));
+                if (qualified.length) {
+                    const winner = qualified[0];
+                    setMarket(winner.market);
+                    setTicks(winner.ticks);
+                    setScanProgress(100);
+                    setScanComplete(true);
+                    setScanMessage(winner.market.name + ' · ' + winner.analysis.signal + ' · ' + winner.analysis.winRate.toFixed(1) + '% observed win rate');
+                    break;
+                }
 
-                if (history.length < 20) continue;
-                results.push({ market: item, ticks: history, analysis: analyseTicks(history, tickWindow, selectedTradeType) });
+                setScanMessage('No market met the 80% win-rate and AI-score criteria · restarting scan cycle ' + (cycle + 1));
+                setScanProgress(0);
+                await new Promise(resolve => window.setTimeout(resolve, 700));
             }
-
-            if (!results.length) throw new Error('No usable tick history was returned by Deriv.');
-
-            results.sort((a, b) => Number(b.analysis.winRate >= 80) - Number(a.analysis.winRate >= 80) || b.analysis.winRate - a.analysis.winRate || b.analysis.momentumBurst - a.analysis.momentumBurst || b.analysis.confidence - a.analysis.confidence);
-            const winner = results[0];
-            setMarket(winner.market);
-            if (winner.analysis.signal !== 'Waiting') setSelectedTradeType(winner.analysis.signal === 'Over 1' || winner.analysis.signal === 'Under 8' ? 'Over1 / Under8' : winner.analysis.signal === 'Over 2' || winner.analysis.signal === 'Under 7' ? 'Over2 / Under7' : 'Over3 / Under6');
-            setTicks(winner.ticks);
-            setScanProgress(100);
-            setScanComplete(true);
-            setScanMessage(winner.market.name + ' • ' + winner.analysis.signal + ' • observed hit rate ' + winner.analysis.winRate.toFixed(1) + '%');
-
         } catch (e: any) {
             setError(e?.message || 'Unable to scan the volatility markets');
             setScanMessage('Market scan failed');
@@ -463,9 +470,6 @@ const FloatingAIScanner = () => {
                 </div>
 
                 {scanComplete && <>
-                    <div className='ai-scanner__recent-streak' aria-label='Last 30 tick digits'>
-                        {recentDigitStreak.map((digit, index) => <span key={index}>{digit}</span>)}
-                    </div>
                     <div className='ai-scanner__result-table' role='table' aria-label='Best market scan result'>
                         <div role='row'><span role='columnheader'>BEST MARKET</span><span role='columnheader'>TRADE TYPE</span><span role='columnheader'>AI SCORE</span><span role='columnheader'>WIN RATE</span><span role='columnheader'>TICKS</span></div>
                         <div role='row'><strong role='cell'>{market.name}</strong><strong role='cell'>{analysis.signal}</strong><strong role='cell'>{analysis.confidence}%</strong><strong role='cell'>{analysis.winRate.toFixed(1)}%</strong><strong role='cell'>{analysis.total}/{tickWindow}</strong></div>
