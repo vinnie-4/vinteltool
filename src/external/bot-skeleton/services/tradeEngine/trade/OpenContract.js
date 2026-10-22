@@ -17,6 +17,23 @@ export default Engine =>
 
                     this.setContractFlags(contract);
 
+                    // Optional, capped stake recovery for digit contracts only.
+                    if (contract.is_expired || contract.is_sold) {
+                        const settings = (() => {
+                            try { return JSON.parse(window.localStorage.getItem('vinteltool-analysis-recovery-settings') || 'null'); }
+                            catch { return null; }
+                        })();
+                        const isDigitContract = /^DIGIT/.test(String(contract.contract_type || '').toUpperCase());
+                        if (settings?.enabled && settings?.recovery && isDigitContract && this.tradeOptions && contract.contract_id !== this.analysisRecoveryLastContractId) {
+                            this.analysisRecoveryLastContractId = contract.contract_id;
+                            const baseStake = Number(this.analysisRecoveryBaseStake) || Number(this.tradeOptions.amount) || 0;
+                            const multiplier = Math.max(1, Math.min(5, Number(settings.multiplier) || 2));
+                            const maxStake = Math.max(baseStake, Number(settings.maxStake) || baseStake);
+                            const profit = Number(contract.profit);
+                            this.tradeOptions.amount = profit < 0 ? Math.min(baseStake * multiplier, maxStake) : baseStake;
+                        }
+                    }
+
                     this.data.contract = contract;
 
                     broadcastContract({ accountID: api_base.account_info.loginid, ...contract });
