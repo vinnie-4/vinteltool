@@ -41,7 +41,7 @@ const MARKETS: Market[] = [
 ];
 
 const TICK_WINDOWS = [3000, 1000, 500, 300, 100, 60, 30];
-const DEFAULT_TICK_WINDOW = 3000;
+const DEFAULT_TICK_WINDOW = 1000;
 const SCAN_TRADE_TYPES = ['Over1 / Under8', 'Over2 / Under7', 'Over3 / Under6'] as const;
 const MAX_TICKS = 3000;
 
@@ -181,7 +181,7 @@ const FloatingAIScanner = () => {
     const [open, setOpen] = useState(false);
     const [showLoadConfig, setShowLoadConfig] = useState(false);
     const [recoveryExpanded, setRecoveryExpanded] = useState(false);
-    const [selectedTradeType, setSelectedTradeType] = useState<(typeof SCAN_TRADE_TYPES)[number]>('Over3 / Under6');
+    const [selectedTradeType, setSelectedTradeType] = useState<(typeof SCAN_TRADE_TYPES)[number]>('Over1 / Under8');
     const [fabPosition, setFabPosition] = useState<{ x: number; y: number } | null>(null);
     const fabDragRef = useRef<{ pointerX: number; pointerY: number; left: number; top: number; moved: boolean } | null>(null);
     const fabMovedRef = useRef(false);
@@ -359,7 +359,7 @@ const FloatingAIScanner = () => {
                 for (let index = 0; index < MARKETS.length; index += 1) {
                     const item = MARKETS[index];
                     setScanProgress(Math.round(((index + 1) / MARKETS.length) * 100));
-                    setScanMessage('Cycle ' + cycle + ' · scanning ' + item.name + ' (' + (index + 1) + '/' + MARKETS.length + ')');
+                    setScanMessage('Volatility ' + (index + 1) + '/' + MARKETS.length);
                     const response: any = await api_base.api.send({
                         ticks_history: item.symbol,
                         count: tickWindow,
@@ -374,9 +374,11 @@ const FloatingAIScanner = () => {
                         quote,
                         digit: digitOf(quote, precision),
                     }));
-                    if (history.length < tickWindow) continue;
-                    const result = analyseTicks(history, tickWindow, selectedTradeType);
-                    results.push({ market: item, ticks: history, analysis: result });
+                    if (history.length >= tickWindow) {
+                        const result = analyseTicks(history, tickWindow, selectedTradeType);
+                        results.push({ market: item, ticks: history, analysis: result });
+                    }
+                    await new Promise(resolve => window.setTimeout(resolve, 1500));
                 }
 
                 const qualified = results
@@ -393,7 +395,7 @@ const FloatingAIScanner = () => {
                     break;
                 }
 
-                setScanMessage('No market met the 80% win-rate and AI-score criteria · restarting scan cycle ' + (cycle + 1));
+                setScanMessage('Volatility · cycle ' + (cycle + 1));
                 setScanProgress(0);
                 await new Promise(resolve => window.setTimeout(resolve, 700));
             }
@@ -421,14 +423,13 @@ const FloatingAIScanner = () => {
     if (isDuplicateInstance) return null;
 
     return <>
-        {open && <div className='ai-scanner__backdrop' onClick={closeScanner} aria-hidden='true' />}
+        {open && <div className='ai-scanner__backdrop' aria-hidden='true' />}
 
         {open && <section className='ai-scanner__panel' aria-label='AI Scanner'>
             <header className='ai-scanner__header'>
                 <div>
                     <span className='ai-scanner__spark'>✦</span>
                     <strong>{showLoadConfig ? 'SCANNER BOT CONFIGURATION' : 'AI SCANNER'}</strong>
-                    <small>Live Deriv Options signal scanner</small>
                 </div>
                 <button type='button' onClick={closeScanner} aria-label='Close scanner'>×</button>
             </header>
@@ -437,7 +438,7 @@ const FloatingAIScanner = () => {
                 {showLoadConfig ? <section className='ai-scanner__config-layout' aria-label='Scanner bot configuration'>
                     <div className='ai-scanner__config-row'>
                         <label>Stake<input type='number' defaultValue='0.5' min='0.01' step='0.01' /></label>
-                        <label>Ticks<input type='number' defaultValue='1' min='1' step='1' /></label>
+                        <label>Ticks<input type='number' defaultValue='1000' min='1' step='1' /></label>
                         <label>No. of wins<input type='number' defaultValue='4' min='1' step='1' /></label>
                     </div>
                     <div className='ai-scanner__config-row'>
@@ -446,7 +447,7 @@ const FloatingAIScanner = () => {
                         <button type='button' className={'ai-scanner__recovery-toggle' + (recoveryExpanded ? ' is-expanded' : '')} onClick={() => setRecoveryExpanded(value => !value)} aria-expanded={recoveryExpanded}>Recovery (Even/Odd) <span>{recoveryExpanded ? '−' : '+'}</span></button>
                     </div>
                     {recoveryExpanded && <div className='ai-scanner__recovery-options'>
-                        <strong>Recovery condition</strong>
+                        <strong>Recovery</strong>
                         <label>Analyse last <input type='number' defaultValue='2' min='1' max='30' /> digits</label>
                         <p>If the last selected digits are odd, trade Even. If they are even, trade Odd.</p>
                     </div>}
@@ -454,7 +455,6 @@ const FloatingAIScanner = () => {
                         <button type='button' onClick={() => setShowLoadConfig(false)}>Back</button>
                         <button type='button' onClick={() => {}}>Load Scanner Bot</button>
                     </div>
-                    <small>Layout preview only — these settings are not connected to trading.</small>
                 </section> : <>
                 <div className='ai-scanner__trade-types' role='group' aria-label='Trade type to scan'>
                     {SCAN_TRADE_TYPES.map(type => (
@@ -487,7 +487,7 @@ const FloatingAIScanner = () => {
 
                 {scanning && <section className='ai-scanner__scan-progress-card is-scanning' aria-live='polite'>
                     <div className='ai-scanner__scan-progress-heading'>
-                        <span>{scanMessage || 'Scanning markets…'}</span>
+                        <span>{scanMessage || 'Scanning volatility'}</span>
                         <strong>{Math.max(1, scanProgress)}%</strong>
                     </div>
                     <div className='ai-scanner__scan-progress-track'><span style={{ width: Math.max(5, scanProgress) + '%' }} /></div>
