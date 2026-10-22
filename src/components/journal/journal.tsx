@@ -10,9 +10,10 @@ import { useDevice } from '@deriv-com/ui';
 import DataList from '../data-list';
 import { TCheckedFilters, TFilterMessageValues, TJournalDataListArgs } from './journal.types';
 import { JournalItem, JournalLoader, JournalTools } from './journal-components';
+import TradeDigitStreak from '@/components/trade-digit-streak/trade-digit-streak';
 
 const Journal = observer(() => {
-    const { journal, run_panel } = useStore();
+    const { journal, run_panel, summary_card } = useStore();
     const {
         checked_filters,
         filterMessage,
@@ -22,7 +23,7 @@ const Journal = observer(() => {
         toggleFilterDialog,
         unfiltered_messages,
     } = journal;
-    const { is_stop_button_visible, contract_stage } = run_panel;
+    const { is_stop_button_visible, contract_stage, active_index } = run_panel;
 
     const filtered_messages_length = Array.isArray(filtered_messages) && filtered_messages.length;
     const unfiltered_messages_length = Array.isArray(unfiltered_messages) && unfiltered_messages.length;
@@ -35,6 +36,7 @@ const Journal = observer(() => {
             })}
             data-testid='dt_mock_journal'
         >
+            <TradeDigitStreak contract={summary_card.contract_info} active={active_index === 2} />
             <JournalTools
                 checked_filters={checked_filters}
                 filters={filters}
