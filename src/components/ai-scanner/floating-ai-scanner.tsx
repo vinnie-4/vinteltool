@@ -455,7 +455,7 @@ const FloatingAIScanner = () => {
                     </div>}
                     <div className='ai-scanner__config-actions'>
                         <button type='button' onClick={() => setShowLoadConfig(false)}>Back</button>
-                        <button type='button' onClick={() => {}}>Load Scanner Bot</button>
+                        <button type='button' onClick={() => void loadScannerBot()}>Load Scanner Bot</button>
                     </div>
                 </section> : <>
                 <div className='ai-scanner__trade-types' role='group' aria-label='Trade type to scan'>
