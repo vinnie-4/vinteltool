@@ -123,3 +123,33 @@
         animation: none !important;
     }
 }
+
+
+/* Centered Smart Scan sheet and matching active trade-type highlight. */
+.ai-scanner__panel {
+    left: 50% !important; top: 50% !important; right: auto !important; bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
+    width: min(680px, calc(100vw - 32px)); max-height: min(82dvh, 760px); overflow: auto;
+    background: #eaf1fb; color: #173052; border: 1px solid #cbdcf2; border-radius: 18px;
+}
+.ai-scanner__header { background: #fff; color: #273344; border-radius: 18px 18px 0 0; }
+.ai-scanner__header button { color: #273344; }
+.ai-scanner__trade-types {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px;
+    padding: 5px; margin-bottom: 12px; border: 1px solid #cbdcf2; border-radius: 18px; background: #e1eaf8;
+}
+.ai-scanner__trade-type {
+    min-width: 0; padding: 12px 9px; border: 0; border-radius: 13px; background: transparent;
+    color: #567397; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer;
+}
+.ai-scanner__trade-type.is-active {
+    background: linear-gradient(110deg, #2450e8 0%, #2eaff2 100%); color: #fff;
+    box-shadow: 0 3px 10px rgba(37, 99, 235, .22);
+}
+.ai-scanner__market select, .ai-scanner__controls-row select { border-color: #cbdcf2; background: #f7faff; color: #244466; }
+.ai-scanner__signal, .ai-scanner__stats div, .ai-scanner__rationale { background: #f7faff; border-color: #d4e2f4; }
+.ai-scanner__scan-button, .ai-scanner__load-button { background: linear-gradient(110deg, #2450e8 0%, #2eaff2 100%); color: #fff; }
+@media (max-width: 480px) {
+    .ai-scanner__panel { width: calc(100vw - 24px); max-height: calc(100dvh - 32px); }
+    .ai-scanner__trade-type { padding: 11px 4px; font-size: 10px; }
+}
