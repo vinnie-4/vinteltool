@@ -4,15 +4,17 @@ import { useStore } from '@/hooks/useStore';
 import { useDevice } from '@deriv-com/ui';
 import ThemedScrollbars from '../shared_ui/themed-scrollbars';
 import SummaryCard from './summary-card';
+import TradeDigitStreak from '@/components/trade-digit-streak/trade-digit-streak';
 
 type TSummary = {
     is_drawer_open: boolean;
 };
 
 const Summary = observer(({ is_drawer_open }: TSummary) => {
-    const { dashboard, summary_card } = useStore();
+    const { dashboard, summary_card, run_panel } = useStore();
     const { is_contract_loading, contract_info, is_bot_running } = summary_card;
     const { active_tour } = dashboard;
+    const { active_index } = run_panel;
     const { isDesktop } = useDevice();
     return (
         <div
@@ -35,6 +37,7 @@ const Summary = observer(({ is_drawer_open }: TSummary) => {
                     contract_info={contract_info}
                     is_bot_running={is_bot_running}
                 />
+                <TradeDigitStreak contract={contract_info} active={active_index === 0 && !is_contract_loading && !is_bot_running} />
             </ThemedScrollbars>
         </div>
     );
