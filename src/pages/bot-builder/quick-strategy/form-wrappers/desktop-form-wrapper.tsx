@@ -193,7 +193,7 @@ const FormWrapper = observer(
                                     >
                                         {localize('Back')}
                                     </Button>
-                                    <Button secondary disabled={!isValid} onClick={onEdit}>
+                                    <Button className='qs-load-button' secondary disabled={!isValid} onClick={onEdit}>
                                         {localize('Load')}
                                     </Button>
                                 </div>
