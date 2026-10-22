@@ -383,3 +383,7 @@
     background: #1769e8;
     transition: width .2s linear;
 }
+
+.ai-scanner__recovery-enable { display:flex !important; grid-template-columns:auto 1fr !important; justify-content:start; align-items:center; gap:9px !important; }
+.ai-scanner__recovery-enable input[type='checkbox'] { width:17px; height:17px; accent-color:#1769e8; }
+.ai-scanner__recovery-options strong { font-weight:900; }
