@@ -87,7 +87,7 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
         if (!xml?.trim()) return;
         this.pending_free_bot = { xml, name: botName };
         this.setFormVisibility(true);
-        void this.importPendingFreeBot();
+        await this.importPendingFreeBot();
     };
 
     waitForWorkspace = async () => {
