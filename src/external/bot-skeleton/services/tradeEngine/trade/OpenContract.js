@@ -17,6 +17,43 @@ export default Engine =>
 
                     this.setContractFlags(contract);
 
+                    // One short beep on a finalized loss; a win beep only when analysis triggered the trade.
+                    if (contract.is_expired || contract.is_sold) {
+                        const contractKey = 'vinteltool-notified-contract-' + String(contract.contract_id);
+                        try {
+                            if (window.sessionStorage.getItem(contractKey) !== '1') {
+                                const profit = Number(contract.profit);
+                                const isFinalProfit = Number.isFinite(profit);
+                                let shouldBeep = isFinalProfit && profit < 0;
+                                let frequency = 420;
+                                if (isFinalProfit && profit > 0 && window.localStorage.getItem('vinteltool-analysis-win-beep-eligible') === 'true') {
+                                    shouldBeep = true;
+                                    frequency = 740;
+                                    window.localStorage.removeItem('vinteltool-analysis-win-beep-eligible');
+                                }
+                                if (shouldBeep) {
+                                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                                    if (AudioContextClass) {
+                                        const audio = new AudioContextClass();
+                                        const oscillator = audio.createOscillator();
+                                        const gain = audio.createGain();
+                                        oscillator.type = 'sine';
+                                        oscillator.frequency.value = frequency;
+                                        gain.gain.setValueAtTime(0.0001, audio.currentTime);
+                                        gain.gain.exponentialRampToValueAtTime(0.12, audio.currentTime + 0.01);
+                                        gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + 0.16);
+                                        oscillator.connect(gain);
+                                        gain.connect(audio.destination);
+                                        oscillator.start();
+                                        oscillator.stop(audio.currentTime + 0.17);
+                                        oscillator.onended = () => { void audio.close(); };
+                                    }
+                                }
+                                window.sessionStorage.setItem(contractKey, '1');
+                            }
+                        } catch {}
+                    }
+
                     // Optional, capped stake recovery for digit contracts only.
                     if (contract.is_expired || contract.is_sold) {
                         const settings = (() => {
