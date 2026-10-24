@@ -43,7 +43,7 @@
 <block type="after_purchase" id="under6_after_purchase" x="520" y="620">
   <statement name="AFTERPURCHASE_STACK"><block type="controls_if" id="under6_result"><mutation else="1"></mutation>
     <value name="IF0"><block type="contract_check_result"><field name="CHECK_RESULT">win</field></block></value>
-    <statement name="DO0"><block type="variables_set" id="under6_win_stake"><field name="VAR" id="under6_stake">Stake</field><value name="VALUE"><block type="math_number"><field name="NUM">0.35</field></block>
+    <statement name="DO0"><block type="variables_set" id="under6_win_stake"><field name="VAR" id="under6_stake">Stake</field><value name="VALUE"><block type="math_number"><field name="NUM">0.35</field></block></value>
       <next><block type="variables_set" id="under6_win_prediction"><field name="VAR" id="under6_prediction">Prediction</field><value name="VALUE"><block type="math_number"><field name="NUM">6</field></block></value></block></next>
     </block></statement>
     <statement name="ELSE"><block type="variables_set" id="under6_loss_stake"><field name="VAR" id="under6_stake">Stake</field><value name="VALUE"><block type="math_arithmetic"><field name="OP">MULTIPLY</field><value name="A"><block type="variables_get"><field name="VAR" id="under6_stake">Stake</field></value><value name="B"><block type="variables_get"><field name="VAR" id="under6_martingale">Martingale</field></value></block></value>
