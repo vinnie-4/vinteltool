@@ -188,7 +188,7 @@ const AppWrapper = observer(() => {
     }, [active_tab, is_drawer_open]);
     useEffect(() => { let timer: ReturnType<typeof setTimeout>; if (dashboard_strategies.length > 0) timer = setTimeout(() => updateWorkspaceName()); return () => { if (timer) clearTimeout(timer); }; }, [dashboard_strategies, active_tab]);
     const handleTabChange = React.useCallback((tab_index: number) => { setActiveTab(tab_index); const el_id = TAB_IDS[tab_index]; if (el_id) setTimeout(() => document.getElementById(el_id)?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' }), 10); }, [active_tab]);
-    const handleFreeBotLoad = React.useCallback(async (bot) => { setActiveTab(BOT_BUILDER); await new Promise<void>(resolve => setTimeout(resolve, 50)); await quick_strategy.loadFreeBotXml(bot.xml, bot.name); }, [quick_strategy, setActiveTab]);
+    const handleFreeBotLoad = React.useCallback(async (bot) => { if (!bot?.xml?.trim()) throw new Error('This free bot has no XML to load.'); setActiveTab(BOT_BUILDER); await quick_strategy.loadFreeBotXml(bot.xml, bot.name); }, [quick_strategy, setActiveTab]);
     const handleLoginGeneration = async () => { const oauthUrl = await generateOAuthURL(); if (oauthUrl) window.location.replace(oauthUrl); else console.error('Failed to generate OAuth URL'); };
 
     return <React.Fragment><div className='main'><div className={classNames('main__container', { 'main__container--active': active_tour && active_tab === DASHBOARD && !isDesktop })}><div>
