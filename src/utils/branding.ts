@@ -33,7 +33,7 @@ export function getLogoCandidates(): string[] {
 /**
  * Resolves the partner app name for the header / title / favicon.
  * Preference: NEXT_PUBLIC_DERIV_APP_NAME → brand.config.json `platform.name`
- * → 'Deriv Bot'. Env wins so partners editing `.env` after a source download
+ * → 'VintelTool'. Env wins so partners editing `.env` after a source download
  * take effect (App Builder also writes platform.name; env is the override).
  * Configure/OAuth registration name is separate and is not written here.
  */
@@ -41,7 +41,7 @@ export function getAppName(): string {
     const fromEnv = process.env.NEXT_PUBLIC_DERIV_APP_NAME?.trim();
     if (fromEnv) return fromEnv;
     const fromConfig = getPlatform()?.name?.trim();
-    return fromConfig || 'Deriv Bot';
+    return fromConfig || 'VintelTool';
 }
 
 /**
