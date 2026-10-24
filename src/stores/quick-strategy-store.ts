@@ -3,7 +3,7 @@ import { action, makeObservable, observable, reaction } from 'mobx';
 import { ApiHelpers, config as qs_config } from '@/external/bot-skeleton';
 import { save_types } from '@/external/bot-skeleton/constants/save-type';
 import { addDynamicBlockToDOM } from '@/utils/xml-dom-quick-strategy';
-import { load as loadStrategyXml, loadBlocks } from '@/external/bot-skeleton/scratch/utils';
+import { loadBlocks } from '@/external/bot-skeleton/scratch/utils';
 import { removeLimitedBlocks } from '@/external/bot-skeleton/utils/workspace';
 import { STRATEGIES } from '../pages/bot-builder/quick-strategy/config';
 import { TFormData } from '../pages/bot-builder/quick-strategy/types';
@@ -108,17 +108,39 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
         const runImport = async () => {
             try {
                 const workspace = await this.waitForWorkspace();
-                // Reuse the official strategy importer so legacy XML is converted
-                // to the block types registered in VintelTool's available Blocks menu.
-                // This also validates XML and rejects files with genuinely unsupported blocks.
-                const result = await loadStrategyXml({
-                    block_string: pending.xml,
-                    file_name: pending.name,
-                    from: 'free-bots',
-                    workspace,
-                    show_snackbar: false,
-                });
-                if (result?.error) throw new Error(result.error);
+                // Free Bots are already Blockly XML: load directly into the main
+                // workspace instead of invoking the full strategy/file importer (which
+                // also triggers loading dialogs, history persistence and notifications).
+                const Blockly = window.Blockly;
+                if (!Blockly?.utils?.xml?.textToDom || !Blockly?.Xml?.clearWorkspaceAndLoadFromXml) {
+                    throw new Error('Blockly XML tools are not ready.');
+                }
+                const parsed = new DOMParser().parseFromString(pending.xml, 'application/xml');
+                if (parsed.querySelector('parsererror')) {
+                    throw new Error('This free bot contains invalid XML.');
+                }
+                const xmlDom = Blockly.utils.xml.textToDom(pending.xml);
+                const blocks = Array.from(xmlDom.querySelectorAll('block'));
+                if (!blocks.length) {
+                    throw new Error('This free bot does not contain any Blockly blocks.');
+                }
+                const unsupported = blocks
+                    .map(block => block.getAttribute('type'))
+                    .filter((type): type is string => Boolean(type) && !Object.prototype.hasOwnProperty.call(Blockly.Blocks, type));
+                if (unsupported.length) {
+                    throw new Error(`This free bot uses unsupported blocks: ${[...new Set(unsupported)].join(', ')}`);
+                }
+                const isCollection = xmlDom.getAttribute('collection') === 'true';
+                Blockly.Events.setGroup(`vintel-free-bot-${Date.now()}`);
+                if (!isCollection) await workspace.asyncClear();
+                if (isCollection) {
+                    loadBlocks(xmlDom, null, `vintel-free-bot-${Date.now()}`, workspace);
+                } else {
+                    Blockly.Xml.clearWorkspaceAndLoadFromXml(xmlDom, workspace);
+                    workspace.cleanUp();
+                    workspace.clearUndo();
+                }
+                Blockly.Events.setGroup(false);
                 if (!workspace.getAllBlocks(false).length) {
                     throw new Error('The XML did not produce any editable Bot Builder blocks.');
                 }
