@@ -127,6 +127,7 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
                 this.setFormVisibility(false);
             } catch (error) {
                 console.error('Quick Strategy free bot load failed:', error);
+                throw error;
             }
         };
         const previous = this.workspace_load_queue;
