@@ -851,3 +851,28 @@ button[class*="reset"]:hover:not(:disabled),
  .manual-digits__analysis-controls { gap:4px; }
  .manual-digits__analysis-controls select { max-width:108px; min-height:27px; }
 }
+
+
+/* Frequency highlights: highest in teal, lowest in red. */
+.manual-digits__circle.is-most .manual-digits__circle-ring {
+  border-color: #0d9488;
+  background: conic-gradient(#0d9488 var(--digit-rate), rgba(130,150,175,.16) 0);
+}
+.manual-digits__circle.is-most .manual-digits__circle-ring b {
+  color: #0f766e;
+}
+.manual-digits__circle.is-least .manual-digits__circle-ring {
+  border-color: #dc4545;
+  background: conic-gradient(#dc4545 var(--digit-rate), rgba(130,150,175,.16) 0);
+}
+.manual-digits__circle.is-least .manual-digits__circle-ring b {
+  color: #dc4545;
+}
+.manual-digits__circle.is-most.is-selected .manual-digits__circle-ring b {
+  background: #0d9488;
+  color: #fff;
+}
+.manual-digits__circle.is-least.is-selected .manual-digits__circle-ring b {
+  background: #dc4545;
+  color: #fff;
+}

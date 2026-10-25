@@ -326,9 +326,17 @@ const ManualTraderStructure = () => {
         </div>
         <section className='manual-digits__analysis' aria-label='Live digit analysis'>
             <div className='manual-digits__analysis-head'><strong>Digit analysis</strong><div className='manual-digits__analysis-controls'><label htmlFor='manual-digits-analysis-window'>Analyse last</label><select id='manual-digits-analysis-window' value={analysisWindow} onChange={event => setAnalysisWindow(Number(event.target.value))}><option value={1000}>1,000 ticks</option><option value={3000}>3,000 ticks</option></select><span>{recentDigits.length.toLocaleString()}/{analysisWindow.toLocaleString()} ticks</span></div></div>
-            <div className='manual-digits__circles'>{digitCounts.map((count, digit) => <button type='button' key={digit} aria-pressed={prediction === digit} onClick={() => setPrediction(digit)} className={'manual-digits__circle' + (prediction === digit ? ' is-selected' : '')}>
-                <span className='manual-digits__circle-ring' style={{ '--digit-rate': (recentDigits.length ? count / recentDigits.length * 100 : 0) + '%' } as React.CSSProperties}><b>{digit}</b></span><small>{recentDigits.length ? Math.round(count / recentDigits.length * 100) : 0}%</small>
-            </button>)}</div>
+            <div className='manual-digits__circles'>{digitCounts.map((count, digit) => {
+                const nonZeroCounts = digitCounts.filter(value => value > 0);
+                const mostCount = nonZeroCounts.length ? Math.max(...nonZeroCounts) : 0;
+                const leastCount = nonZeroCounts.length ? Math.min(...nonZeroCounts) : 0;
+                const isMost = recentDigits.length > 0 && count === mostCount;
+                const isLeast = recentDigits.length > 0 && count === leastCount;
+                const frequencyClass = isMost ? ' is-most' : isLeast ? ' is-least' : '';
+                return <button type='button' key={digit} aria-pressed={prediction === digit} aria-label={`Digit ${digit}, ${count} appearances${isMost ? ', most frequent' : isLeast ? ', least frequent' : ''}`} onClick={() => setPrediction(digit)} className={'manual-digits__circle' + frequencyClass + (prediction === digit ? ' is-selected' : '')}>
+                    <span className='manual-digits__circle-ring' style={{ '--digit-rate': (recentDigits.length ? count / recentDigits.length * 100 : 0) + '%' } as React.CSSProperties}><b>{digit}</b></span><small>{recentDigits.length ? Math.round(count / recentDigits.length * 100) : 0}%</small>
+                </button>;
+            })}</div>
         </section>
         {tradeType !== 'Even/Odd' && <div className='manual-trader__selected-barrier' aria-live='polite'>Barrier: <strong>{prediction}</strong></div>}
         <div className='manual-trader__trade-inputs'>
