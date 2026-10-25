@@ -254,33 +254,37 @@
 /* Vinteltool Android: keep the Blocks Menu reachable without covering the
    Quick Bot Builder toolbar button. The menu opens as a compact left drawer. */
 @media (max-width: 767px) {
-    /* Keep the controls in a stable row separate from the floating menu panel. */
+    /* Anchor controls to the Blockly workspace container, not the viewport. */
     .db-toolbox {
-        position: static;
+        position: absolute;
+        top: 0;
+        inset-inline-start: 0;
         width: auto;
         height: auto;
         max-height: none;
         padding: 0;
         background: transparent;
         box-shadow: none;
-        z-index: auto;
+        z-index: 30;
+        pointer-events: none;
     }
 
     .db-toolbox__controls-row {
-        position: fixed;
-        top: 132px;
+        position: absolute;
+        top: 22px;
         inset-inline-start: 72px;
         display: flex;
         align-items: flex-start;
         gap: 16px;
         z-index: 31;
+        pointer-events: auto;
     }
 
     .db-toolbox__toggle-control {
         flex: 0 0 auto;
-        width: 180px;
+        width: 194px;
         height: 55px;
-        max-width: calc(100vw - 88px);
+        max-width: calc(100vw - 100px);
     }
 
     .db-toolbox__toggle-control .db-toolbox__header {
@@ -307,11 +311,11 @@
     }
 
     .db-toolbox__overlay {
-        position: fixed;
-        top: 132px;
+        position: absolute;
+        top: 11px;
         inset-inline-start: 11px;
         width: min(227px, calc(100vw - 22px));
-        height: calc(100dvh - 104px - 7.2rem);
+        height: calc(100dvh - 10.4rem);
         max-height: none;
         padding: 0.6rem;
         box-sizing: border-box;
@@ -319,6 +323,7 @@
         z-index: 30;
         box-shadow: 0 0.8rem 2rem rgb(0 0 0 / 18%);
         overflow: hidden;
+        pointer-events: auto;
     }
 
     .db-toolbox--collapsed .db-toolbox__overlay {
