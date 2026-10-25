@@ -841,3 +841,13 @@ button[class*="reset"]:hover:not(:disabled),
   .manual-trader__trade-inputs input,
   .manual-trader__top-row > * { min-width: 0; max-width: 100%; box-sizing: border-box; }
 }
+
+
+.manual-digits__analysis-controls { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:6px; }
+.manual-digits__analysis-controls label { font-size:11px; opacity:.7; }
+.manual-digits__analysis-controls select { max-width:125px; min-height:28px; padding:3px 7px; border:1px solid var(--border-color,#d5dfeb); border-radius:6px; background:var(--general-main-1,#fff); color:var(--text-general,#132b48); font:inherit; font-size:11px; }
+@media(max-width:520px) {
+ .manual-digits__analysis-head { align-items:flex-start; }
+ .manual-digits__analysis-controls { gap:4px; }
+ .manual-digits__analysis-controls select { max-width:108px; min-height:27px; }
+}
