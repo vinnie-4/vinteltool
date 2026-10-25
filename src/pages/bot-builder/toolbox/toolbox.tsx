@@ -37,7 +37,7 @@ const Toolbox = observer(() => {
     const { setVisibility, selected_category } = flyout;
 
     const toolbox_ref = React.useRef(ToolboxItems());
-    const [is_open, setOpen] = React.useState(true);
+    const [is_open, setOpen] = React.useState(isDesktop);
     const [is_last_digit_open, setLastDigitOpen] = React.useState(false);
     const [pending_selection] = React.useState<string | null>(null);
 
