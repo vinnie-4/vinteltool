@@ -270,12 +270,13 @@
     }
 
     .db-toolbox__controls-row {
+        /* Screenshot reference: 22px below nav, 77px from the workspace area's left edge. */
         position: absolute;
         top: 22px;
-        inset-inline-start: 72px;
+        inset-inline-start: 77px;
         display: flex;
         align-items: flex-start;
-        gap: 16px;
+        gap: 22px;
         z-index: 31;
         pointer-events: auto;
     }
