@@ -251,10 +251,8 @@
 }
 
 
-/* Vinteltool Android: keep the Blocks Menu reachable without covering the
-   Quick Bot Builder toolbar button. The menu opens as a compact left drawer. */
+/* VintelTool Android: align controls to the workspace rail; overlay the menu. */
 @media (max-width: 767px) {
-    /* Anchor controls to the Blockly workspace container, not the viewport. */
     .db-toolbox {
         position: absolute;
         top: 0;
@@ -270,19 +268,12 @@
     }
 
     .db-toolbox__controls-row {
-        /*
-         * Align with the Binarytool reference: the controls start just to the
-         * right of the vertical workspace rail, directly under the main tabs.
-         * Keep this row anchored to the workspace/toolbox container (not the
-         * viewport) so it follows the workspace on mobile.
-         */
         position: absolute;
-        top: -1.2rem;
-        /* Align the controls just after the 4rem vertical workspace rail. */
-        inset-inline-start: calc(4rem + 0.5rem);
+        top: 0;
+        inset-inline-start: 4.5rem;
         display: flex;
         align-items: flex-start;
-        gap: 0.125rem;
+        gap: 2px;
         z-index: 31;
         pointer-events: auto;
     }
@@ -321,9 +312,9 @@
 
     .db-toolbox__overlay {
         position: absolute;
-        top: -1.9rem;
-        inset-inline-start: 11px;
-        width: min(227px, calc(100vw - 22px));
+        top: 2.95rem;
+        inset-inline-start: 4.5rem;
+        width: min(227px, calc(100vw - 4.5rem - 8px));
         height: calc(100dvh - 10.4rem);
         max-height: none;
         padding: 0.6rem;
