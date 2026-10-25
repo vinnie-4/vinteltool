@@ -243,7 +243,6 @@ const ManualTraderStructure = () => {
         return () => {
             cancelled = true;
             subscription?.unsubscribe?.();
-            try { if (api?.connection?.readyState === WebSocket.OPEN) void api.send({ forget_all: 'ticks' }); } catch { /* connection may already be closed */ }
         };
     }, [symbol]);
     const digitCounts = Array.from({ length: 10 }, (_, digit) => recentDigits.filter(value => value === digit).length);
