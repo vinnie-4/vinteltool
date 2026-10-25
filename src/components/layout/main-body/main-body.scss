@@ -1,3 +1,20 @@
 .main-body {
     flex-grow: 1;
 }
+
+
+.main-body {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+}
+.main-body > * {
+    min-width: 0;
+    max-width: 100%;
+}
+@media (max-width: 767px) {
+    .main-body {
+        overflow-x: clip;
+        -webkit-overflow-scrolling: touch;
+    }
+}

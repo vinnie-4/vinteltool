@@ -66,3 +66,86 @@ button {
 body *:not(i):not([class*='icon']):not([class*='Icon']):not(svg):not(path):not(use) {
     font-family: var(--vintel-font-family) !important;
 }
+
+
+/* VintelTool app-wide responsive foundation shared by Dashboard, Bot Builder,
+   Free Bots, Manual Trader, scanner panels, dialogs and other tabs. */
+html {
+    width: 100%;
+    min-width: 320px;
+    min-height: 100%;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+body {
+    width: 100%;
+    min-width: 320px;
+    min-height: 100%;
+    margin: 0;
+    overflow-x: hidden;
+}
+#root, #app, .app-root {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+img, video, canvas, iframe {
+    max-width: 100%;
+}
+input, select, textarea, button {
+    max-width: 100%;
+}
+input, select, textarea {
+    min-width: 0;
+}
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+@media (min-width: 1024px) {
+    .layout, .main-body {
+        min-width: 0;
+        max-width: 100%;
+    }
+}
+@media (max-width: 767px) {
+    .layout, .main-body {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+    }
+    .main-body {
+        overflow-x: clip;
+    }
+    /* Let tab rows and control groups wrap instead of pushing the viewport wide. */
+    .app-root [role='tablist'] {
+        max-width: 100%;
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+    .app-root table {
+        max-width: 100%;
+    }
+    .app-root input, .app-root select, .app-root textarea {
+        font-size: 16px;
+    }
+    .app-root button, .app-root [role='button'] {
+        touch-action: manipulation;
+    }
+    .modal-root:not(:empty) {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100dvh;
+        overflow-y: auto;
+        padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    }
+}
+@media (max-width: 420px) {
+    .app-root [role='dialog'] {
+        max-width: 100%;
+    }
+    .app-root input, .app-root select, .app-root textarea {
+        max-width: 100%;
+    }
+}

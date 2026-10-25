@@ -18,3 +18,30 @@
         }
     }
 }
+
+
+/* Keep the main application shell within desktop and Android viewports. */
+.layout {
+    width: 100%;
+    min-width: 0;
+    max-width: 100vw;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: clip;
+}
+.layout > * {
+    min-width: 0;
+}
+.layout .deriv-header {
+    flex: 0 0 auto;
+    max-width: 100%;
+}
+@media (max-width: 767px) {
+    .layout {
+        height: 100vh;
+        height: 100dvh;
+    }
+    .layout .deriv-header {
+        width: 100%;
+    }
+}
