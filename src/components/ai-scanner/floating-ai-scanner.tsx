@@ -478,8 +478,15 @@ const FloatingAIScanner = () => {
                         <label>Take profit<input type='number' value={configTakeProfit} onChange={e => setConfigTakeProfit(e.target.value)} min='0' step='0.1' /></label>
                         <button type='button' className={'ai-scanner__recovery-toggle' + (recoveryExpanded ? ' is-expanded' : '')} onClick={() => setRecoveryExpanded(value => !value)} aria-expanded={recoveryExpanded} >Recovery (Even/Odd) <span>{recoveryExpanded ? '−' : '+'}</span></button>
                     </div>
+                    <button
+                        type='button'
+                        className={'ai-scanner__recovery-switch' + (configRecoveryEnabled ? ' is-enabled' : ' is-disabled')}
+                        aria-pressed={configRecoveryEnabled}
+                        onClick={() => setConfigRecoveryEnabled(enabled => !enabled)}
+                    >
+                        Recovery Mode: {configRecoveryEnabled ? 'ENABLED' : 'DISABLED'}
+                    </button>
                     {recoveryExpanded && <div className='ai-scanner__recovery-options'>
-                        <label className='ai-scanner__recovery-enable'><input type='checkbox' checked={configRecoveryEnabled} onChange={e => setConfigRecoveryEnabled(e.target.checked)} /> Enable recovery after a loss</label>
                         <strong>Recovery — Even / Odd</strong>
                         <p>If the last N digits are all odd, the recovery trade is Even. If they are all even, the recovery trade is Odd.</p>
                         <label>Analyse last <input type='number' value={configRecoveryDigits} onChange={e => setConfigRecoveryDigits(e.target.value)} min='2' max='30' /> consecutive digits</label>
