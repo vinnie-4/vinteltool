@@ -198,6 +198,7 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
     <variable type="" id="vintel_qbb_stake">Stake</variable>
     <variable type="" id="vintel_qbb_martingale">Martingale</variable>
     <variable type="" id="vintel_qbb_prediction">Prediction</variable>
+    <variable type="" id="vintel_qbb_recovery_even">Recovery Even</variable>
   </variables>
   <block type="trade_definition" id="vintel_qbb_trade" x="20" y="20">
     <statement name="TRADE_OPTIONS">
@@ -219,7 +220,7 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
     <statement name="INITIALIZATION">
       <block type="variables_set" id="vintel_qbb_init_stake"><field name="VAR" id="vintel_qbb_stake">Stake</field><value name="VALUE"><block type="math_number"><field name="NUM">${stake}</field></block></value>
         <next><block type="variables_set" id="vintel_qbb_init_martingale"><field name="VAR" id="vintel_qbb_martingale">Martingale</field><value name="VALUE"><block type="math_number"><field name="NUM">${Math.max(1, Number(cfg.multiplier) || 2)}</field></block></value>
-          <next><block type="variables_set" id="vintel_qbb_init_prediction"><field name="VAR" id="vintel_qbb_prediction">Prediction</field><value name="VALUE"><block type="math_number"><field name="NUM">${prediction}</field></block></value></next>
+          <next><block type="variables_set" id="vintel_qbb_init_prediction"><field name="VAR" id="vintel_qbb_prediction">Prediction</field><value name="VALUE"><block type="math_number"><field name="NUM">${prediction}</field></block></value><next><block type="variables_set" id="vintel_qbb_init_recovery_even"><field name="VAR" id="vintel_qbb_recovery_even">Recovery Even</field><value name="VALUE"><block type="logic_boolean"><field name="BOOL">FALSE</field></block></value></next></block></next>
         </block></next>
       </block>
     </statement>
@@ -234,19 +235,19 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
     </statement>
   </block>
   <block type="before_purchase" id="vintel_qbb_before_purchase" x="20" y="620">
-    <statement name="BEFOREPURCHASE_STACK"><block type="purchase" id="vintel_qbb_purchase"><field name="PURCHASE_LIST">${purchaseCode}</field></block></statement>
+    <statement name="BEFOREPURCHASE_STACK">${recoveryEnabled ? `<block type="controls_if" id="vintel_qbb_recovery_purchase"><mutation else="1"></mutation><value name="IF0"><block type="variables_get"><field name="VAR" id="vintel_qbb_recovery_even">Recovery Even</field></block></value><statement name="DO0"><block type="purchase" id="vintel_qbb_purchase_even"><field name="PURCHASE_LIST">EVEN</field></block></statement><statement name="ELSE"><block type="purchase" id="vintel_qbb_purchase"><field name="PURCHASE_LIST">${purchaseCode}</field></block></statement></block>` : `<block type="purchase" id="vintel_qbb_purchase"><field name="PURCHASE_LIST">${purchaseCode}</field></block>`}</statement>
   </block>
   <block type="after_purchase" id="vintel_qbb_after_purchase" x="520" y="620">
     <statement name="AFTERPURCHASE_STACK"><block type="controls_if" id="vintel_qbb_result"><mutation else="1"></mutation>
       <value name="IF0"><block type="contract_check_result"><field name="CHECK_RESULT">win</field></block></value>
       <statement name="DO0">
         <block type="variables_set" id="vintel_qbb_win_stake"><field name="VAR" id="vintel_qbb_stake">Stake</field><value name="VALUE"><block type="math_number"><field name="NUM">${stake}</field></block></value>
-          <next><block type="variables_set" id="vintel_qbb_win_prediction"><field name="VAR" id="vintel_qbb_prediction">Prediction</field><value name="VALUE"><block type="math_number"><field name="NUM">${prediction}</field></block></value></next>
+          <next><block type="variables_set" id="vintel_qbb_win_prediction"><field name="VAR" id="vintel_qbb_prediction">Prediction</field><value name="VALUE"><block type="math_number"><field name="NUM">${prediction}</field></block></value><next><block type="variables_set" id="vintel_qbb_win_recovery_reset"><field name="VAR" id="vintel_qbb_recovery_even">Recovery Even</field><value name="VALUE"><block type="logic_boolean"><field name="BOOL">FALSE</field></block></value></block></next></block></next>
         </block>
       </statement>
       <statement name="ELSE">
-        <block type="variables_set" id="vintel_qbb_loss_stake"><field name="VAR" id="vintel_qbb_stake">Stake</field><value name="VALUE"><block type="math_arithmetic"><field name="OP">MULTIPLY</field><value name="A"><block type="variables_get"><field name="VAR" id="vintel_qbb_stake">Stake</field></block></value><value name="B"><block type="variables_get"><field name="VAR" id="vintel_qbb_martingale">Martingale</field></block></value></block></value>
-          <next><block type="controls_if" id="vintel_qbb_recovery_gate"><value name="IF0"><block type="logic_boolean"><field name="BOOL">${recoveryEnabled ? 'TRUE' : 'FALSE'}</field></block></value><statement name="DO0"><block type="variables_set" id="vintel_qbb_loss_prediction"><field name="VAR" id="vintel_qbb_prediction">Prediction</field><value name="VALUE"><block type="math_number"><field name="NUM">${recoveryPrediction}</field></block></value></block></statement></block></next>
+        <block type="variables_set" id="vintel_qbb_loss_stake"><field name="VAR" id="vintel_qbb_stake">Stake</field><value name="VALUE"><block type="math_number"><field name="NUM">${stake}</field></block></value>
+          <next><block type="controls_if" id="vintel_qbb_recovery_gate"><value name="IF0"><block type="logic_boolean"><field name="BOOL">${recoveryEnabled ? 'TRUE' : 'FALSE'}</field></block></value><statement name="DO0"><block type="variables_set" id="vintel_qbb_loss_prediction"><field name="VAR" id="vintel_qbb_prediction">Prediction</field><value name="VALUE"><block type="math_number"><field name="NUM">${recoveryPrediction}</field></block></value><next><block type="variables_set" id="vintel_qbb_loss_recovery_enable"><field name="VAR" id="vintel_qbb_recovery_even">Recovery Even</field><value name="VALUE"><block type="logic_boolean"><field name="BOOL">TRUE</field></block></value></next></block></statement></block></next>
         </block>
       </statement>
       <next><block type="trade_again" id="vintel_qbb_trade_again"></block></next>
