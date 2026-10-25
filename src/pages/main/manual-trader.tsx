@@ -101,6 +101,7 @@ const ManualTraderStructure = () => {
     const [prediction, setPrediction] = useState(1);
     const [isTrading, setIsTrading] = useState(false);
     const [tradeRecords, setTradeRecords] = useState<ManualTradeRecord[]>([]);
+    const [recentDigits, setRecentDigits] = useState<number[]>([]);
     const tradeLockRef = useRef(false);
     const manualRunIdRef = useRef<string>('');
     const messageSubscriptionRef = useRef<any>(null);
@@ -203,6 +204,49 @@ const ManualTraderStructure = () => {
         document.body.classList.remove('manual-trade-in-progress');
     }, []);
 
+    useEffect(() => {
+        let subscription: any = null;
+        let cancelled = false;
+        let api: any;
+        const digits: number[] = [];
+        const pushQuote = (quote: unknown, pipSize?: number) => {
+            const value = Number(quote);
+            if (!Number.isFinite(value)) return;
+            const decimals = Number.isFinite(Number(pipSize)) ? Math.max(0, Math.min(8, Number(pipSize))) : 2;
+            const digit = Number(value.toFixed(decimals).replace('.', '').slice(-1));
+            digits.push(digit);
+            if (digits.length > 100) digits.shift();
+            setRecentDigits([...digits]);
+        };
+        const start = async () => {
+            const started = Date.now();
+            while (!cancelled && Date.now() - started < 10000) {
+                api = api_base.api;
+                if (api?.connection?.readyState === WebSocket.OPEN && api_base.is_authorized) break;
+                await sleep(250);
+            }
+            if (cancelled || !api?.connection || api.connection.readyState !== WebSocket.OPEN) return;
+            try {
+                const stream = api.onMessage?.();
+                if (stream?.subscribe) subscription = stream.subscribe((message: any) => {
+                    const envelope = message?.data ?? message;
+                    const data = envelope?.data ?? envelope;
+                    if (data?.tick?.quote !== undefined) pushQuote(data.tick.quote, data.tick.pip_size);
+                    if (Array.isArray(data?.history?.prices)) data.history.prices.forEach((price: unknown) => pushQuote(price, data?.pip_size));
+                });
+                await api.send({ ticks_history: symbol, count: 100, end: 'latest', style: 'ticks', subscribe: 1 });
+            } catch (error) {
+                console.warn('[Manual Trader] Digit analysis feed unavailable:', error);
+            }
+        };
+        void start();
+        return () => {
+            cancelled = true;
+            subscription?.unsubscribe?.();
+            try { if (api?.connection?.readyState === WebSocket.OPEN) void api.send({ forget_all: 'ticks' }); } catch { /* connection may already be closed */ }
+        };
+    }, [symbol]);
+    const digitCounts = Array.from({ length: 10 }, (_, digit) => recentDigits.filter(value => value === digit).length);
     const selectedVolatility = Object.keys(VOLATILITY_SYMBOLS).find(name => VOLATILITY_SYMBOLS[name] === symbol) || 'Volatility 100 (1s)';
 
     const handleTrade = async (selection: 'Even' | 'Odd' | 'Over' | 'Under' | 'Matches' | 'Differs') => {
@@ -275,17 +319,16 @@ const ManualTraderStructure = () => {
     };
 
     return <div className='manual-trader manual-trader--digits'>
-        <header className='manual-digits__header'>
-            <div><span className='manual-digits__eyebrow'>VINTELTOOL · LIVE DERIV MARKETS</span><h2>Digits Trader</h2><p>Live digit analysis and quick digit-contract trading.</p></div>
-            <span className={isTrading ? 'manual-digits__status is-trading' : 'manual-digits__status'}><i />{isTrading ? 'Trade in progress' : 'Ready to trade'}</span>
-        </header>
+        <div className='manual-digits__toolbar'><span className={isTrading ? 'manual-digits__status is-trading' : 'manual-digits__status'}><i />{isTrading ? 'Trading' : 'Ready'}</span><span className='manual-digits__feed'>{recentDigits.length ? 'Live analysis' : 'Connecting ticks…'}</span></div>
         <div className='manual-trader__top-row'>
             <div className='manual-trader__volatility'><span>Volatility</span><select value={selectedVolatility} onChange={event => setSymbol(VOLATILITY_SYMBOLS[event.target.value])}>{Object.keys(VOLATILITY_SYMBOLS).map(name => <option key={name}>{name}</option>)}</select></div>
             <div className='manual-trader__trade-type'><span>TRADE TYPE</span><select value={tradeType} onChange={event => setTradeType(event.target.value)}><option>Even/Odd</option><option>Over/Under</option><option>Matches/Differs</option></select></div>
         </div>
-        <section className='manual-digits__digit-picker' aria-label='Select prediction digit'>
-            <div className='manual-digits__picker-heading'><strong>Select a digit</strong><span>{tradeType === 'Even/Odd' ? 'Optional selection' : 'Contract barrier'} · {prediction}</span></div>
-            <div className='manual-digits__digits'>{Array.from({ length: 10 }, (_, digit) => <button key={digit} type='button' aria-pressed={prediction === digit} className={prediction === digit ? 'is-selected' : ''} onClick={() => setPrediction(digit)}>{digit}</button>)}</div>
+        <section className='manual-digits__analysis' aria-label='Live digit analysis'>
+            <div className='manual-digits__analysis-head'><strong>Digit analysis</strong><span>{recentDigits.length}/100 ticks</span></div>
+            <div className='manual-digits__circles'>{digitCounts.map((count, digit) => <button type='button' key={digit} aria-pressed={prediction === digit} onClick={() => setPrediction(digit)} className={'manual-digits__circle' + (prediction === digit ? ' is-selected' : '')}>
+                <span className='manual-digits__circle-ring' style={{ '--digit-rate': (recentDigits.length ? count / recentDigits.length * 100 : 0) + '%' } as React.CSSProperties}><b>{digit}</b></span><small>{recentDigits.length ? Math.round(count / recentDigits.length * 100) : 0}%</small>
+            </button>)}</div>
         </section>
         {tradeType !== 'Even/Odd' && <div className='manual-trader__selected-barrier' aria-live='polite'>Barrier: <strong>{prediction}</strong></div>}
         <div className='manual-trader__trade-inputs'>
