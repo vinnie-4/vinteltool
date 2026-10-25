@@ -745,3 +745,57 @@
 @media (prefers-reduced-motion: reduce) {
     .dashboard-greeting-hand--visible { animation: none; opacity: 1; }
 }
+
+
+/* Responsive dashboard canvas and drawer sizing across desktop and Android. */
+.tab__dashboard, .tab__dashboard__content, .tab__dashboard__header,
+.tab__dashboard__content > *, .bot-dashboard {
+    min-width: 0;
+    max-width: 100%;
+}
+.tab__dashboard__content {
+    overflow-x: clip;
+}
+@media (min-width: 1024px) {
+    .tab__dashboard__content {
+        padding-inline: clamp(20px, 3vw, 48px);
+    }
+    .tab__dashboard__header {
+        max-width: 1180px;
+        margin-inline: auto;
+    }
+}
+@media (max-width: 767px) {
+    .bot-dashboard {
+        height: auto;
+        min-height: calc(100dvh - 4.4rem);
+        overflow: visible;
+    }
+    .tab__dashboard__content {
+        padding-inline: 12px;
+        padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+    .tab__dashboard__header {
+        width: 100%;
+        margin-bottom: 1.5rem !important;
+        overflow-wrap: anywhere;
+    }
+    .tab__dashboard__header .title {
+        font-size: clamp(1.5rem, 6vw, 2.1rem);
+        line-height: 1.2;
+    }
+    .tab__dashboard__header .dashboard-greeting-subtitle,
+    .tab__dashboard__header .subtitle {
+        margin-top: .75rem !important;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+    }
+    .tab__dashboard .run-panel__container {
+        max-width: 100%;
+        min-width: 0;
+    }
+}
+@media (max-width: 420px) {
+    .tab__dashboard__content { padding-inline: 8px; }
+    .tab__dashboard__header { margin-bottom: 1rem !important; }
+}

@@ -487,3 +487,36 @@
         border-radius: 1.3rem;
     }
 }
+
+
+/* Responsive dashboard quick-action cards: preserve two columns where legible. */
+.tab__dashboard__table,
+.tab__dashboard__table__tiles,
+.tab__dashboard__quick-card,
+.tab__dashboard__quick-card__body { min-width: 0; max-width: 100%; }
+.tab__dashboard__quick-card { overflow-wrap: anywhere; }
+.tab__dashboard__quick-card__title { line-height: 1.25; overflow-wrap: anywhere; }
+.tab__dashboard__quick-card__description { line-height: 1.45; overflow-wrap: anywhere; }
+@media (min-width: 1024px) {
+    .tab__dashboard__table__tiles { max-width: 1040px; gap: clamp(16px, 2vw, 28px); }
+    .tab__dashboard__quick-card { min-height: 260px; }
+}
+@media (max-width: 767px) {
+    .tab__dashboard__table { width: 100%; padding-inline: 0; }
+    .tab__dashboard__table__tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .tab__dashboard__quick-card { padding: 14px 12px; border-radius: 14px; }
+    .tab__dashboard__quick-card__icon { width: 42px; height: 42px; border-radius: 10px; }
+    .tab__dashboard__quick-card__icon svg { width: 34px; height: 34px; }
+    .tab__dashboard__quick-card__body { margin-top: 12px; }
+    .tab__dashboard__quick-card__title { white-space: normal; font-size: clamp(13px, 3.6vw, 16px); }
+    .tab__dashboard__quick-card__description { font-size: 12px; }
+    .tab__dashboard__quick-card__footer { font-size: 12px; gap: 6px; }
+    .tab__dashboard__quick-card__arrow { inset-inline-end: 10px; }
+    .tab__dashboard__quick-actions { grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); gap: 8px; letter-spacing: .08em; font-size: 11px; }
+}
+@media (max-width: 360px) {
+    .tab__dashboard__table__tiles { gap: 7px; }
+    .tab__dashboard__quick-card { padding: 10px 9px; }
+    .tab__dashboard__quick-card__description { font-size: 11px; }
+    .tab__dashboard__quick-card__footer { font-size: 11px; }
+}
