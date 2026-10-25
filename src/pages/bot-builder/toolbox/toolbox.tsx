@@ -53,7 +53,7 @@ const Toolbox = observer(() => {
         /* [/AI] */
     };
 
-    if (isDesktop) {
+    {
         return (
             <div className='db-toolbox' data-testid='dashboard__toolbox'>
                 <ToolbarButton
