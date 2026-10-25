@@ -468,3 +468,81 @@
   .ai-scanner__header { padding-block: 10px; }
   .ai-scanner__body { padding-block: 12px; }
 }
+
+
+/* Desktop scanner is an in-flow, full-width workspace panel rather than a modal overlay.
+   Mobile keeps the compact, fixed sheet behavior defined by the mobile rules below. */
+@media (min-width: 768px) {
+  .ai-scanner__backdrop { display: none !important; }
+  .ai-scanner__panel {
+    position: relative !important;
+    inset: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    margin: 12px 0 18px;
+    overflow: visible;
+    border-radius: 16px !important;
+    box-shadow: 0 8px 26px rgba(20, 47, 86, .14);
+  }
+  .ai-scanner__header {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    border-radius: 16px 16px 0 0 !important;
+  }
+  .ai-scanner__body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    padding: clamp(16px, 2vw, 28px) !important;
+  }
+  .ai-scanner__intro-card {
+    grid-template-columns: minmax(0, 1fr) minmax(150px, 220px);
+    gap: 20px;
+  }
+  .ai-scanner__market-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .ai-scanner__result-metrics {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .ai-scanner__result-table {
+    width: 100%;
+    overflow-x: auto;
+  }
+  .ai-scanner__result-table > [role='row'] {
+    display: grid;
+    grid-template-columns: minmax(150px, 1.6fr) repeat(4, minmax(100px, 1fr));
+    gap: 12px;
+    align-items: center;
+  }
+  .ai-scanner__digits {
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .ai-scanner__digits div { padding: 12px 8px; }
+  .ai-scanner__actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .ai-scanner__config-layout {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 16px;
+  }
+  .ai-scanner__config-actions { grid-column: 1 / -1; }
+}
+@media (min-width: 768px) and (max-width: 1100px) {
+  .ai-scanner__market-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ai-scanner__result-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ai-scanner__digits { gap: 5px; }
+  .ai-scanner__result-table > [role='row'] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
