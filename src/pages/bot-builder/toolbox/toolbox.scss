@@ -269,7 +269,7 @@
 
     .db-toolbox__controls-row {
         position: absolute;
-        top: 0;
+        top: 0.25rem;
         inset-inline-start: 4.5rem;
         display: flex;
         align-items: flex-start;
@@ -280,7 +280,7 @@
 
     .db-toolbox__toggle-control {
         flex: 0 0 auto;
-        width: 13.25rem;
+        width: 14rem;
         height: 2.85rem;
         max-width: calc(100vw - 8rem);
     }
@@ -312,7 +312,7 @@
 
     .db-toolbox__overlay {
         position: absolute;
-        top: 2.95rem;
+        top: 3.2rem;
         inset-inline-start: 4.5rem;
         width: min(227px, calc(100vw - 4.5rem - 8px));
         height: calc(100dvh - 10.4rem);
