@@ -748,3 +748,30 @@ button[class*="reset"]:hover:not(:disabled),
     /* Transactions drawer fades from navy at the top to light at the bottom. */
     background: linear-gradient(180deg, #061a36 0%, #356ba4 35%, #c6e0f7 72%, #edf6ff 100%) !important;
 }
+
+
+/* Digits trading interface adapted for VintelTool's existing Manual Trader engine. */
+.manual-trader--digits { display: flex; flex-direction: column; gap: 12px; padding: 12px; border-radius: 12px; background: var(--general-main-1, #fff); }
+.manual-digits__header { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:16px; border-radius:10px; color:#f7fbff; background:linear-gradient(120deg,#071b38 0%,#123c70 58%,#176b9b 100%); }
+.manual-digits__eyebrow { display:block; margin-bottom:5px; font-size:10px; letter-spacing:1.3px; font-weight:800; opacity:.78; }
+.manual-digits__header h2 { margin:0; color:inherit; font-size:22px; line-height:1.2; font-weight:800; }
+.manual-digits__header p { margin:5px 0 0; color:inherit; font-size:12px; opacity:.82; }
+.manual-digits__status { display:inline-flex; align-items:center; gap:7px; flex:0 0 auto; padding:7px 10px; border:1px solid rgba(255,255,255,.24); border-radius:99px; font-size:11px; font-weight:700; white-space:nowrap; }
+.manual-digits__status i { width:7px; height:7px; border-radius:50%; background:#48e0a4; box-shadow:0 0 0 3px rgba(72,224,164,.16); }
+.manual-digits__status.is-trading i { background:#ffca64; box-shadow:0 0 0 3px rgba(255,202,100,.16); }
+.manual-digits__digit-picker { padding:12px; border:1px solid var(--border-color, #d9e2ee); border-radius:9px; background:var(--general-section-1, #f7faff); }
+.manual-digits__picker-heading { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; font-size:12px; }
+.manual-digits__picker-heading span { opacity:.7; text-align:right; }
+.manual-digits__digits { display:grid; grid-template-columns:repeat(10,minmax(0,1fr)); gap:6px; }
+.manual-digits__digits button { min-width:0; min-height:36px; border:1px solid var(--border-color, #d5dfeb); border-radius:7px; background:var(--general-main-1, #fff); color:var(--text-general, #132b48); font-weight:800; cursor:pointer; transition:background .12s,border-color .12s,transform .12s; }
+.manual-digits__digits button:hover { border-color:#1976b9; transform:translateY(-1px); }
+.manual-digits__digits button.is-selected { border-color:#1765a5; background:#1765a5; color:#fff; box-shadow:0 2px 7px rgba(23,101,165,.22); }
+@media(max-width:520px) {
+ .manual-trader--digits { padding:7px; gap:8px; }
+ .manual-digits__header { align-items:flex-start; padding:12px; }
+ .manual-digits__header h2 { font-size:19px; }
+ .manual-digits__header p { max-width:210px; line-height:1.4; }
+ .manual-digits__status { padding:6px 7px; font-size:10px; }
+ .manual-digits__digits { gap:3px; }
+ .manual-digits__digits button { min-height:32px; border-radius:5px; font-size:12px; }
+}
