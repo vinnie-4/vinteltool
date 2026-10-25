@@ -55,7 +55,7 @@ const Toolbox = observer(() => {
 
     {
         return (
-            <div className='db-toolbox' data-testid='dashboard__toolbox'>
+            <div className={classNames('db-toolbox', { 'db-toolbox--collapsed': !is_open })} data-testid='dashboard__toolbox'>
                 <ToolbarButton
                     popover_message={localize('Click here to start building your Deriv Bot.')}
                     button_id='db-toolbar__get-started-button'
