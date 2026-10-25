@@ -512,6 +512,11 @@ export const scrollWorkspace = (workspace, scroll_amount, is_horizontal, is_chro
             return;
         }
     }
+    // Mobile horizontal alignment: adjust Blockly's own horizontal scrollbar,
+    // without moving the injected workspace container or its surrounding UI.
+    if (DBotStore.instance.is_mobile && !is_RTL) {
+        scroll_x += 32; // 2rem at the standard 16px root font size
+    }
     workspace?.scrollbar?.set(scroll_x, scroll_y);
 };
 
