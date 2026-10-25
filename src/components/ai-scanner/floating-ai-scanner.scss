@@ -439,3 +439,32 @@
 @media (prefers-reduced-motion: reduce) {
     .ai-scanner__panel *, .ai-scanner__fab { scroll-behavior: auto; }
 }
+
+
+/* Desktop scanner: wider content canvas and predictable grid sizing. */
+@media (min-width: 768px) {
+  .ai-scanner__panel {
+    width: min(620px, calc(100vw - 48px));
+    max-width: calc(100vw - 48px);
+    max-height: min(860px, calc(100dvh - 40px));
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  .ai-scanner__header { padding: 16px 20px; }
+  .ai-scanner__body { padding: 18px 20px; }
+  .ai-scanner__intro-card { grid-template-columns: minmax(0, 1fr) 112px; gap: 16px; }
+  .ai-scanner__market-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .ai-scanner__result-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .ai-scanner__config-row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .ai-scanner__config-layout { gap: 14px; }
+  .ai-scanner__result-table { width: 100%; table-layout: fixed; }
+  .ai-scanner__result-table th, .ai-scanner__result-table td { overflow-wrap: anywhere; }
+  .ai-scanner__digits { grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; }
+  .ai-scanner__actions { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .ai-scanner__trade-types { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+}
+@media (min-width: 768px) and (max-height: 760px) {
+  .ai-scanner__panel { max-height: calc(100dvh - 24px); }
+  .ai-scanner__header { padding-block: 10px; }
+  .ai-scanner__body { padding-block: 12px; }
+}

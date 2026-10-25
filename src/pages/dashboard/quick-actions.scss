@@ -520,3 +520,36 @@
     .tab__dashboard__quick-card__description { font-size: 11px; }
     .tab__dashboard__quick-card__footer { font-size: 11px; }
 }
+
+
+/* Desktop: keep all dashboard action cards on one horizontal row when space allows. */
+@media (min-width: 1100px) {
+  .tab__dashboard__table { width: 100%; max-width: 100%; }
+  .tab__dashboard__table__tiles {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: stretch;
+    width: 100%;
+    max-width: 1440px;
+    gap: clamp(10px, 1.15vw, 18px);
+    margin-inline: auto;
+  }
+  .tab__dashboard__quick-card {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    min-height: 245px;
+    padding: clamp(14px, 1.35vw, 22px);
+  }
+  .tab__dashboard__quick-card__icon { flex: 0 0 auto; }
+  .tab__dashboard__quick-card__body { min-width: 0; margin-top: auto; padding-top: 18px; }
+  .tab__dashboard__quick-card__title { white-space: normal; font-size: clamp(14px, 1.1vw, 18px); }
+  .tab__dashboard__quick-card__description { font-size: clamp(11px, .85vw, 13px); }
+  .tab__dashboard__quick-card__footer { margin-top: 12px; }
+}
+@media (min-width: 768px) and (max-width: 1099px) {
+  .tab__dashboard__table__tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 100%; gap: 14px; }
+  .tab__dashboard__quick-card { min-width: 0; padding: 16px; }
+  .tab__dashboard__quick-card__title, .tab__dashboard__quick-card__description { white-space: normal; overflow-wrap: anywhere; }
+}
