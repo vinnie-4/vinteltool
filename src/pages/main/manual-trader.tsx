@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as DerivTradeTypeIcons from '@deriv/quill-icons/TradeTypes';
 import { api_base } from '@/external/bot-skeleton';
-import AnalysisTool from '../analysis-tool';
 import { useStore } from '@/hooks/useStore';
 import './main.scss';
 
@@ -96,7 +95,6 @@ const ManualTraderStructure = () => {
     useEffect(() => () => document.body.classList.remove('manual-trade-in-progress'), []);
     const [tradeType, setTradeType] = useState('Even/Odd');
     const [symbol, setSymbol] = useState('1HZ100V');
-    const [analysisTicks, setAnalysisTicks] = useState(3000);
     const [duration, setDuration] = useState(5);
     const [stake, setStake] = useState(10);
     const [bulkTrades, setBulkTrades] = useState(1);
@@ -283,10 +281,8 @@ const ManualTraderStructure = () => {
         </header>
         <div className='manual-trader__top-row'>
             <div className='manual-trader__volatility'><span>Volatility</span><select value={selectedVolatility} onChange={event => setSymbol(VOLATILITY_SYMBOLS[event.target.value])}>{Object.keys(VOLATILITY_SYMBOLS).map(name => <option key={name}>{name}</option>)}</select></div>
-            <div className='manual-trader__analysis-ticks'><span>Ticks</span><select value={analysisTicks} onChange={event => setAnalysisTicks(Number(event.target.value))}>{[3000, 1000, 500, 300, 100, 60].map(value => <option key={value} value={value}>{value}</option>)}</select></div>
             <div className='manual-trader__trade-type'><span>TRADE TYPE</span><select value={tradeType} onChange={event => setTradeType(event.target.value)}><option>Even/Odd</option><option>Over/Under</option><option>Matches/Differs</option></select></div>
         </div>
-        <AnalysisTool showLegend={false} showStreak showSubtabs={false} showControls={false} showPrice showContractProbabilities contractMode={tradeType as 'Even/Odd' | 'Over/Under' | 'Matches/Differs'} predictionDigit={prediction} selectedBarrierDigit={tradeType === 'Even/Odd' ? undefined : prediction} onDigitSelect={digit => { if (tradeType !== 'Even/Odd') setPrediction(digit); }} selectedIndex={selectedVolatility} windowSize={analysisTicks} />
         <section className='manual-digits__digit-picker' aria-label='Select prediction digit'>
             <div className='manual-digits__picker-heading'><strong>Select a digit</strong><span>{tradeType === 'Even/Odd' ? 'Optional selection' : 'Contract barrier'} · {prediction}</span></div>
             <div className='manual-digits__digits'>{Array.from({ length: 10 }, (_, digit) => <button key={digit} type='button' aria-pressed={prediction === digit} className={prediction === digit ? 'is-selected' : ''} onClick={() => setPrediction(digit)}>{digit}</button>)}</div>
