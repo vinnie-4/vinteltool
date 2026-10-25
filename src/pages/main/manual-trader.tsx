@@ -102,6 +102,7 @@ const ManualTraderStructure = () => {
     const [isTrading, setIsTrading] = useState(false);
     const [tradeRecords, setTradeRecords] = useState<ManualTradeRecord[]>([]);
     const [recentDigits, setRecentDigits] = useState<number[]>([]);
+    const [analysisWindow, setAnalysisWindow] = useState(1000);
     const tradeLockRef = useRef(false);
     const manualRunIdRef = useRef<string>('');
     const messageSubscriptionRef = useRef<any>(null);
@@ -215,7 +216,7 @@ const ManualTraderStructure = () => {
             const decimals = Number.isFinite(Number(pipSize)) ? Math.max(0, Math.min(8, Number(pipSize))) : 2;
             const digit = Number(value.toFixed(decimals).replace('.', '').slice(-1));
             digits.push(digit);
-            if (digits.length > 100) digits.shift();
+            if (digits.length > analysisWindow) digits.shift();
             setRecentDigits([...digits]);
         };
         const start = async () => {
@@ -234,7 +235,7 @@ const ManualTraderStructure = () => {
                     if (data?.tick?.quote !== undefined) pushQuote(data.tick.quote, data.tick.pip_size);
                     if (Array.isArray(data?.history?.prices)) data.history.prices.forEach((price: unknown) => pushQuote(price, data?.pip_size));
                 });
-                await api.send({ ticks_history: symbol, count: 100, end: 'latest', style: 'ticks', subscribe: 1 });
+                await api.send({ ticks_history: symbol, count: analysisWindow, end: 'latest', style: 'ticks', subscribe: 1 });
             } catch (error) {
                 console.warn('[Manual Trader] Digit analysis feed unavailable:', error);
             }
@@ -244,7 +245,7 @@ const ManualTraderStructure = () => {
             cancelled = true;
             subscription?.unsubscribe?.();
         };
-    }, [symbol]);
+    }, [symbol, analysisWindow]);
     const digitCounts = Array.from({ length: 10 }, (_, digit) => recentDigits.filter(value => value === digit).length);
     const selectedVolatility = Object.keys(VOLATILITY_SYMBOLS).find(name => VOLATILITY_SYMBOLS[name] === symbol) || 'Volatility 100 (1s)';
 
@@ -324,7 +325,7 @@ const ManualTraderStructure = () => {
             <div className='manual-trader__trade-type'><span>TRADE TYPE</span><select value={tradeType} onChange={event => setTradeType(event.target.value)}><option>Even/Odd</option><option>Over/Under</option><option>Matches/Differs</option></select></div>
         </div>
         <section className='manual-digits__analysis' aria-label='Live digit analysis'>
-            <div className='manual-digits__analysis-head'><strong>Digit analysis</strong><span>{recentDigits.length}/100 ticks</span></div>
+            <div className='manual-digits__analysis-head'><strong>Digit analysis</strong><div className='manual-digits__analysis-controls'><label htmlFor='manual-digits-analysis-window'>Analyse last</label><select id='manual-digits-analysis-window' value={analysisWindow} onChange={event => setAnalysisWindow(Number(event.target.value))}><option value={1000}>1,000 ticks</option><option value={3000}>3,000 ticks</option></select><span>{recentDigits.length.toLocaleString()}/{analysisWindow.toLocaleString()} ticks</span></div></div>
             <div className='manual-digits__circles'>{digitCounts.map((count, digit) => <button type='button' key={digit} aria-pressed={prediction === digit} onClick={() => setPrediction(digit)} className={'manual-digits__circle' + (prediction === digit ? ' is-selected' : '')}>
                 <span className='manual-digits__circle-ring' style={{ '--digit-rate': (recentDigits.length ? count / recentDigits.length * 100 : 0) + '%' } as React.CSSProperties}><b>{digit}</b></span><small>{recentDigits.length ? Math.round(count / recentDigits.length * 100) : 0}%</small>
             </button>)}</div>
