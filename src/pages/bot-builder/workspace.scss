@@ -41,27 +41,26 @@
 }
 
 /*
- * VintelTool workspace alignment:
- * Keep the vertical toolbar anchored to the left edge of #scratch_div,
- * while starting the Blockly drawing surface immediately after its 4rem rail.
- * This changes only workspace geometry; toolbox controls and Blockly behavior
- * remain unchanged.
+ * VintelTool Blockly workspace horizontal alignment.
+ * Keep the workspace origin 2rem from the left edge of its container.
+ * The toolbar remains independently positioned by toolbar.scss.
  */
-@media (max-width: 767px) {
-    #scratch_div {
-        position: relative;
-        width: 100%;
-        overflow: hidden;
-    }
+#scratch_div {
+    position: relative;
+}
 
-    #scratch_div > .injectionDiv,
+#scratch_div .injectionDiv {
+    position: relative;
+    left: 2rem;
+    width: calc(100% - 2rem);
+    max-width: calc(100% - 2rem);
+    box-sizing: border-box;
+}
+
+@media (max-width: 767px) {
     #scratch_div .injectionDiv {
-        position: absolute;
-        inset-inline-start: 4rem;
-        top: 0;
-        width: calc(100% - 4rem) !important;
-        height: calc(100dvh - 10.4rem);
-        max-width: calc(100% - 4rem);
-        box-sizing: border-box;
+        left: 2rem;
+        width: calc(100% - 2rem);
+        max-width: calc(100% - 2rem);
     }
 }
