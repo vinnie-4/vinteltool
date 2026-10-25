@@ -249,3 +249,49 @@
 .db-toolbox__last-digit--open .dcircles {
     padding: 6px 0;
 }
+
+
+/* Vinteltool Android: keep the Blocks Menu reachable without covering the
+   Quick Bot Builder toolbar button. The menu opens as a compact left drawer. */
+@media (max-width: 767px) {
+    .db-toolbox {
+        position: fixed;
+        top: 282px;
+        inset-inline-start: 0;
+        width: min(23.6rem, 82vw);
+        height: calc(100dvh - 282px - 7.2rem);
+        max-height: none;
+        padding: 0.6rem;
+        z-index: 30;
+        box-sizing: border-box;
+        box-shadow: 0 0.8rem 2rem rgb(0 0 0 / 18%);
+    }
+
+    .db-toolbox > .toolbar__btn {
+        display: none !important;
+    }
+
+    .db-toolbox__header {
+        padding: 0.4rem 0.8rem;
+        text-align: left;
+        background: var(--general-section-5);
+    }
+
+    .db-toolbox__title {
+        min-height: 3.2rem;
+        height: 3.2rem;
+        line-height: 3.2rem;
+        font-size: 1.5rem;
+    }
+
+    .db-toolbox__content-wrapper.active {
+        height: calc(100% - 4rem);
+        overflow-y: auto;
+    }
+
+    .db-toolbox__category-menu {
+        height: auto;
+        max-height: 42dvh;
+        overflow-y: auto;
+    }
+}
