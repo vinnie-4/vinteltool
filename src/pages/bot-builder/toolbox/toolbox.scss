@@ -270,23 +270,27 @@
     }
 
     .db-toolbox__controls-row {
-        /* Align just inside the workspace, immediately after the vertical rail
-           and close beneath the main tabs, matching the Android reference. */
+        /*
+         * Align with the Binarytool reference: the controls start just to the
+         * right of the vertical workspace rail, directly under the main tabs.
+         * Keep this row anchored to the workspace/toolbox container (not the
+         * viewport) so it follows the workspace on mobile.
+         */
         position: absolute;
-        top: 5.5px;
-        inset-inline-start: 2.5px;
+        top: 0;
+        inset-inline-start: 2.25rem;
         display: flex;
         align-items: flex-start;
-        gap: 11px;
+        gap: 0.7rem;
         z-index: 31;
         pointer-events: auto;
     }
 
     .db-toolbox__toggle-control {
         flex: 0 0 auto;
-        width: 97px;
-        height: 28.5px;
-        max-width: calc(100vw - 40px);
+        width: 6.1rem;
+        height: 2.85rem;
+        max-width: calc(100vw - 8rem);
     }
 
     .db-toolbox__toggle-control .db-toolbox__header {
@@ -298,18 +302,20 @@
     }
 
     .db-toolbox__title {
-        min-height: 28.5px;
-        height: 28.5px;
-        line-height: 28.5px;
+        min-height: 2.85rem;
+        height: 2.85rem;
+        line-height: 2.85rem;
         font-size: 1.5rem;
+        white-space: nowrap;
     }
 
     .db-toolbox__controls-row > .toolbar__btn {
         flex: 0 0 auto;
-        width: 101.5px;
+        width: 6.35rem;
         min-width: 0;
-        height: 28.5px;
+        height: 2.85rem;
         margin: 0;
+        white-space: nowrap;
     }
 
     .db-toolbox__overlay {
