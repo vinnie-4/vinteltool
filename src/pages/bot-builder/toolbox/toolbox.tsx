@@ -56,33 +56,36 @@ const Toolbox = observer(() => {
     {
         return (
             <div className={classNames('db-toolbox', { 'db-toolbox--collapsed': !is_open })} data-testid='dashboard__toolbox'>
-                <ToolbarButton
-                    popover_message={localize('Click here to start building your Deriv Bot.')}
-                    button_id='db-toolbar__get-started-button'
-                    button_classname='toolbar__btn toolbar__btn--icon toolbar__btn--start'
-                    buttonOnClick={handleQuickStrategyOpen}
-                    button_text={localize('Quick strategy')}
-                />
-                <div id='gtm-toolbox' className='db-toolbox__content'>
-                    <div className='db-toolbox__header'>
+                <div className='db-toolbox__controls-row'>
+                    <div className='db-toolbox__toggle-control'>
                         <div
-                            className='db-toolbox__title'
-                            data-testid='db-toolbox__title'
+                            className='db-toolbox__header'
                             onClick={() => {
                                 setOpen(!is_open);
                                 setVisibility(false);
                             }}
                         >
-                            {localize('Blocks menu')}
-                            <span
-                                className={classNames('db-toolbox__title__chevron', {
-                                    'db-toolbox__title__chevron--active': is_open,
-                                })}
-                            >
-                                <LabelPairedChevronDownMdFillIcon fill='var(--text-general)' />
-                            </span>
+                            <div className='db-toolbox__title' data-testid='db-toolbox__title'>
+                                {localize('Blocks menu')}
+                                <span
+                                    className={classNames('db-toolbox__title__chevron', {
+                                        'db-toolbox__title__chevron--active': is_open,
+                                    })}
+                                >
+                                    <LabelPairedChevronDownMdFillIcon fill='var(--text-general)' />
+                                </span>
+                            </div>
                         </div>
                     </div>
+                    <ToolbarButton
+                        popover_message={localize('Click here to start building your Deriv Bot.')}
+                        button_id='db-toolbar__get-started-button'
+                        button_classname='toolbar__btn toolbar__btn--icon toolbar__btn--start'
+                        buttonOnClick={handleQuickStrategyOpen}
+                        button_text={localize('Quick strategy')}
+                    />
+                </div>
+                <div id='gtm-toolbox' className='db-toolbox__content db-toolbox__overlay'>
                     <div
                         className={classNames('db-toolbox__content-wrapper', { active: is_open })}
                         data-testid='db-toolbox__content-wrapper'
