@@ -270,22 +270,23 @@
     }
 
     .db-toolbox__controls-row {
-        /* Reference screenshot is 720px wide at 2x device scale. */
+        /* Align just inside the workspace, immediately after the vertical rail
+           and close beneath the main tabs, matching the Android reference. */
         position: absolute;
-        top: 20.5px;
-        inset-inline-start: 22px;
+        top: 5.5px;
+        inset-inline-start: 2.5px;
         display: flex;
         align-items: flex-start;
-        gap: 15.5px;
+        gap: 11px;
         z-index: 31;
         pointer-events: auto;
     }
 
     .db-toolbox__toggle-control {
         flex: 0 0 auto;
-        width: 134px;
+        width: 97px;
         height: 28.5px;
-        max-width: calc(100vw - 50px);
+        max-width: calc(100vw - 40px);
     }
 
     .db-toolbox__toggle-control .db-toolbox__header {
@@ -305,7 +306,7 @@
 
     .db-toolbox__controls-row > .toolbar__btn {
         flex: 0 0 auto;
-        width: 87.5px;
+        width: 101.5px;
         min-width: 0;
         height: 28.5px;
         margin: 0;
