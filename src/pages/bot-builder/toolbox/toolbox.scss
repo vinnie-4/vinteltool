@@ -270,13 +270,13 @@
     }
 
     .db-toolbox__controls-row {
-        /* Screenshot reference: 22px below nav, 77px from the workspace area's left edge. */
+        /* Requested Android spacing: flush with workspace top, 22px from its left edge. */
         position: absolute;
-        top: 22px;
-        inset-inline-start: 77px;
+        top: 0;
+        inset-inline-start: 22px;
         display: flex;
         align-items: flex-start;
-        gap: 22px;
+        gap: 2px;
         z-index: 31;
         pointer-events: auto;
     }
@@ -305,7 +305,7 @@
 
     .db-toolbox__controls-row > .toolbar__btn {
         flex: 0 0 auto;
-        width: 203px;
+        width: 194px;
         min-width: 0;
         height: 55px;
         margin: 0;
