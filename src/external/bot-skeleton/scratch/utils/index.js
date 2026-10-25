@@ -250,6 +250,18 @@ export const load = async ({
     }
 };
 
+
+// Apply the default mobile horizontal position after a workspace is initialized
+// or a strategy is loaded, not only when the user scrolls manually.
+const setDefaultHorizontalWorkspacePosition = workspace => {
+    if (!workspace || !DBotStore.instance.is_mobile || workspace.RTL) return;
+    const metrics = workspace.getMetrics();
+    if (!metrics || !workspace.scrollbar) return;
+    const scroll_x = metrics.viewLeft - metrics.scrollLeft + 32; // 2rem
+    const scroll_y = metrics.viewTop - metrics.scrollTop;
+    workspace.scrollbar.set(scroll_x, scroll_y);
+};
+
 export const loadBlocks = (xml, drop_event, event_group, workspace) => {
     window.Blockly.Events.setGroup(event_group);
 
@@ -260,6 +272,7 @@ export const loadBlocks = (xml, drop_event, event_group, workspace) => {
         cleanUpOnLoad(added_blocks, drop_event, workspace);
     } else {
         workspace.cleanUp();
+        setDefaultHorizontalWorkspacePosition(workspace);
     }
 };
 
@@ -268,6 +281,7 @@ export const loadWorkspace = async (xml, event_group, workspace) => {
     await workspace.asyncClear();
     window.Blockly.Xml.clearWorkspaceAndLoadFromXml(xml, workspace);
     workspace.cleanUp();
+    setDefaultHorizontalWorkspacePosition(workspace);
 };
 
 const loadBlocksFromHeader = (xml_string, block) => {
