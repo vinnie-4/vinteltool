@@ -145,3 +145,27 @@
 @media (min-width: 768px) {
     .run-panel__container { max-height: calc(100dvh - 10.4rem) !important; }
 }
+
+/* Desktop run panel visibility: keep the execution drawer above the workspace
+   and inside the viewport, independent of AI Scanner layout rules. */
+@media (min-width: 768px) {
+  .run-panel__container {
+    position: fixed !important;
+    top: 10.4rem !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: min(36.6rem, 38vw) !important;
+    height: auto !important;
+    max-height: calc(100dvh - 10.4rem) !important;
+    z-index: 30 !important;
+    overflow: visible !important;
+    pointer-events: auto !important;
+  }
+  .run-panel__container .dc-drawer,
+  .run-panel__container .dc-drawer__content,
+  .run-panel__container .run-panel__content {
+    max-height: 100% !important;
+    min-height: 0;
+  }
+  .run-panel__container .run-panel__content { overflow: auto !important; }
+}
