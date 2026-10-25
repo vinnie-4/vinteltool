@@ -132,13 +132,11 @@
 
     &__wrapper {
         @include mobile-or-tablet-screen {
-            // Keep the workspace controls in a fixed left rail on Android/tablet.
-            // The Blockly canvas must remain underneath this rail instead of
-            // pushing it into a horizontal scrolling toolbar.
+            // Anchor the workspace rail to #scratch_div so it moves with Blockly.
             background-color: var(--general-main-1);
-            position: fixed;
+            position: absolute;
             inset-inline-start: 0;
-            top: 104px;
+            top: 0;
             bottom: 0;
             width: 4rem;
             height: auto;
