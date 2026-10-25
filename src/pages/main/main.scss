@@ -782,3 +782,62 @@ button[class*="reset"]:hover:not(:disabled),
  .manual-digits__digits { gap:3px; }
  .manual-digits__digits button { min-height:30px; font-size:12px; }
 }
+
+
+/* Manual Trader responsive layout: desktop and Android/mobile are both first-class. */
+@media (min-width: 768px) {
+  .manual-trader--digits {
+    width: 100%;
+    max-width: 100%;
+    padding: 14px;
+    gap: 12px;
+  }
+  .manual-digits__analysis,
+  .manual-digits__digit-picker {
+    padding: 12px 14px;
+  }
+  .manual-digits__circles {
+    grid-template-columns: repeat(10, minmax(42px, 1fr));
+    gap: 12px;
+  }
+  .manual-digits__circle-ring {
+    width: 42px;
+    height: 42px;
+  }
+  .manual-digits__circle-ring b { font-size: 13px; }
+  .manual-digits__circle small { font-size: 11px; }
+  .manual-digits__digits button { min-height: 36px; }
+  .manual-trader__top-row,
+  .manual-trader__trade-inputs { gap: 12px; }
+}
+@media (min-width: 521px) and (max-width: 767px) {
+  .manual-trader--digits { padding: 8px; gap: 9px; }
+  .manual-digits__analysis,
+  .manual-digits__digit-picker { padding: 9px; }
+  .manual-digits__circles { gap: 5px; }
+  .manual-digits__circle-ring { width: 34px; height: 34px; border-width: 2px; }
+}
+@media (max-width: 520px) {
+  .manual-trader--digits {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+  .manual-digits__analysis,
+  .manual-digits__digit-picker {
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .manual-digits__circles { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+  .manual-digits__circle { overflow: hidden; }
+  .manual-digits__circle-ring { width: clamp(24px, 7vw, 32px); height: clamp(24px, 7vw, 32px); }
+  .manual-digits__circle-ring b { width: calc(100% - 4px); height: calc(100% - 4px); }
+  .manual-digits__digits { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+  .manual-digits__picker-heading { flex-wrap: wrap; }
+  .manual-digits__picker-heading span { text-align: left; }
+  .manual-trader__trade-inputs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .manual-trader__trade-inputs label,
+  .manual-trader__trade-inputs input,
+  .manual-trader__top-row > * { min-width: 0; max-width: 100%; box-sizing: border-box; }
+}
