@@ -269,18 +269,18 @@
     .db-toolbox__controls-row {
         position: fixed;
         top: 132px;
-        inset-inline-start: 77px;
+        inset-inline-start: 72px;
         display: flex;
         align-items: flex-start;
-        gap: 22px;
+        gap: 16px;
         z-index: 31;
     }
 
     .db-toolbox__toggle-control {
         flex: 0 0 auto;
-        width: 194px;
+        width: 180px;
         height: 55px;
-        max-width: calc(100vw - 100px);
+        max-width: calc(100vw - 88px);
     }
 
     .db-toolbox__toggle-control .db-toolbox__header {
