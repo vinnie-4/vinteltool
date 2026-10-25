@@ -270,22 +270,23 @@
     }
 
     .db-toolbox__controls-row {
-        /* Reference screenshot is 720px wide at 2x device scale. */
+        /* Match the 720px reference screenshot at 2x device scale.
+           Position relative to the workspace container so the controls travel with it. */
         position: absolute;
-        top: 20.5px;
-        inset-inline-start: 22px;
+        top: 11px;
+        inset-inline-start: 2.5px;
         display: flex;
         align-items: flex-start;
-        gap: 15.5px;
+        gap: 11px;
         z-index: 31;
         pointer-events: auto;
     }
 
     .db-toolbox__toggle-control {
         flex: 0 0 auto;
-        width: 134px;
-        height: 28.5px;
-        max-width: calc(100vw - 50px);
+        width: 97px;
+        height: 27.5px;
+        max-width: calc(100vw - 40px);
     }
 
     .db-toolbox__toggle-control .db-toolbox__header {
@@ -297,17 +298,17 @@
     }
 
     .db-toolbox__title {
-        min-height: 28.5px;
-        height: 28.5px;
-        line-height: 28.5px;
+        min-height: 27.5px;
+        height: 27.5px;
+        line-height: 27.5px;
         font-size: 1.5rem;
     }
 
     .db-toolbox__controls-row > .toolbar__btn {
         flex: 0 0 auto;
-        width: 87.5px;
+        width: 101.5px;
         min-width: 0;
-        height: 28.5px;
+        height: 27.5px;
         margin: 0;
     }
 
