@@ -210,6 +210,8 @@ const ManualTraderStructure = () => {
         let cancelled = false;
         let api: any;
         const digits: number[] = [];
+        // Clear the old market/window immediately so the UI never shows stale digits.
+        setRecentDigits([]);
         const pushQuote = (quote: unknown, pipSize?: number) => {
             const value = Number(quote);
             if (!Number.isFinite(value)) return;
@@ -232,8 +234,10 @@ const ManualTraderStructure = () => {
                 if (stream?.subscribe) subscription = stream.subscribe((message: any) => {
                     const envelope = message?.data ?? message;
                     const data = envelope?.data ?? envelope;
-                    if (data?.tick?.quote !== undefined) pushQuote(data.tick.quote, data.tick.pip_size);
-                    if (Array.isArray(data?.history?.prices)) data.history.prices.forEach((price: unknown) => pushQuote(price, data?.pip_size));
+                    if (data?.tick?.quote !== undefined && (!data.tick.symbol || data.tick.symbol === symbol)) pushQuote(data.tick.quote, data.tick.pip_size ?? data.tick.pipSize);
+                    if (Array.isArray(data?.history?.prices) && (!data?.echo_req?.ticks_history || data.echo_req.ticks_history === symbol)) {
+                        data.history.prices.forEach((price: unknown) => pushQuote(price, data?.pip_size));
+                    }
                 });
                 await api.send({ ticks_history: symbol, count: analysisWindow, end: 'latest', style: 'ticks', subscribe: 1 });
             } catch (error) {
