@@ -546,3 +546,30 @@
   .ai-scanner__digits { gap: 5px; }
   .ai-scanner__result-table > [role='row'] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }
+
+
+/* Visibility safeguard: the scanner must remain visible after the FAB opens it.
+   Keep desktop presentation fixed to the viewport until a true layout slot is
+   provided by the parent page; mobile keeps its existing sheet layout. */
+@media (min-width: 768px) {
+  .ai-scanner__panel {
+    position: fixed !important;
+    z-index: 10050 !important;
+    top: 88px !important;
+    right: 20px !important;
+    bottom: 20px !important;
+    left: auto !important;
+    width: min(760px, calc(100vw - 40px)) !important;
+    max-width: calc(100vw - 40px) !important;
+    height: auto !important;
+    max-height: calc(100dvh - 108px) !important;
+    margin: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    transform: none !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+  .ai-scanner__panel .ai-scanner__body { min-width: 0; }
+}
