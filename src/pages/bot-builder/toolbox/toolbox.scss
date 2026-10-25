@@ -284,9 +284,25 @@
         font-size: 1.5rem;
     }
 
+    .db-toolbox--collapsed {
+        height: auto !important;
+        max-height: none;
+        padding-bottom: 0;
+        pointer-events: auto;
+    }
+
+    .db-toolbox--collapsed .db-toolbox__content-wrapper {
+        height: 0 !important;
+        overflow: hidden;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
     .db-toolbox__content-wrapper.active {
         height: calc(100% - 4rem);
         overflow-y: auto;
+        visibility: visible;
+        pointer-events: auto;
     }
 
     .db-toolbox__category-menu {
