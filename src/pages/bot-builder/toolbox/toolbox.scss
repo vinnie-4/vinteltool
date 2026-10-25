@@ -256,15 +256,28 @@
 @media (max-width: 767px) {
     .db-toolbox {
         position: fixed;
+        /* Keep the menu floating above Blockly; never participate in workspace layout. */
         top: 282px;
-        inset-inline-start: 0;
-        width: min(23.6rem, 82vw);
+        inset-inline-start: 11px;
+        width: min(227px, calc(100vw - 22px));
         height: calc(100dvh - 282px - 7.2rem);
         max-height: none;
         padding: 0.6rem;
         z-index: 30;
         box-sizing: border-box;
         box-shadow: 0 0.8rem 2rem rgb(0 0 0 / 18%);
+    }
+
+    /* Collapsed state stays as a compact control beside the workspace toolbar.
+       Expanding moves the same floating panel to the screenshot's left inset. */
+    .db-toolbox--collapsed {
+        inset-inline-start: 77px;
+        width: min(194px, calc(100vw - 88px));
+    }
+
+    .db-toolbox:not(.db-toolbox--collapsed) {
+        inset-inline-start: 11px;
+        width: min(227px, calc(100vw - 22px));
     }
 
     .db-toolbox > .toolbar__btn {
