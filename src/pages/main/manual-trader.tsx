@@ -332,11 +332,16 @@ const ManualTraderStructure = () => {
                 const leastCount = nonZeroCounts.length ? Math.min(...nonZeroCounts) : 0;
                 const isMost = recentDigits.length > 0 && count === mostCount;
                 const isLeast = recentDigits.length > 0 && count === leastCount;
+                const isLast = recentDigits.length > 0 && recentDigits[recentDigits.length - 1] === digit;
                 const frequencyClass = isMost ? ' is-most' : isLeast ? ' is-least' : '';
-                return <button type='button' key={digit} aria-pressed={prediction === digit} aria-label={`Digit ${digit}, ${count} appearances${isMost ? ', most frequent' : isLeast ? ', least frequent' : ''}`} onClick={() => setPrediction(digit)} className={'manual-digits__circle' + frequencyClass + (prediction === digit ? ' is-selected' : '')}>
-                    <span className='manual-digits__circle-ring' style={{ '--digit-rate': (recentDigits.length ? count / recentDigits.length * 100 : 0) + '%' } as React.CSSProperties}><b>{digit}</b></span><small>{recentDigits.length ? Math.round(count / recentDigits.length * 100) : 0}%</small>
+                return <button type='button' key={digit} aria-pressed={prediction === digit} aria-label={`Digit ${digit}, ${count} appearances${isMost ? ', most frequent' : isLeast ? ', least frequent' : ''}${isLast ? ', latest tick digit' : ''}`} onClick={() => setPrediction(digit)} className={'manual-digits__circle' + frequencyClass + (prediction === digit ? ' is-selected' : '') + (isLast ? ' is-last-digit' : '')}>
+                    <span className='manual-digits__circle-ring' style={{ '--digit-rate': (recentDigits.length ? count / recentDigits.length * 100 : 0) + '%' } as React.CSSProperties}><b>{digit}</b></span><small>{recentDigits.length ? Math.round(count / recentDigits.length * 100) : 0}%</small>{isLast && <span className='manual-digits__last-marker' aria-label='Latest tick'>▼<em>LAST</em></span>}
                 </button>;
             })}</div>
+            <div className='manual-digits__signal' aria-live='polite'>
+                <span className='manual-digits__signal-label'>Analysis reference</span>
+                {recentDigits.length ? <span>Latest digit <strong>{recentDigits[recentDigits.length - 1]}</strong> · Most observed <strong>{digitCounts.indexOf(Math.max(...digitCounts))}</strong> · Least observed <strong>{digitCounts.findIndex(count => count > 0 && count === Math.min(...digitCounts.filter(value => value > 0)))}</strong></span> : <span>Waiting for live tick data…</span>}
+            </div>
         </section>
         {tradeType !== 'Even/Odd' && <div className='manual-trader__selected-barrier' aria-live='polite'>Barrier: <strong>{prediction}</strong></div>}
         <div className='manual-trader__trade-inputs'>
