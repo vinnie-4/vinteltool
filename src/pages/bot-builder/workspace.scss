@@ -39,3 +39,29 @@
     #scratch_div { height: calc(100dvh - 10.4rem); max-height: none; }
     .injectionDiv { height: calc(100dvh - 10.4rem); }
 }
+
+/*
+ * VintelTool workspace alignment:
+ * Keep the vertical toolbar anchored to the left edge of #scratch_div,
+ * while starting the Blockly drawing surface immediately after its 4rem rail.
+ * This changes only workspace geometry; toolbox controls and Blockly behavior
+ * remain unchanged.
+ */
+@media (max-width: 767px) {
+    #scratch_div {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    #scratch_div > .injectionDiv,
+    #scratch_div .injectionDiv {
+        position: absolute;
+        inset-inline-start: 4rem;
+        top: 0;
+        width: calc(100% - 4rem) !important;
+        height: calc(100dvh - 10.4rem);
+        max-width: calc(100% - 4rem);
+        box-sizing: border-box;
+    }
+}
