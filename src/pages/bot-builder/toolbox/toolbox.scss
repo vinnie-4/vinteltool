@@ -270,23 +270,22 @@
     }
 
     .db-toolbox__controls-row {
-        /* Match the supplied Android screenshot relative to #scratch_div:
-           controls begin 41px below the workspace area's top and 51px from its left. */
+        /* Reference screenshot is 720px wide at 2x device scale. */
         position: absolute;
-        top: 41px;
-        inset-inline-start: 51px;
+        top: 20.5px;
+        inset-inline-start: 22px;
         display: flex;
         align-items: flex-start;
-        gap: 31px;
+        gap: 15.5px;
         z-index: 31;
         pointer-events: auto;
     }
 
     .db-toolbox__toggle-control {
         flex: 0 0 auto;
-        width: 268px;
-        height: 57px;
-        max-width: calc(100vw - 100px);
+        width: 134px;
+        height: 28.5px;
+        max-width: calc(100vw - 50px);
     }
 
     .db-toolbox__toggle-control .db-toolbox__header {
@@ -298,17 +297,17 @@
     }
 
     .db-toolbox__title {
-        min-height: 3.2rem;
-        height: 3.2rem;
-        line-height: 3.2rem;
+        min-height: 28.5px;
+        height: 28.5px;
+        line-height: 28.5px;
         font-size: 1.5rem;
     }
 
     .db-toolbox__controls-row > .toolbar__btn {
         flex: 0 0 auto;
-        width: 175px;
+        width: 87.5px;
         min-width: 0;
-        height: 57px;
+        height: 28.5px;
         margin: 0;
     }
 
