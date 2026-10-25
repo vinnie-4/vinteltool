@@ -573,3 +573,45 @@
   }
   .ai-scanner__panel .ai-scanner__body { min-width: 0; }
 }
+
+
+/* Fix desktop launcher open state: the scanner must remain visible after the
+   FAB hides. Keep it in a fixed, high-layer dock rather than normal document flow. */
+@media (min-width: 768px) {
+  .ai-scanner__panel {
+    position: fixed !important;
+    inset: 88px 24px 24px auto !important;
+    transform: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: min(720px, calc(100vw - 48px)) !important;
+    max-width: calc(100vw - 48px) !important;
+    height: auto !important;
+    max-height: calc(100dvh - 112px) !important;
+    min-height: 240px !important;
+    overflow: hidden !important;
+    z-index: 10050 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    background: var(--general-main-1, #fff);
+    color: var(--text-prominent, #1d2939);
+    border: 1px solid var(--border-normal, #d7dee8);
+    box-shadow: 0 18px 60px rgba(8, 22, 44, .28) !important;
+  }
+  .ai-scanner__panel .ai-scanner__header {
+    flex: 0 0 auto;
+    position: relative !important;
+    top: auto !important;
+  }
+  .ai-scanner__panel .ai-scanner__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+  .ai-scanner__fab {
+    z-index: 10040 !important;
+    pointer-events: auto !important;
+  }
+}
