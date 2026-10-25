@@ -97,8 +97,8 @@ const ManualTraderStructure = () => {
     const [tradeType, setTradeType] = useState('Even/Odd');
     const [symbol, setSymbol] = useState('1HZ100V');
     const [analysisTicks, setAnalysisTicks] = useState(3000);
-    const [duration, setDuration] = useState(1);
-    const [stake, setStake] = useState(0.5);
+    const [duration, setDuration] = useState(5);
+    const [stake, setStake] = useState(10);
     const [bulkTrades, setBulkTrades] = useState(1);
     const [prediction, setPrediction] = useState(1);
     const [isTrading, setIsTrading] = useState(false);
