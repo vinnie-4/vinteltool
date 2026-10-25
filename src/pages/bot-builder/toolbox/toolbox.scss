@@ -268,7 +268,7 @@
 
     .db-toolbox__controls-row {
         position: fixed;
-        top: 272px;
+        top: 104px;
         inset-inline-start: 77px;
         display: flex;
         align-items: flex-start;
@@ -305,10 +305,10 @@
 
     .db-toolbox__overlay {
         position: fixed;
-        top: 272px;
+        top: 104px;
         inset-inline-start: 11px;
         width: min(227px, calc(100vw - 22px));
-        height: calc(100dvh - 272px - 7.2rem);
+        height: calc(100dvh - 104px - 7.2rem);
         max-height: none;
         padding: 0.6rem;
         box-sizing: border-box;
