@@ -270,21 +270,22 @@
     }
 
     .db-toolbox__controls-row {
-        /* Requested Android spacing: flush with workspace top, 22px from its left edge. */
+        /* Match the supplied Android screenshot relative to #scratch_div:
+           controls begin 41px below the workspace area's top and 51px from its left. */
         position: absolute;
-        top: 0;
-        inset-inline-start: 22px;
+        top: 41px;
+        inset-inline-start: 51px;
         display: flex;
         align-items: flex-start;
-        gap: 2px;
+        gap: 31px;
         z-index: 31;
         pointer-events: auto;
     }
 
     .db-toolbox__toggle-control {
         flex: 0 0 auto;
-        width: 194px;
-        height: 55px;
+        width: 268px;
+        height: 57px;
         max-width: calc(100vw - 100px);
     }
 
@@ -305,9 +306,9 @@
 
     .db-toolbox__controls-row > .toolbar__btn {
         flex: 0 0 auto;
-        width: 194px;
+        width: 175px;
         min-width: 0;
-        height: 55px;
+        height: 57px;
         margin: 0;
     }
 
