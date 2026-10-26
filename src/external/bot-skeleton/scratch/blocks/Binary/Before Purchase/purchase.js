@@ -90,3 +90,31 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.purchase = block => {
     const purchaseList = block.getFieldValue('PURCHASE_LIST');
     return `Bot.purchase('${purchaseList}');\n`;
 };
+
+
+// Numbered purchase blocks are useful when a strategy has separate conditional
+// branches. Keep their contract dropdowns synchronized with the configured
+// trade type and contract type, just like the original Purchase block.
+const createNumberedPurchaseBlock = (blockType, label) => ({
+    ...window.Blockly.Blocks.purchase,
+    definition() {
+        return {
+            ...window.Blockly.Blocks.purchase.definition(),
+            message0: localize(label + ' {{ contract_type }}', { contract_type: '%1' }),
+            tooltip: localize('Purchases the selected configured contract type when this condition is reached.'),
+        };
+    },
+});
+
+window.Blockly.Blocks.purchase1 = createNumberedPurchaseBlock('purchase1', 'Purchase 1');
+window.Blockly.Blocks.purchase2 = createNumberedPurchaseBlock('purchase2', 'Purchase 2');
+
+window.Blockly.JavaScript.javascriptGenerator.forBlock.purchase1 = block => {
+    const purchaseList = block.getFieldValue('PURCHASE_LIST');
+    return `Bot.purchase('${purchaseList}');\\n`;
+};
+
+window.Blockly.JavaScript.javascriptGenerator.forBlock.purchase2 = block => {
+    const purchaseList = block.getFieldValue('PURCHASE_LIST');
+    return `Bot.purchase('${purchaseList}');\\n`;
+};
