@@ -2,6 +2,8 @@ import React from 'react';
 import './free-bots.scss';
 // @ts-ignore — raw-loader exposes XML assets as strings at build time.
 import OVER_1_UNDER_8_BOT_XML from '@/xml/Over 1 Under 8 Bot.xml';
+// @ts-ignore — raw-loader exposes XML assets as strings at build time.
+import EVEN_ODD_VOLATILITY_50_BOT_XML from '@/xml/Even Odd Volatility 50 Bot.xml';
 
 export type TFreeBot = { id: string; name: string; xml: string; description?: string; tags?: string[] };
 type TFreeBotsProps = { bots?: TFreeBot[]; onLoadBot: (bot: TFreeBot) => void | Promise<void> };
@@ -9,6 +11,13 @@ type TPublishedBot = { id?: string; name?: string; description?: string; categor
 type TPublishedFreeBot = TFreeBot & { publishedAt: number; sourceIndex: number };
 
 export const FREE_BOTS: TFreeBot[] = [
+    {
+        id: 'even-odd-volatility-50-bot',
+        name: 'Even/Odd Volatility 50 Bot',
+        description: 'R_50 · 1 tick · Stake 1 · Take profit 10 · Stop loss 20 · Martingale ×2 after losses',
+        tags: ['EVEN/ODD', 'VOLATILITY 50', '1 TICK'],
+        xml: EVEN_ODD_VOLATILITY_50_BOT_XML,
+    },
     {
         id: 'over-1-under-8-bot',
         name: 'Over 1 Under 8 Bot',
@@ -49,7 +58,11 @@ const FreeBots = ({ bots = FREE_BOTS, onLoadBot }: TFreeBotsProps) => {
     const allBots = [
         ...bots.map((bot, index) => ({ ...bot, publishedAt: 0, sourceIndex: -bots.length + index })),
         ...publishedBots.filter(published => !bots.some(existing => existing.id === published.id)),
-    ].sort((a, b) => b.publishedAt - a.publishedAt || b.sourceIndex - a.sourceIndex);
+    ].sort((a, b) => {
+        if (a.id === 'even-odd-volatility-50-bot') return -1;
+        if (b.id === 'even-odd-volatility-50-bot') return 1;
+        return b.publishedAt - a.publishedAt || b.sourceIndex - a.sourceIndex;
+    });
 
     if (!allBots.length) return null;
 
