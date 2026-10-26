@@ -158,7 +158,7 @@ const AppWrapper = observer(() => {
                 disableUrlParameterApplication(); setupTradeTypeChangeListener();
                 const handleTradeTypeModal = () => checkAndShowTradeTypeModal(() => enableUrlParameterApplication(), () => {});
                 if (!blockly_store.is_loading) setTimeout(handleTradeTypeModal, 500);
-                else { let pollAttempts = 0; const checkBlocklyLoaded = () => { if (!blockly_store.is_loading) return handleTradeTypeModal(); if (pollAttempts < 10) { pollAttempts++; pollTimeoutId = setTimeout(checkBlocklyLoaded, 500); } else console.warn('Blockly loading timeout after 5 seconds - proceeding without URL parameter check'); }; checkBlocklyLoaded(); }
+                else { const checkBlocklyLoaded = () => { if (!blockly_store.is_loading) return handleTradeTypeModal(); pollTimeoutId = setTimeout(checkBlocklyLoaded, 500); }; checkBlocklyLoaded(); }
             });
         }
         return () => { if (pollTimeoutId) clearTimeout(pollTimeoutId); };
