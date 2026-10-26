@@ -33,7 +33,6 @@ window.Blockly.Blocks.before_purchase = {
                 {
                     type: 'input_statement',
                     name: 'BEFOREPURCHASE_STACK',
-                    check: 'Purchase',
                 },
             ],
             args2: [
