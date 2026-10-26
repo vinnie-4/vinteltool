@@ -14,3 +14,6 @@ import './Binary/Trade Definition';
 import './Logic';
 import './Math';
 import './Text';
+
+// Compatibility blocks used by legacy Quick Bot Builder XML files.
+import './Compatibility/legacy-free-bot';
