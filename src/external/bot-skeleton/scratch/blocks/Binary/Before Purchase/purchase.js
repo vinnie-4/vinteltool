@@ -116,5 +116,5 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.purchase1 = block => {
 
 window.Blockly.JavaScript.javascriptGenerator.forBlock.purchase2 = block => {
     const purchaseList = block.getFieldValue('PURCHASE_LIST');
-    return `Bot.purchase('${purchaseList}');\\n`;
+    return `Bot.purchase('${purchaseList}');\n`;
 };
