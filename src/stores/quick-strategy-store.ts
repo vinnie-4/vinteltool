@@ -94,12 +94,12 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
     };
 
     waitForWorkspace = async () => {
-        for (let attempt = 0; attempt < 240; attempt += 1) {
+        // Keep waiting while the app initializes; do not surface a timeout error.
+        while (true) {
             const workspace = window.Blockly?.derivWorkspace;
             if (workspace && window.Blockly?.utils?.xml) return workspace;
             await new Promise<void>(resolve => setTimeout(resolve, 50));
         }
-        throw new Error('Bot Builder workspace is not ready.');
     };
 
     importPendingFreeBot = async () => {
@@ -132,21 +132,25 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
                 }
                 const isCollection = xmlDom.getAttribute('collection') === 'true';
                 Blockly.Events.setGroup(`vintel-free-bot-${Date.now()}`);
-                if (!isCollection) await workspace.asyncClear();
-                if (isCollection) {
-                    loadBlocks(xmlDom, null, `vintel-free-bot-${Date.now()}`, workspace);
-                } else {
-                    Blockly.Xml.clearWorkspaceAndLoadFromXml(xmlDom, workspace);
-                    workspace.cleanUp();
-                    workspace.clearUndo();
+                try {
+                    if (!isCollection) await workspace.asyncClear();
+                    if (isCollection) {
+                        loadBlocks(xmlDom, null, `vintel-free-bot-${Date.now()}`, workspace);
+                    } else {
+                        Blockly.Xml.clearWorkspaceAndLoadFromXml(xmlDom, workspace);
+                        workspace.cleanUp();
+                        workspace.clearUndo();
+                    }
+                    if (!workspace.getAllBlocks(false).length) {
+                        throw new Error('The XML did not produce any editable Bot Builder blocks.');
+                    }
+                    this.pending_free_bot = null;
+                    this.setAdditionalData({ free_bot_name: pending.name });
+                    this.setFormVisibility(false);
+                } finally {
+                    // Always release Blockly's event group, including failed imports.
+                    Blockly.Events.setGroup(false);
                 }
-                Blockly.Events.setGroup(false);
-                if (!workspace.getAllBlocks(false).length) {
-                    throw new Error('The XML did not produce any editable Bot Builder blocks.');
-                }
-                this.pending_free_bot = null;
-                this.setAdditionalData({ free_bot_name: pending.name });
-                this.setFormVisibility(false);
             } catch (error) {
                 console.error('Quick Strategy free bot load failed:', error);
                 throw error;
