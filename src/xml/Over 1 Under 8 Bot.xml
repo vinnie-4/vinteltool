@@ -315,7 +315,7 @@
           </block>
         </value>
         <statement name="DO0">
-          <block type="apollo_purchase2" id="9Sa[N(|7u~yAo/Tr)eHk">
+          <block type="purchase" id="9Sa[N(|7u~yAo/Tr)eHk">
             <field name="PURCHASE_LIST">DIGITOVER</field>
             <value name="PREDICTION">
               <block type="math_number" id="lsE8FwSE%!)vf=i_J,9%">
@@ -346,7 +346,7 @@
           </block>
         </value>
         <statement name="DO1">
-          <block type="apollo_purchase2" id="K^uf!Mj_-(XCuD.}er*a">
+          <block type="purchase" id="K^uf!Mj_-(XCuD.}er*a">
             <field name="PURCHASE_LIST">DIGITUNDER</field>
             <value name="PREDICTION">
               <block type="math_number" id="z}#:#Q`xSjPsDCJZ9ySi">
