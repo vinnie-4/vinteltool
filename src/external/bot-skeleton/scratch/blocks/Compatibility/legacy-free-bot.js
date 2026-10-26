@@ -70,5 +70,5 @@ window.Blockly.Blocks.apollo_purchase2 = {
 window.Blockly.JavaScript.javascriptGenerator.forBlock.apollo_purchase2 = block => {
     const contract = block.getFieldValue('PURCHASE_LIST') || 'DIGITOVER';
     const prediction = window.Blockly.JavaScript.javascriptGenerator.valueToCode(block, 'PREDICTION', window.Blockly.JavaScript.javascriptGenerator.ORDER_ATOMIC) || '0';
-    return `Bot.purchase('${contract}');\\n`;
+    return `Bot.purchase('${contract}');\n`;
 };
