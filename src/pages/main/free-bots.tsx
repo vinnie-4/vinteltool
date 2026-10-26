@@ -1,7 +1,7 @@
 import React from 'react';
 import './free-bots.scss';
 // @ts-ignore — raw-loader exposes XML assets as strings at build time.
-import VINTEL_UNDER_6_RECOVERY_UNDER_5_XML from '@/xml/VintelTool Under 6 Recovery Under 5.xml';
+import OVER_1_UNDER_8_BOT_XML from '@/xml/Over 1 Under 8 Bot.xml';
 
 export type TFreeBot = { id: string; name: string; xml: string; description?: string; tags?: string[] };
 type TFreeBotsProps = { bots?: TFreeBot[]; onLoadBot: (bot: TFreeBot) => void | Promise<void> };
@@ -10,9 +10,9 @@ type TPublishedFreeBot = TFreeBot & { publishedAt: number; sourceIndex: number }
 
 export const FREE_BOTS: TFreeBot[] = [
     {
-        id: 'vintel-under-6-recovery-under-5',
-        name: 'VintelTool Under 6 Recovery Under 5',
-        xml: VINTEL_UNDER_6_RECOVERY_UNDER_5_XML,
+        id: 'over-1-under-8-bot',
+        name: 'Over 1 Under 8 Bot',
+        xml: OVER_1_UNDER_8_BOT_XML,
     },
 ];
 
