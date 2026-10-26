@@ -7,6 +7,8 @@ window.Blockly.Blocks.quick_bot_fixed_variables = {
     init() {
         this.appendDummyInput().appendField(localize('Quick Bot Builder setup'));
         this.appendStatementInput('SETUP');
+        this.setPreviousStatement(true);
+        this.setNextStatement(true);
         this.setColour(window.Blockly.Colours?.RootBlock?.colour || 230);
         this.setTooltip(localize('Initializes variables for a legacy Quick Bot Builder strategy.'));
         this.setDeletable(false);
