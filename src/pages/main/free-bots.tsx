@@ -60,6 +60,8 @@ const FreeBots = ({ bots = FREE_BOTS, onLoadBot }: TFreeBotsProps) => {
             await onLoadBot(bot);
         } catch (error) {
             console.error('Failed to load free bot:', error);
+            const message = error instanceof Error ? error.message : 'Please try loading this bot again.';
+            window.alert(`Could not load "${bot.name}". ${message}`);
         } finally {
             setLoadingBotId(null);
         }
