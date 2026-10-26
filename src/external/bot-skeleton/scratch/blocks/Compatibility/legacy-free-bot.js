@@ -53,7 +53,8 @@ window.Blockly.Blocks.apollo_purchase2 = {
         this.setTooltip(localize('Legacy purchase block with a digit prediction.'));
         this.setInputsInline(false);
         this.setOnChange(function(event) {
-            if (!this.workspace || this.workspace.isFlyout || this.workspace.isDragging()) return;
+            if (!this.workspace || window.Blockly.derivWorkspace?.isFlyoutVisible || this.workspace.isDragging()) return;
+            if (!event || ![window.Blockly.Events.BLOCK_CREATE, window.Blockly.Events.BLOCK_CHANGE, window.Blockly.Events.BLOCK_DRAG].includes(event.type)) return;
             const root = this.workspace.getTradeDefinitionBlock?.();
             if (!root) return;
             const tradeTypeBlock = root.getChildByType?.('trade_definition_tradetype');
@@ -62,10 +63,17 @@ window.Blockly.Blocks.apollo_purchase2 = {
             const options = getContractTypeOptions(contractTypeBlock.getFieldValue('TYPE_LIST'), tradeTypeBlock.getFieldValue('TRADETYPE_LIST'));
             const field = this.getField('PURCHASE_LIST');
             if (field && Array.isArray(options) && options.length) {
-                field.updateOptions(options, { default_value: field.getValue(), event_group: event?.group, should_pretend_empty: true });
+                field.updateOptions(options, {
+                    default_value: field.getValue(),
+                    event_group: event.group,
+                    should_pretend_empty: true,
+                });
             }
         });
-        modifyContextMenu?.(this);
+    },
+    customContextMenu(menu) {
+        modifyContextMenu(menu);
+
     },
 };
 
