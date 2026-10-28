@@ -32,3 +32,17 @@
     touch-action: none;
     overflow: hidden;
 }
+
+/* On narrow screens, Blockly's workspace container is laid out too far to the
+ * right relative to the fixed 4rem tool rail. Shift the container, not the
+ * individual blocks, and extend its width to keep the right edge available.
+ * Desktop positioning remains unchanged.
+ */
+@media (max-width: 767px) {
+    #scratch_div .injectionDiv {
+        left: -19.7rem;
+        width: calc(100% + 19.7rem);
+        max-width: none;
+        box-sizing: border-box;
+    }
+}

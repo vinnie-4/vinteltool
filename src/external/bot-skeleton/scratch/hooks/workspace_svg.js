@@ -175,7 +175,7 @@ window.Blockly.WorkspaceSvg.prototype.cleanUp = function (x, y = 0, blocks_to_cl
 
             const xy = block.getRelativeToSurfaceXY();
 
-            const cursor_x = is_import ? x : x - xy.x;
+            const cursor_x = is_import ? x : -xy.x;
             const cursor_y = original_cursor_y - (is_import ? 0 : xy.y) + (DBotStore.instance.is_mobile ? 50 : 0);
 
             if (column_index === 0) {
