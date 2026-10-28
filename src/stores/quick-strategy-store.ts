@@ -93,19 +93,24 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
         await this.importPendingFreeBot();
     };
 
-    waitForWorkspace = async (timeoutMs = 15000) => {
-        // The Bot Builder tab can take a moment to mount Blockly. Wait for it,
-        // but fail clearly instead of leaving the Load button spinning forever.
+    waitForWorkspace = async (timeoutMs = 20000) => {
+        // A Blockly workspace object can exist while Bot Builder is still hidden.
+        // Wait for the actual workspace container to be visible before importing,
+        // otherwise Blockly may calculate a zero-sized viewport and place blocks
+        // outside the visible area.
         const startedAt = Date.now();
         while (Date.now() - startedAt < timeoutMs) {
             const Blockly = window.Blockly;
             const workspace = Blockly?.derivWorkspace;
-            if (workspace && Blockly?.utils?.xml?.textToDom && Blockly?.Xml?.domToWorkspace) {
+            const container = document.getElementById('scratch_div');
+            const rect = container?.getBoundingClientRect();
+            const visible = Boolean(container && rect && rect.width > 0 && rect.height > 0);
+            if (workspace && visible && Blockly?.utils?.xml?.textToDom && Blockly?.Xml?.clearWorkspaceAndLoadFromXml) {
                 return workspace;
             }
-            await new Promise<void>(resolve => setTimeout(resolve, 50));
+            await new Promise<void>(resolve => setTimeout(resolve, 100));
         }
-        throw new Error('Bot Builder workspace did not become ready within 15 seconds. Open Bot Builder, wait for the blocks to appear, then try Load again.');
+        throw new Error('Bot Builder workspace did not become visible within 20 seconds. Open Bot Builder, wait for the workspace to appear, then tap Load again.');
     };
 
     importPendingFreeBot = async () => {
@@ -273,8 +278,19 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             if (!blockTypes.includes('trade_definition') || !blockTypes.includes('purchase') || !blockTypes.includes('before_purchase')) {
                 throw new Error('The scanner strategy is incomplete and was not loaded.');
             }
-            removeLimitedBlocks(workspace, blockTypes);
-            loadBlocks(strategyDom, null, `vintel-quick-builder-${Date.now()}`, workspace);
+            // This is a complete scanner strategy, not a block collection.
+            // Replace the workspace from the validated XML only after the Bot
+            // Builder is visible, so the blocks are created in the on-screen workspace.
+            const eventGroup = `vintel-quick-builder-${Date.now()}`;
+            Blockly.Events.setGroup(eventGroup);
+            try {
+                await workspace.asyncClear();
+                Blockly.Xml.clearWorkspaceAndLoadFromXml(strategyDom, workspace);
+                workspace.cleanUp();
+                workspace.clearUndo();
+            } finally {
+                Blockly.Events.setGroup(false);
+            }
             const loadedBlocks = workspace.getAllBlocks(false);
             const requiredLoadedTypes = ['trade_definition', 'trade_definition_market', 'trade_definition_tradetype', 'trade_definition_contracttype', 'purchase', 'before_purchase'];
             const missingLoadedTypes = requiredLoadedTypes.filter(type => !loadedBlocks.some(block => block.type === type));
