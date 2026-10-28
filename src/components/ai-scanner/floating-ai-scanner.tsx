@@ -438,8 +438,8 @@ const FloatingAIScanner = () => {
                 loss: Math.max(0, Number(configStopLoss) || 10),
                 martingale: true,
                 recoveryMode: configRecoveryEnabled,
-                recoveryPurchase: 'Trade Even',
-                recoveryPrediction: 0,
+                recoveryPurchase: side,
+                recoveryPrediction: prediction,
                 analysisEnabled: configRecoveryEnabled,
                 analysisCondition: { mode: 'even-odd', streak: Math.max(2, Math.min(30, Number(configRecoveryDigits) || 2)), onlyAfterLoss: true },
             });
