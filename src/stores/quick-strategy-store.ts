@@ -4,7 +4,6 @@ import { ApiHelpers, config as qs_config } from '@/external/bot-skeleton';
 import { save_types } from '@/external/bot-skeleton/constants/save-type';
 import { addDynamicBlockToDOM } from '@/utils/xml-dom-quick-strategy';
 import { loadBlocks } from '@/external/bot-skeleton/scratch/utils';
-import { removeLimitedBlocks } from '@/external/bot-skeleton/utils/workspace';
 import { STRATEGIES } from '../pages/bot-builder/quick-strategy/config';
 import { TFormData } from '../pages/bot-builder/quick-strategy/types';
 import { getSetting, storeSetting } from '../utils/settings';
