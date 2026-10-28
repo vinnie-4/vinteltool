@@ -251,15 +251,16 @@ export const load = async ({
 };
 
 
-// Apply the default mobile horizontal position after a workspace is initialized
-// or a strategy is loaded, not only when the user scrolls manually.
+// Restore the Blockly viewport to its origin after layout cleanup. The cleanup
+// routine places the first column at workspace x=0; applying an extra pixel
+// offset derived from metrics can shift the visible blocks away from the left rail.
 const setDefaultHorizontalWorkspacePosition = workspace => {
     if (!workspace || !DBotStore.instance.is_mobile || workspace.RTL) return;
-    const metrics = workspace.getMetrics();
-    if (!metrics || !workspace.scrollbar) return;
-    const scroll_x = metrics.viewLeft - metrics.scrollLeft + 32; // 2rem
-    const scroll_y = metrics.viewTop - metrics.scrollTop;
-    workspace.scrollbar.set(scroll_x, scroll_y);
+    if (typeof workspace.scroll === 'function') {
+        workspace.scroll(0, 0);
+    } else if (workspace.scrollbar) {
+        workspace.scrollbar.set(0, 0);
+    }
 };
 
 export const loadBlocks = (xml, drop_event, event_group, workspace) => {
