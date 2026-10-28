@@ -140,7 +140,10 @@ window.Blockly.WorkspaceSvg.prototype.addBlockNode = function (block_node) {
  * root-blocks are sorted in columns first, then all other blocks are positioned below
  * the lowest hanging root-block.
  */
-window.Blockly.WorkspaceSvg.prototype.cleanUp = function (x = 0, y = 0, blocks_to_clean = []) {
+window.Blockly.WorkspaceSvg.prototype.cleanUp = function (x, y = 0, blocks_to_clean = []) {
+    // Keep the first column of Blockly blocks clear of the fixed 4rem mobile rail.
+    // This changes block coordinates only; the toolbox remains an independent overlay.
+    if (typeof x !== 'number') x = DBotStore.instance.is_mobile && !this.RTL ? 80 : 0;
     this.setResizesEnabled(false);
     window.Blockly.Events.setGroup(window.Blockly.Events.getGroup() || true);
 
