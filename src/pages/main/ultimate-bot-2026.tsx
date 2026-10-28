@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { api_base } from '@/external/bot-skeleton';
 import { useStore } from '@/hooks/useStore';
 import './main.scss';
@@ -133,9 +133,79 @@ const UltimateBot2026 = () => {
     const [running, setRunning] = useState(false);
     const [tradesPlaced, setTradesPlaced] = useState(0);
     const [lastError, setLastError] = useState('');
+    const [recentDigits, setRecentDigits] = useState<number[]>([]);
+    const [analysisStatus, setAnalysisStatus] = useState('Waiting for live market data');
     const tradeLockRef = useRef(false);
     const stopRequestedRef = useRef(false);
     const status = useMemo(() => (running ? 'RUNNING' : 'READY'), [running]);
+    useEffect(() => {
+        let cancelled = false;
+        let stream: any;
+        let observer: any;
+        let retryTimer: ReturnType<typeof setTimeout>;
+        let pipSize = 2;
+        const symbol = VOLATILITY_SYMBOLS[volatility];
+        const loadTicks = async () => {
+            const api = api_base.api;
+            if (!api || api.connection?.readyState !== WebSocket.OPEN) {
+                if (!cancelled) {
+                    setAnalysisStatus('Log in to stream live digit analysis');
+                    retryTimer = setTimeout(loadTicks, 1000);
+                }
+                return;
+            }
+            try {
+                setAnalysisStatus('Loading tick history…');
+                const history = await api.send({ ticks_history: symbol, count: Math.max(60, Number(sample) || 3000), end: 'latest', style: 'ticks' });
+                if (cancelled) return;
+                if (history?.error) throw new Error(history.error.message || 'Tick history request failed.');
+                pipSize = Number(history?.pip_size ?? 2);
+                const prices: number[] = history?.history?.prices || [];
+                const digits = prices.map(price => Number(Number(price).toFixed(pipSize).slice(-1)));
+                setRecentDigits(digits);
+                setAnalysisStatus(digits.length ? `Analysing ${digits.length} recent ticks` : 'No tick history returned');
+                stream = await api.subscribe({ ticks: symbol });
+                observer = stream.subscribe((message: any) => {
+                    if (cancelled) return;
+                    if (message?.error) { setAnalysisStatus(message.error.message || 'Live tick stream error'); return; }
+                    if (!message?.tick) return;
+                    const quote = Number(message.tick.quote);
+                    const precision = Number(message.tick.pip_size ?? pipSize);
+                    const digit = Number(quote.toFixed(precision).slice(-1));
+                    setRecentDigits(previous => [...previous.slice(-Math.max(59, (Number(sample) || 3000) - 1)), digit]);
+                    setAnalysisStatus('Live digit analysis connected');
+                });
+            } catch (error) {
+                if (!cancelled) {
+                    setAnalysisStatus(error instanceof Error ? error.message : 'Unable to load digit analysis');
+                    retryTimer = setTimeout(loadTicks, 3000);
+                }
+            }
+        };
+        void loadTicks();
+        return () => {
+            cancelled = true;
+            clearTimeout(retryTimer);
+            try { observer?.unsubscribe?.(); } catch { /* already closed */ }
+            try { stream?.unsubscribe?.(); } catch { /* already closed */ }
+        };
+    }, [volatility, sample]);
+
+    const digitCounts = useMemo(() => {
+        const counts = Array(10).fill(0);
+        recentDigits.forEach(digit => { if (digit >= 0 && digit <= 9) counts[digit] += 1; });
+        const total = recentDigits.length || 1;
+        const even = recentDigits.filter(digit => digit % 2 === 0).length;
+        const over4 = recentDigits.filter(digit => digit > 4).length;
+        return {
+            counts,
+            even: even / total * 100,
+            odd: (recentDigits.length - even) / total * 100,
+            over4: over4 / total * 100,
+            under5: (recentDigits.length - over4) / total * 100,
+        };
+    }, [recentDigits]);
+
 
     const handleRun = async () => {
         if (running) {
@@ -262,7 +332,9 @@ const UltimateBot2026 = () => {
                 <label>Trade type<select value={tradeType} onChange={e => setTradeType(e.target.value)}>{strategy === 'Even/Odd' ? <><option>Even</option><option>Odd</option></> : <><option>Over</option><option>Under</option></>}</select></label>
                 {strategy === 'Over/Under' && <label>Prediction digit<input inputMode='numeric' min='0' max='9' value={prediction} onChange={e => setPrediction(e.target.value)} /></label>}
             </div>}
-            <div className='ultimate-bot-2026__signal'><div><b>DCircles</b><span>Live digit signal</span></div><div className='ultimate-bot-2026__signal-values'><span className='green'>Most</span><span className='blue'>2nd</span><span className='yellow'>2nd least</span><span className='red'>Least</span></div></div>
+            <div className='ultimate-bot-2026__signal'><div><b>Live digit analysis</b><span>{analysisStatus} · {recentDigits.length} ticks</span></div><div className='ultimate-bot-2026__signal-values'><span className='green'>Even {digitCounts.even.toFixed(0)}%</span><span className='blue'>Odd {digitCounts.odd.toFixed(0)}%</span><span className='yellow'>Over 4 {digitCounts.over4.toFixed(0)}%</span><span className='red'>Under 5 {digitCounts.under5.toFixed(0)}%</span></div></div>
+            <div className='ultimate-bot-2026__digit-bars'>{digitCounts.counts.map((value, digit) => <div key={digit}><span>{digit}</span><i style={{ height: `${Math.max(3, value / (recentDigits.length || 1) * 100)}%` }} /><small>{recentDigits.length ? (value / recentDigits.length * 100).toFixed(0) : 0}%</small></div>)}</div>
+            <div className='ultimate-bot-2026__recent-digits'>{recentDigits.slice(-20).map((digit, index) => <span key={index} className={digit % 2 === 0 ? 'digit-even' : 'digit-odd'}>{digit}</span>)}</div>
             <div className='ultimate-bot-2026__sample-row'><span>Analysis sample</span>{['60', '100', '300', '500', '1000', '3000'].map(item => <button key={item} className={sample === item ? 'active' : ''} onClick={() => setSample(item)}>{item}</button>)}</div></div>
             <div className='ultimate-bot-2026__card'><h3>Trade & recovery</h3><div className='ultimate-bot-2026__inputs'>
                 <label>Initial stake<input inputMode='decimal' value={stake} onChange={e => setStake(e.target.value)} /></label><label>Recovery<select value={recovery} onChange={e => setRecovery(e.target.value)}>{RECOVERY.map(item => <option key={item}>{item}</option>)}</select></label><label>Multiplier<input inputMode='decimal' value={multiplier} onChange={e => setMultiplier(e.target.value)} /></label><label>Max recovery<input inputMode='numeric' value={maxRecovery} onChange={e => setMaxRecovery(e.target.value)} /></label><label>Max trades<input inputMode='numeric' value={maxTrades} onChange={e => setMaxTrades(e.target.value)} /></label><label>Cooldown<input inputMode='numeric' value={cooldown} onChange={e => setCooldown(e.target.value)} /></label><label>Ticks<input inputMode='numeric' value={duration} onChange={e => setDuration(e.target.value)} /></label>
