@@ -17,7 +17,7 @@ const VOLATILITY_SYMBOLS: Record<string, string> = {
     'Volatility 90': 'R_90', 'Volatility 90 (1s)': '1HZ90V', 'Volatility 100': 'R_100', 'Volatility 100 (1s)': '1HZ100V',
 };
 
-const STRATEGIES = ['Even/Odd', 'Over/Under', 'Matches/Differs', 'Last Digit', 'Rise/Fall'];
+const STRATEGIES = ['Even/Odd', 'Over/Under'];
 const RECOVERY = ['Fixed Stake', 'Martingale', 'Anti-Martingale', 'Custom Multiplier'];
 const CONTRACT_TYPES: Record<string, string> = { Even: 'DIGITEVEN', Odd: 'DIGITODD', Over: 'DIGITOVER', Under: 'DIGITUNDER' };
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -210,7 +210,6 @@ const UltimateBot2026 = () => {
     const handleRun = async () => {
         if (running) {
             stopRequestedRef.current = true;
-            setRunning(false);
             return;
         }
         if (tradeLockRef.current) return;
@@ -340,7 +339,7 @@ const UltimateBot2026 = () => {
                 <label>Initial stake<input inputMode='decimal' value={stake} onChange={e => setStake(e.target.value)} /></label><label>Recovery<select value={recovery} onChange={e => setRecovery(e.target.value)}>{RECOVERY.map(item => <option key={item}>{item}</option>)}</select></label><label>Multiplier<input inputMode='decimal' value={multiplier} onChange={e => setMultiplier(e.target.value)} /></label><label>Max recovery<input inputMode='numeric' value={maxRecovery} onChange={e => setMaxRecovery(e.target.value)} /></label><label>Max trades<input inputMode='numeric' value={maxTrades} onChange={e => setMaxTrades(e.target.value)} /></label><label>Cooldown<input inputMode='numeric' value={cooldown} onChange={e => setCooldown(e.target.value)} /></label><label>Ticks<input inputMode='numeric' value={duration} onChange={e => setDuration(e.target.value)} /></label>
             </div></div>
             <div className='ultimate-bot-2026__card'><h3>Safety limits</h3><div className='ultimate-bot-2026__inputs ultimate-bot-2026__inputs--limits'><label>Take profit<input inputMode='decimal' value={takeProfit} onChange={e => setTakeProfit(e.target.value)} /></label><label>Stop loss<input inputMode='decimal' value={stopLoss} onChange={e => setStopLoss(e.target.value)} /></label></div><div className='ultimate-bot-2026__safety'>Maximum loss • Maximum profit • Consecutive-loss protection • Emergency stop</div></div>
-            <div className='ultimate-bot-2026__live'><div><span>Market</span><b>{volatility}</b></div><div><span>Strategy</span><b>{strategy} {tradeType}</b></div><div><span>Stake</span><b>{stake} USD</b></div><div><span>Trades placed</span><b>{tradesPlaced}/{maxTrades}</b></div></div>
+            <div className='ultimate-bot-2026__live'><div><span>Market</span><b>{volatility}</b></div><div><span>Strategy</span><b>{strategy} {tradeType}</b></div><div><span>Stake</span><b>{stake} {api_base.account_info?.currency || 'USD'}</b></div><div><span>Trades placed</span><b>{tradesPlaced}/{maxTrades}</b></div></div>
             {lastError && <div className='ultimate-bot-2026__error'>{lastError}</div>}
             <button className={`ultimate-bot-2026__run ${running ? 'stop' : ''}`} onClick={handleRun}>{running ? 'Stop Bulk Trader' : 'Run Bulk Trader'}</button>
         </section>
