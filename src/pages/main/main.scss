@@ -887,3 +887,67 @@ button[class*="reset"]:hover:not(:disabled),
 @keyframes manual-digit-cursor { 0%,100% { transform:translateY(0); opacity:1; } 50% { transform:translateY(3px); opacity:.65; } }
 @media(prefers-reduced-motion:reduce) { .manual-digits__last-marker { animation:none; } }
 @media(max-width:520px) { .manual-digits__last-marker em { font-size:6px; } .manual-digits__signal { font-size:10px; } }
+
+
+/* Ultimate Bot 2026 responsive layout: desktop dashboard grid, compact Android stack. */
+.ultimate-bot-2026 {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 14px;
+    width: 100%;
+    max-width: 1440px;
+    min-width: 0;
+    margin: 0 auto;
+    padding: 16px;
+    box-sizing: border-box;
+    overflow-x: clip;
+    color: var(--text-general, #172b4d);
+}
+.ultimate-bot-2026 > * { min-width: 0; box-sizing: border-box; }
+.ultimate-bot-2026__hero,
+.ultimate-bot-2026__live,
+.ultimate-bot-2026__error,
+.ultimate-bot-2026__run { grid-column: 1 / -1; }
+.ultimate-bot-2026__card { grid-column: span 6; min-width: 0; padding: 16px; border: 1px solid var(--border-normal, #dce4ee); border-radius: 14px; background: var(--general-section-1, #fff); box-shadow: 0 3px 12px rgba(15, 40, 75, .06); }
+.ultimate-bot-2026__card:first-of-type { grid-column: 1 / -1; }
+.ultimate-bot-2026__grid,
+.ultimate-bot-2026__inputs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.ultimate-bot-2026 label { display: flex; flex-direction: column; gap: 6px; min-width: 0; font-size: 12px; font-weight: 700; }
+.ultimate-bot-2026 input,
+.ultimate-bot-2026 select { width: 100%; min-width: 0; min-height: 40px; padding: 8px 10px; box-sizing: border-box; border: 1px solid var(--border-normal, #ccd7e5); border-radius: 8px; background: var(--general-main-1, #fff); color: var(--text-general, #172b4d); font: inherit; font-size: 13px; }
+.ultimate-bot-2026__hero { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 4px 2px; }
+.ultimate-bot-2026__signal { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.ultimate-bot-2026__signal-values { display: flex; flex-wrap: wrap; gap: 6px; }
+.ultimate-bot-2026__digit-bars { max-width: 100%; overflow: hidden; }
+.ultimate-bot-2026__live { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.ultimate-bot-2026__live > div { display: flex; flex-direction: column; gap: 5px; min-width: 0; padding: 12px; border-radius: 10px; background: var(--general-section-1, #fff); border: 1px solid var(--border-normal, #dce4ee); }
+.ultimate-bot-2026__live b { overflow-wrap: anywhere; }
+.ultimate-bot-2026__run { min-height: 46px; border: 0; border-radius: 10px; background: #1677e8; color: #fff; font-weight: 800; cursor: pointer; }
+.ultimate-bot-2026__run.stop { background: #d93036; }
+.ultimate-bot-2026__error { padding: 11px 13px; border-radius: 9px; background: var(--general-section-1, #f4f7fb); overflow-wrap: anywhere; }
+.ultimate-bot-2026__safety { margin-top: 12px; font-size: 11px; opacity: .75; }
+@media (min-width: 768px) {
+    .ultimate-bot-2026 { align-content: start; }
+    .ultimate-bot-2026__card:nth-of-type(2) { grid-column: span 7; }
+    .ultimate-bot-2026__card:nth-of-type(3) { grid-column: span 5; }
+}
+@media (max-width: 767px) {
+    .ultimate-bot-2026 { display: flex; flex-direction: column; gap: 10px; padding: 10px; width: 100%; max-width: 100%; }
+    .ultimate-bot-2026__card { width: 100%; padding: 12px; border-radius: 11px; }
+    .ultimate-bot-2026__grid,
+    .ultimate-bot-2026__inputs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+    .ultimate-bot-2026__hero { align-items: flex-start; }
+    .ultimate-bot-2026__signal { flex-direction: column; }
+    .ultimate-bot-2026__signal-values { width: 100%; }
+    .ultimate-bot-2026__live { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .ultimate-bot-2026__live > div { padding: 9px; }
+    .ultimate-bot-2026__run { width: 100%; position: sticky; bottom: 8px; z-index: 4; box-shadow: 0 4px 16px rgba(0,0,0,.16); }
+}
+@media (max-width: 360px) {
+    .ultimate-bot-2026 { padding: 7px; gap: 8px; }
+    .ultimate-bot-2026__card { padding: 9px; }
+    .ultimate-bot-2026__grid,
+    .ultimate-bot-2026__inputs { grid-template-columns: minmax(0, 1fr); }
+    .ultimate-bot-2026__live { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .ultimate-bot-2026__signal-values { gap: 4px; }
+}
