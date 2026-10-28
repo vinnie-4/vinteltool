@@ -909,7 +909,7 @@ button[class*="reset"]:hover:not(:disabled),
 .ultimate-bot-2026__error,
 .ultimate-bot-2026__run { grid-column: 1 / -1; }
 .ultimate-bot-2026__card { grid-column: span 6; min-width: 0; padding: 16px; border: 1px solid var(--border-normal, #dce4ee); border-radius: 14px; background: var(--general-section-1, #fff); box-shadow: 0 3px 12px rgba(15, 40, 75, .06); }
-.ultimate-bot-2026__card:first-of-type { grid-column: 1 / -1; }
+.ultimate-bot-2026__card:nth-of-type(2) { grid-column: 1 / -1; }
 .ultimate-bot-2026__grid,
 .ultimate-bot-2026__inputs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .ultimate-bot-2026 label { display: flex; flex-direction: column; gap: 6px; min-width: 0; font-size: 12px; font-weight: 700; }
@@ -928,8 +928,8 @@ button[class*="reset"]:hover:not(:disabled),
 .ultimate-bot-2026__safety { margin-top: 12px; font-size: 11px; opacity: .75; }
 @media (min-width: 768px) {
     .ultimate-bot-2026 { align-content: start; }
-    .ultimate-bot-2026__card:nth-of-type(2) { grid-column: span 7; }
-    .ultimate-bot-2026__card:nth-of-type(3) { grid-column: span 5; }
+    .ultimate-bot-2026__card:nth-of-type(3) { grid-column: span 7; }
+    .ultimate-bot-2026__card:nth-of-type(4) { grid-column: span 5; }
 }
 @media (max-width: 767px) {
     .ultimate-bot-2026 { display: flex; flex-direction: column; gap: 10px; padding: 10px; width: 100%; max-width: 100%; }
