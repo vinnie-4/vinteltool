@@ -33,15 +33,14 @@
     overflow: hidden;
 }
 
-/* On narrow screens, Blockly's workspace container is laid out too far to the
- * right relative to the fixed 4rem tool rail. Shift the container, not the
- * individual blocks, and extend its width to keep the right edge available.
- * Desktop positioning remains unchanged.
+/* Align the mobile Blockly canvas immediately after the fixed 4rem left rail.
+ * The rail is positioned independently; reserve exactly its width and avoid
+ * the previous large negative offset that could shift the workspace too far.
  */
 @media (max-width: 767px) {
     #scratch_div .injectionDiv {
-        left: -19.7rem;
-        width: calc(100% + 19.7rem);
+        left: 4rem;
+        width: calc(100% - 4rem);
         max-width: none;
         box-sizing: border-box;
     }
