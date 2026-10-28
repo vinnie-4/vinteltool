@@ -263,6 +263,35 @@ const setDefaultHorizontalWorkspacePosition = workspace => {
     }
 };
 
+// Center the complete top-level strategy in the visible mobile Blockly viewport.
+const centerTopLevelBlocksInWorkspace = workspace => {
+    if (!workspace || !DBotStore.instance.is_mobile || workspace.RTL || !workspace.scrollbar) return;
+
+    const blocks = workspace.getTopBlocks(true);
+    if (!blocks.length) return;
+
+    const bounds = blocks.reduce((result, block) => {
+        const xy = block.getRelativeToSurfaceXY();
+        const size = block.getHeightWidth();
+        return {
+            left: Math.min(result.left, xy.x),
+            top: Math.min(result.top, xy.y),
+            right: Math.max(result.right, xy.x + size.width),
+            bottom: Math.max(result.bottom, xy.y + size.height),
+        };
+    }, { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity });
+
+    const metrics = workspace.getMetrics();
+    if (!metrics || !Number.isFinite(metrics.viewWidth) || !Number.isFinite(metrics.viewHeight)) return;
+
+    const centerX = ((bounds.left + bounds.right) / 2) * workspace.scale;
+    const centerY = ((bounds.top + bounds.bottom) / 2) * workspace.scale;
+    workspace.scrollbar.set(
+        centerX - metrics.contentLeft - metrics.viewWidth / 2,
+        centerY - metrics.contentTop - metrics.viewHeight / 2
+    );
+};
+
 export const loadBlocks = (xml, drop_event, event_group, workspace) => {
     window.Blockly.Events.setGroup(event_group);
 
@@ -273,7 +302,7 @@ export const loadBlocks = (xml, drop_event, event_group, workspace) => {
         cleanUpOnLoad(added_blocks, drop_event, workspace);
     } else {
         workspace.cleanUp();
-        setDefaultHorizontalWorkspacePosition(workspace);
+        centerTopLevelBlocksInWorkspace(workspace);
     }
 };
 
@@ -282,7 +311,7 @@ export const loadWorkspace = async (xml, event_group, workspace) => {
     await workspace.asyncClear();
     window.Blockly.Xml.clearWorkspaceAndLoadFromXml(xml, workspace);
     workspace.cleanUp();
-    setDefaultHorizontalWorkspacePosition(workspace);
+    centerTopLevelBlocksInWorkspace(workspace);
 };
 
 const loadBlocksFromHeader = (xml_string, block) => {
