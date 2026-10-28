@@ -3,7 +3,7 @@ import { action, makeObservable, observable, reaction } from 'mobx';
 import { ApiHelpers, config as qs_config } from '@/external/bot-skeleton';
 import { save_types } from '@/external/bot-skeleton/constants/save-type';
 import { addDynamicBlockToDOM } from '@/utils/xml-dom-quick-strategy';
-import { loadBlocks } from '@/external/bot-skeleton/scratch/utils';
+import { loadBlocks, loadWorkspace } from '@/external/bot-skeleton/scratch/utils';
 import { STRATEGIES } from '../pages/bot-builder/quick-strategy/config';
 import { TFormData } from '../pages/bot-builder/quick-strategy/types';
 import { getSetting, storeSetting } from '../utils/settings';
@@ -281,21 +281,13 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             // Replace the workspace from the validated XML only after the Bot
             // Builder is visible, so the blocks are created in the on-screen workspace.
             const eventGroup = `vintel-quick-builder-${Date.now()}`;
-            Blockly.Events.setGroup(eventGroup);
             try {
-                // Avoid relying on asyncClear/clearWorkspaceAndLoadFromXml across
-                // Blockly versions. The project's shared loadBlocks helper uses
-                // domToWorkspace and is already used for supported XML imports.
-                workspace.clear();
-                const createdIds = Blockly.Xml.domToWorkspace(strategyDom, workspace);
-                if (!createdIds || createdIds.length === 0) {
-                    throw new Error('Blockly parsed the scanner XML but created no blocks.');
-                }
-                workspace.cleanUp();
+                // Use the same complete-workspace importer as VintelTool's native
+                // Load Bot flow. It clears Blockly safely, imports the full strategy,
+                // cleans up the layout, and centers top-level blocks on mobile.
+                await loadWorkspace(strategyDom, eventGroup, workspace);
                 workspace.clearUndo();
-                // A tab switch can leave Blockly with stale dimensions for a frame.
                 if (typeof Blockly.svgResize === 'function') Blockly.svgResize(workspace);
-                if (typeof workspace.resizeContents === 'function') workspace.resizeContents();
             } finally {
                 Blockly.Events.setGroup(false);
             }
