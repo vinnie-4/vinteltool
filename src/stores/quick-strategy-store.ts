@@ -283,10 +283,19 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             const eventGroup = `vintel-quick-builder-${Date.now()}`;
             Blockly.Events.setGroup(eventGroup);
             try {
-                await workspace.asyncClear();
-                Blockly.Xml.clearWorkspaceAndLoadFromXml(strategyDom, workspace);
+                // Avoid relying on asyncClear/clearWorkspaceAndLoadFromXml across
+                // Blockly versions. The project's shared loadBlocks helper uses
+                // domToWorkspace and is already used for supported XML imports.
+                workspace.clear();
+                const createdIds = Blockly.Xml.domToWorkspace(strategyDom, workspace);
+                if (!createdIds || createdIds.length === 0) {
+                    throw new Error('Blockly parsed the scanner XML but created no blocks.');
+                }
                 workspace.cleanUp();
                 workspace.clearUndo();
+                // A tab switch can leave Blockly with stale dimensions for a frame.
+                if (typeof Blockly.svgResize === 'function') Blockly.svgResize(workspace);
+                if (typeof workspace.resizeContents === 'function') workspace.resizeContents();
             } finally {
                 Blockly.Events.setGroup(false);
             }
