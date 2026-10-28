@@ -34,33 +34,33 @@
     overflow: hidden;
 }
 
-
 @media (max-width: 767px) {
-    #scratch_div { height: calc(100dvh - 10.4rem); max-height: none; }
-    .injectionDiv { height: calc(100dvh - 10.4rem); }
+    #scratch_div {
+        height: calc(100dvh - 10.4rem);
+        max-height: none;
+    }
+
+    .injectionDiv {
+        height: calc(100dvh - 10.4rem);
+    }
 }
 
-/*
- * VintelTool Blockly workspace horizontal alignment.
- * Keep the workspace origin 2rem from the left edge of its container.
- * The toolbar remains independently positioned by toolbar.scss.
+/* Keep the Blockly canvas aligned immediately beside the fixed left toolbar.
+ * Do not horizontally offset the injected workspace: that offset moves the
+ * entire canvas away from the toolbar on narrow screens.
  */
-#scratch_div {
-    position: relative;
-}
-
 #scratch_div .injectionDiv {
     position: relative;
-    left: 2rem;
-    width: calc(100% - 2rem);
-    max-width: calc(100% - 2rem);
+    left: 0;
+    width: 100%;
+    max-width: 100%;
     box-sizing: border-box;
 }
 
 @media (max-width: 767px) {
     #scratch_div .injectionDiv {
-        left: 2rem;
-        width: calc(100% - 2rem);
-        max-width: calc(100% - 2rem);
+        left: 0;
+        width: 100%;
+        max-width: 100%;
     }
 }
