@@ -26,92 +26,57 @@ const waitForTradingApi = async () => {
     const started = Date.now();
     while (Date.now() - started < 10000) {
         const api = api_base.api;
-        if (api?.connection?.readyState === WebSocket.OPEN && api_base.is_authorized) return api;
+        if (api?.connection?.readyState === 1 && api_base.is_authorized) return api;
         await sleep(200);
     }
     throw new Error('Deriv trading connection is not ready. Please log in and select a trading account.');
 };
 
+// Deriv's shared API uses send() plus onMessage(); send() itself does not return the response.
+const requestDeriv = (api: any, payload: Record<string, unknown>, responseKey: string, matches: (message: any) => boolean = () => true, timeoutMs = 15000): Promise<any> =>
+    new Promise((resolve, reject) => {
+        let settled = false;
+        const finish = (error?: Error, value?: any) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeout);
+            subscription?.unsubscribe?.();
+            if (error) reject(error); else resolve(value);
+        };
+        const subscription = api.onMessage().subscribe((message: any) => {
+            if (message?.error && (!message.msg_type || message.msg_type === responseKey)) {
+                finish(new Error(message.error.message || 'Deriv request failed.'));
+                return;
+            }
+            if (message?.msg_type === responseKey && matches(message)) finish(undefined, message);
+        });
+        const timeout = setTimeout(() => finish(new Error(`Timed out waiting for Deriv ${responseKey} response.`)), timeoutMs);
+        try { api.send(payload); } catch (error) { finish(error instanceof Error ? error : new Error('Unable to send Deriv request.')); }
+    });
+
 const buyContract = async (api: any, contractType: string, amount: number, symbol: string, duration: number, prediction: number) => {
     const currency = api_base.account_info?.currency || 'USD';
     const request: Record<string, unknown> = { proposal: 1, amount, basis: 'stake', contract_type: contractType, currency, duration, duration_unit: 't', underlying_symbol: symbol };
     if (contractType === 'DIGITOVER' || contractType === 'DIGITUNDER') request.barrier = prediction;
-    const proposalResponse = await api.send(request);
-    if (proposalResponse?.error) throw new Error(proposalResponse.error.message || 'Unable to create trade proposal.');
+    const proposalResponse = await requestDeriv(api, request, 'proposal');
     const proposal = proposalResponse?.proposal;
     if (!proposal?.id || proposal.ask_price === undefined) throw new Error('Deriv returned an invalid trade proposal.');
-    const buyResponse = await api.send({ buy: proposal.id, price: proposal.ask_price });
-    if (buyResponse?.error) throw new Error(buyResponse.error.message || 'Unable to purchase the contract.');
+    const buyResponse = await requestDeriv(api, { buy: proposal.id, price: proposal.ask_price }, 'buy');
     const buy = buyResponse?.buy;
     if (!buy?.contract_id) throw new Error('Deriv did not confirm the purchased contract.');
     return buy;
 };
 
-const waitForNextMarketTick = async (api: any, symbol: string) => {
-    if (typeof api.subscribe !== 'function') throw new Error('Live tick synchronization is unavailable on this Deriv connection.');
-    const stream = await api.subscribe({ ticks: symbol });
-    return new Promise((resolve, reject) => {
-        let initialTickSeen = false;
-        let settled = false;
-        let observer: any;
-        const finish = (error?: Error, tick?: any) => {
-            if (settled) return;
-            settled = true;
-            clearTimeout(timeout);
-            try { observer?.unsubscribe?.(); } catch { /* already unsubscribed */ }
-            try { stream?.unsubscribe?.(); } catch { /* already unsubscribed */ }
-            if (error) reject(error); else resolve(tick);
-        };
-        const timeout = setTimeout(() => finish(new Error('Timed out waiting for the next market tick.')), 15000);
-        observer = stream.subscribe((message: any) => {
-            if (message?.error) { finish(new Error(message.error.message || 'Market tick subscription failed.')); return; }
-            if (!message?.tick) return;
-            if (!initialTickSeen) { initialTickSeen = true; return; }
-            finish(undefined, message.tick);
-        });
-    });
-};
-
-const buyContractBatch = async (api: any, contractType: string, amount: number, symbol: string, duration: number, prediction: number, count: number) => {
-    const currency = api_base.account_info?.currency || 'USD';
-    const proposalRequest: Record<string, unknown> = {
-        proposal: 1, amount, basis: 'stake', contract_type: contractType,
-        currency, duration, duration_unit: 't', underlying_symbol: symbol,
-    };
-    if (contractType === 'DIGITOVER' || contractType === 'DIGITUNDER') proposalRequest.barrier = prediction;
-    const proposals = await Promise.all(Array.from({ length: count }, async () => {
-        const response = await api.send({ ...proposalRequest });
-        if (response?.error) throw new Error(response.error.message || 'Unable to create a bulk trade proposal.');
-        if (!response?.proposal?.id || response.proposal.ask_price === undefined) throw new Error('Deriv returned an invalid bulk trade proposal.');
-        return response.proposal;
-    }));
-
-    // Wait until every quote is ready, then fire all purchases together on the same live tick.
-    await waitForNextMarketTick(api, symbol);
-    const buyResults = await Promise.allSettled(proposals.map(async proposal => {
-        const response = await api.send({ buy: proposal.id, price: proposal.ask_price });
-        if (response?.error) throw new Error(response.error.message || 'Unable to purchase a bulk contract.');
-        if (!response?.buy?.contract_id) throw new Error('Deriv did not confirm the purchased bulk contract.');
-        return response.buy;
-    }));
-    const buys = buyResults.filter((result: any) => result.status === 'fulfilled').map((result: any) => result.value);
-    if (buys.length === 0) {
-        const failed = buyResults.find((result: any) => result.status === 'rejected') as any;
-        throw new Error(failed?.reason?.message || 'Deriv did not confirm any bulk purchases.');
-    }
-    return { buys, requestedCount: count };
-};
-
 const waitForContractResult = async (api: any, contractId: string) => {
-    const started = Date.now();
-    while (Date.now() - started < 120000) {
-        const response = await api.send({ proposal_open_contract: 1, contract_id: contractId });
-        if (response?.error) throw new Error(response.error.message || 'Unable to read contract result.');
-        const contract = response?.proposal_open_contract;
-        if (contract && (contract.is_sold || contract.status === 'won' || contract.status === 'lost')) return contract;
-        await sleep(500);
-    }
-    throw new Error('Timed out waiting for the Deriv contract result.');
+    const response = await requestDeriv(
+        api,
+        { proposal_open_contract: 1, contract_id: Number(contractId), subscribe: 1 },
+        'proposal_open_contract',
+        message => String(message?.proposal_open_contract?.contract_id) === String(contractId) &&
+            Boolean(message?.proposal_open_contract?.is_sold || ['won', 'lost'].includes(message?.proposal_open_contract?.status)),
+        120000
+    );
+    return response.proposal_open_contract;
 };
 
 const UltimateBot2026 = () => {
@@ -140,35 +105,30 @@ const UltimateBot2026 = () => {
     const status = useMemo(() => (running ? 'RUNNING' : 'READY'), [running]);
     useEffect(() => {
         let cancelled = false;
-        let stream: any;
-        let observer: any;
+        let subscription: any;
         let retryTimer: ReturnType<typeof setTimeout>;
         let pipSize = 2;
         const symbol = VOLATILITY_SYMBOLS[volatility];
         const loadTicks = async () => {
             const api = api_base.api;
-            if (!api || api.connection?.readyState !== WebSocket.OPEN) {
+            if (!api || api.connection?.readyState !== 1 || !api_base.is_authorized) {
                 if (!cancelled) {
                     setAnalysisStatus('Log in to stream live digit analysis');
-                    retryTimer = setTimeout(loadTicks, 1000);
+                    retryTimer = setTimeout(loadTicks, 1500);
                 }
                 return;
             }
             try {
                 setAnalysisStatus('Loading tick history…');
-                const history = await api.send({ ticks_history: symbol, count: Math.max(60, Number(sample) || 3000), end: 'latest', style: 'ticks' });
+                const history = await requestDeriv(api, { ticks_history: symbol, count: Math.max(60, Number(sample) || 3000), end: 'latest', style: 'ticks' }, 'history');
                 if (cancelled) return;
-                if (history?.error) throw new Error(history.error.message || 'Tick history request failed.');
                 pipSize = Number(history?.pip_size ?? 2);
                 const prices: number[] = history?.history?.prices || [];
-                const digits = prices.map(price => Number(Number(price).toFixed(pipSize).slice(-1)));
-                setRecentDigits(digits);
-                setAnalysisStatus(digits.length ? `Analysing ${digits.length} recent ticks` : 'No tick history returned');
-                stream = await api.subscribe({ ticks: symbol });
-                observer = stream.subscribe((message: any) => {
-                    if (cancelled) return;
-                    if (message?.error) { setAnalysisStatus(message.error.message || 'Live tick stream error'); return; }
-                    if (!message?.tick) return;
+                setRecentDigits(prices.map(price => Number(Number(price).toFixed(pipSize).slice(-1))));
+                setAnalysisStatus(prices.length ? `Analysing ${prices.length} recent ticks` : 'No tick history returned');
+                api.send({ ticks: symbol, subscribe: 1 });
+                subscription = api.onMessage().subscribe((message: any) => {
+                    if (cancelled || message?.msg_type !== 'tick' || message?.tick?.symbol !== symbol) return;
                     const quote = Number(message.tick.quote);
                     const precision = Number(message.tick.pip_size ?? pipSize);
                     const digit = Number(quote.toFixed(precision).slice(-1));
@@ -186,11 +146,12 @@ const UltimateBot2026 = () => {
         return () => {
             cancelled = true;
             clearTimeout(retryTimer);
-            try { observer?.unsubscribe?.(); } catch { /* already closed */ }
-            try { stream?.unsubscribe?.(); } catch { /* already closed */ }
+            subscription?.unsubscribe?.();
+            const api = api_base.api;
+            if (api?.connection?.readyState === 1) api.send({ forget_all: 'ticks' });
         };
-    }, [volatility, sample]);
-
+    }, [volatility, sample, api_base.is_authorized]);
+    
     const digitCounts = useMemo(() => {
         const counts = Array(10).fill(0);
         recentDigits.forEach(digit => { if (digit >= 0 && digit <= 9) counts[digit] += 1; });
