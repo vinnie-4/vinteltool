@@ -446,9 +446,13 @@ const FloatingAIScanner = () => {
             setOpen(false);
             setShowLoadConfig(false);
             setRecoveryExpanded(false);
-        } catch (e) {
+        } catch (e: any) {
             console.error('AI Scanner Blockly load failed:', e);
-            setError('Could not load the scanner bot into Blockly. Open Bot Builder and try Load Scanner Bot again.');
+            const message = typeof e?.message === 'string' && e.message.trim()
+                ? e.message
+                : 'Unknown Blockly loading error. Open Bot Builder and try again.';
+            setError(`Could not load scanner bot: ${message}`);
+            setScanMessage('Scanner bot load failed');
         }
     }, [analysis.signal, configDuration, configMartingale, configStake, configStopLoss, configTakeProfit, configRecoveryDigits, configRecoveryEnabled, dashboard, market, quick_strategy]);
 
