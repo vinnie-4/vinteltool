@@ -438,17 +438,21 @@ const FloatingAIScanner = () => {
                 loss: Math.max(0, Number(configStopLoss) || 10),
                 martingale: true,
                 recoveryMode: configRecoveryEnabled,
-                recoveryPurchase: 'Trade Even',
-                recoveryPrediction: 0,
+                recoveryPurchase: side,
+                recoveryPrediction: prediction,
                 analysisEnabled: configRecoveryEnabled,
                 analysisCondition: { mode: 'even-odd', streak: Math.max(2, Math.min(30, Number(configRecoveryDigits) || 2)), onlyAfterLoss: true },
             });
             setOpen(false);
             setShowLoadConfig(false);
             setRecoveryExpanded(false);
-        } catch (e) {
+        } catch (e: any) {
             console.error('AI Scanner Blockly load failed:', e);
-            setError('Could not load the scanner bot into Blockly. Open Bot Builder and try Load Scanner Bot again.');
+            const message = typeof e?.message === 'string' && e.message.trim()
+                ? e.message
+                : 'Unknown Blockly loading error. Open Bot Builder and try again.';
+            setError(`Could not load scanner bot: ${message}`);
+            setScanMessage('Scanner bot load failed');
         }
     }, [analysis.signal, configDuration, configMartingale, configStake, configStopLoss, configTakeProfit, configRecoveryDigits, configRecoveryEnabled, dashboard, market, quick_strategy]);
 
@@ -491,9 +495,13 @@ const FloatingAIScanner = () => {
                         <p>If the last N digits are all odd, the recovery trade is Even. If they are all even, the recovery trade is Odd.</p>
                         <label>Analyse last <input type='number' value={configRecoveryDigits} onChange={e => setConfigRecoveryDigits(e.target.value)} min='2' max='30' /> consecutive digits</label>
                     </div>}
+                    {error && <p className='ai-scanner__error' role='alert'>{error}</p>}
+                    {scanMessage && <p className='ai-scanner__status' aria-live='polite'>{scanMessage}</p>}
                     <div className='ai-scanner__config-actions'>
                         <button type='button' onClick={() => setShowLoadConfig(false)}>Back</button>
-                        <button type='button' onClick={() => void loadScannerBot()}>Load</button>
+                        <button type='button' onClick={() => void loadScannerBot()} disabled={scanMessage === 'Loading scanner strategy into Blockly…'}>
+                            {scanMessage === 'Loading scanner strategy into Blockly…' ? 'Loading…' : 'Load'}
+                        </button>
                     </div>
                 </section> : <>
                 <div className='ai-scanner__trade-types' role='group' aria-label='Trade type to scan'>
