@@ -145,17 +145,20 @@ const UltimateBot2026 = () => {
         }
         if (tradeLockRef.current) return;
 
-        const amount = Number(stake);
+        const baseAmount = Number(stake);
         const count = Math.max(1, Math.floor(Number(maxTrades) || 1));
         const ticks = Math.max(1, Math.floor(Number(duration) || 1));
         const tp = Math.max(0, Number(takeProfit) || 0);
         const sl = Math.max(0, Number(stopLoss) || 0);
         const baseMultiplier = Math.max(1, Number(multiplier) || 2);
         const recoveryLimit = Math.max(0, Math.floor(Number(maxRecovery) || 0));
+        const waitSeconds = Math.max(0, Number(cooldown) || 0);
+        const barrier = Number(prediction);
 
-        if (!Number.isFinite(amount) || amount <= 0) { window.alert('Enter a valid stake greater than 0.'); return; }
+        if (!Number.isFinite(baseAmount) || baseAmount <= 0) { window.alert('Enter a valid stake greater than 0.'); return; }
         if (!['Even/Odd', 'Over/Under'].includes(strategy)) { window.alert(`${strategy} live execution is not enabled yet. Select Even/Odd or Over/Under for real trades.`); return; }
-        if (strategy === 'Over/Under' && (!Number.isInteger(Number(prediction)) || Number(prediction) < 0 || Number(prediction) > 9)) { window.alert('Prediction must be a digit from 0 to 9.'); return; }
+        if (strategy === 'Over/Under' && (!Number.isInteger(barrier) || barrier < 0 || barrier > 9)) { window.alert('Prediction must be a digit from 0 to 9.'); return; }
+        if (!Number.isFinite(Number(takeProfit)) || Number(takeProfit) < 0 || !Number.isFinite(Number(stopLoss)) || Number(stopLoss) < 0) { window.alert('Take profit and stop loss must be zero or greater.'); return; }
 
         tradeLockRef.current = true;
         stopRequestedRef.current = false;
@@ -165,24 +168,35 @@ const UltimateBot2026 = () => {
 
         try {
             const api = await waitForTradingApi();
-            const contractType = strategy === 'Even/Odd' ? CONTRACT_TYPES[tradeType] : CONTRACT_TYPES[tradeType === 'Under' ? 'Under' : 'Over'];
+            const contractType = strategy === 'Even/Odd'
+                ? CONTRACT_TYPES[tradeType]
+                : CONTRACT_TYPES[tradeType === 'Under' ? 'Under' : 'Over'];
             const symbol = VOLATILITY_SYMBOLS[volatility];
             const currency = api_base.account_info?.currency || 'USD';
-            const batch = await buyContractBatch(api, contractType, amount, symbol, ticks, Number(prediction), count);
-            const buys = batch.buys;
-            setTradesPlaced(buys.length);
-            if (buys.length < batch.requestedCount) setLastError(`Only ${buys.length} of ${batch.requestedCount} contracts were confirmed by Deriv; tracking all confirmed purchases.`);
-            buys.forEach(buy => {
+            let currentStake = baseAmount;
+            let consecutiveLosses = 0;
+            let sessionProfit = 0;
+            let completedTrades = 0;
+
+            for (let index = 0; index < count && !stopRequestedRef.current; index += 1) {
+                if (tp > 0 && sessionProfit >= tp) break;
+                if (sl > 0 && sessionProfit <= -Math.abs(sl)) break;
+                if (currentStake <= 0 || !Number.isFinite(currentStake)) throw new Error('Calculated stake is invalid; trading stopped for safety.');
+
+                const buy = await buyContract(api, contractType, currentStake, symbol, ticks, barrier);
+                completedTrades += 1;
+                setTradesPlaced(completedTrades);
                 transactions.pushTransaction({
                     contract_id: Number(buy.contract_id),
                     transaction_ids: { buy: Number(buy.transaction_id) || undefined },
                     contract_type: contractType, underlying_symbol: symbol, currency,
-                    buy_price: Number(buy.buy_price ?? amount), payout: Number(buy.payout ?? 0),
+                    buy_price: Number(buy.buy_price ?? currentStake), payout: Number(buy.payout ?? 0),
                     profit: 0, is_completed: false, date_start: Math.floor(Date.now() / 1000),
                 });
-            });
-            const results = await Promise.all(buys.map(async buy => {
+
                 const result = await waitForContractResult(api, String(buy.contract_id));
+                const profit = Number(result.profit) || 0;
+                sessionProfit = Number((sessionProfit + profit).toFixed(2));
                 transactions.pushTransaction({
                     ...result,
                     contract_id: Number(result.contract_id ?? buy.contract_id),
@@ -194,18 +208,37 @@ const UltimateBot2026 = () => {
                     contract_type: result.contract_type || contractType,
                     underlying_symbol: result.underlying || result.underlying_symbol || symbol,
                     currency: result.currency || currency,
-                    buy_price: Number(result.buy_price ?? buy.buy_price ?? amount),
+                    buy_price: Number(result.buy_price ?? buy.buy_price ?? currentStake),
                     payout: Number(result.payout ?? buy.payout ?? 0),
-                    profit: Number(result.profit) || 0,
-                    entry_spot: result.entry_tick_display_value ?? result.entry_tick ?? result.entry_spot,
+                    profit, entry_spot: result.entry_tick_display_value ?? result.entry_tick ?? result.entry_spot,
                     exit_spot: result.exit_tick_display_value ?? result.exit_tick ?? result.exit_spot,
                     is_completed: true, date_start: result.date_start || Math.floor(Date.now() / 1000),
                 });
-                return result;
-            }));
-            const sessionProfit = results.reduce((sum, result) => sum + (Number(result.profit) || 0), 0);
-            if (tp > 0 && sessionProfit >= tp) console.info('[Bulk Trader] Batch take-profit reached.');
-            if (sl > 0 && sessionProfit <= -Math.abs(sl)) console.info('[Bulk Trader] Batch stop-loss reached.');
+
+                if (profit > 0) {
+                    consecutiveLosses = 0;
+                    currentStake = recovery === 'Anti-Martingale' ? Number((currentStake * baseMultiplier).toFixed(2)) : baseAmount;
+                } else {
+                    consecutiveLosses += 1;
+                    if (recovery === 'Martingale' || recovery === 'Custom Multiplier') {
+                        currentStake = consecutiveLosses > recoveryLimit ? baseAmount : Number((currentStake * baseMultiplier).toFixed(2));
+                        if (consecutiveLosses > recoveryLimit) consecutiveLosses = 0;
+                    } else {
+                        currentStake = baseAmount;
+                    }
+                }
+
+                if (tp > 0 && sessionProfit >= tp) break;
+                if (sl > 0 && sessionProfit <= -Math.abs(sl)) break;
+                if (!stopRequestedRef.current && index < count - 1 && waitSeconds > 0) {
+                    await sleep(waitSeconds * 1000);
+                }
+            }
+
+            if (stopRequestedRef.current) setLastError('Stop requested. Any open contract was allowed to finish before stopping.');
+            else if (tp > 0 && sessionProfit >= tp) setLastError(`Take-profit limit reached: +${sessionProfit.toFixed(2)} ${currency}.`);
+            else if (sl > 0 && sessionProfit <= -Math.abs(sl)) setLastError(`Stop-loss limit reached: ${sessionProfit.toFixed(2)} ${currency}.`);
+            else if (completedTrades > 0) setLastError(`Session finished: ${completedTrades} trade(s), P/L ${sessionProfit >= 0 ? '+' : ''}${sessionProfit.toFixed(2)} ${currency}.`);
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Trade failed.';
             setLastError(message);
