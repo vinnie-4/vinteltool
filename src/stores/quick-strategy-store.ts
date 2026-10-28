@@ -93,13 +93,19 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
         await this.importPendingFreeBot();
     };
 
-    waitForWorkspace = async () => {
-        // Keep waiting while the app initializes; do not surface a timeout error.
-        while (true) {
-            const workspace = window.Blockly?.derivWorkspace;
-            if (workspace && window.Blockly?.utils?.xml) return workspace;
+    waitForWorkspace = async (timeoutMs = 15000) => {
+        // The Bot Builder tab can take a moment to mount Blockly. Wait for it,
+        // but fail clearly instead of leaving the Load button spinning forever.
+        const startedAt = Date.now();
+        while (Date.now() - startedAt < timeoutMs) {
+            const Blockly = window.Blockly;
+            const workspace = Blockly?.derivWorkspace;
+            if (workspace && Blockly?.utils?.xml?.textToDom && Blockly?.Xml?.domToWorkspace) {
+                return workspace;
+            }
             await new Promise<void>(resolve => setTimeout(resolve, 50));
         }
+        throw new Error('Bot Builder workspace did not become ready within 15 seconds. Open Bot Builder, wait for the blocks to appear, then try Load again.');
     };
 
     importPendingFreeBot = async () => {
@@ -258,10 +264,23 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
     </block></statement>
   </block>
 </xml>`;
-            const strategyDom = window.Blockly.utils.xml.textToDom(xml);
+            const Blockly = window.Blockly;
+            if (!Blockly?.utils?.xml?.textToDom || !Blockly?.Xml?.domToWorkspace) {
+                throw new Error('Blockly XML tools are not ready. Please reopen Bot Builder and try again.');
+            }
+            const strategyDom = Blockly.utils.xml.textToDom(xml);
             const blockTypes = Array.from(strategyDom.querySelectorAll('block')).map((block: Element) => block.getAttribute('type')).filter(Boolean);
+            if (!blockTypes.includes('trade_definition') || !blockTypes.includes('purchase') || !blockTypes.includes('before_purchase')) {
+                throw new Error('The scanner strategy is incomplete and was not loaded.');
+            }
             removeLimitedBlocks(workspace, blockTypes);
             loadBlocks(strategyDom, null, `vintel-quick-builder-${Date.now()}`, workspace);
+            const loadedBlocks = workspace.getAllBlocks(false);
+            const requiredLoadedTypes = ['trade_definition', 'trade_definition_market', 'trade_definition_tradetype', 'trade_definition_contracttype', 'purchase', 'before_purchase'];
+            const missingLoadedTypes = requiredLoadedTypes.filter(type => !loadedBlocks.some(block => block.type === type));
+            if (missingLoadedTypes.length) {
+                throw new Error(`Blockly did not create the expected strategy blocks: ${missingLoadedTypes.join(', ')}.`);
+            }
             // Keep the same values in the native Quick Strategy form state used by
             // Bot Builder/Run, not only in the Quick Bot Builder component.
             const nativeFormData = {
