@@ -66,6 +66,7 @@ export default Engine =>
                             const baseStake = Number(this.analysisRecoveryBaseStake) || Number(this.tradeOptions.amount) || 0;
                             const multiplier = Math.max(1, Math.min(5, Number(settings.multiplier) || 2));
                             const maxStake = Math.max(baseStake, Number(settings.maxStake) || baseStake);
+                            const currentStake = Math.max(baseStake, Number(this.tradeOptions.amount) || baseStake);
                             const profit = Number(contract.profit);
                             if (settings.recoveryOnlyAfterLoss) {
                                 this.analysisRecoveryPending = profit < 0;
@@ -83,7 +84,11 @@ export default Engine =>
                                     }
                                 } catch {}
                             }
-                            this.tradeOptions.amount = profit < 0 ? Math.min(baseStake * multiplier, maxStake) : baseStake;
+                            // Increase from the current stake after each consecutive loss,
+                            // cap it at maxStake, and reset to the original stake after a win.
+                            this.tradeOptions.amount = profit < 0
+                                ? Math.min(currentStake * multiplier, maxStake)
+                                : baseStake;
                         }
                     }
 
