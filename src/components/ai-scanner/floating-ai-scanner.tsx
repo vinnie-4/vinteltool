@@ -415,10 +415,10 @@ const FloatingAIScanner = () => {
                     recoveryOnlyAfterLoss: true,
                     primaryContractType: side === 'Over' ? 'DIGITOVER' : 'DIGITUNDER',
                     primaryPrediction: prediction,
-                    multiplier: Math.max(1, Number(configMartingale) || 2),
+                    multiplier: Math.min(5, Math.max(1, Number(configMartingale) || 2)),
                     maxStake: Math.max(
                         Number(configStake) || 0.5,
-                        Math.min(1000, (Number(configStake) || 0.5) * Math.pow(Math.max(1, Number(configMartingale) || 2), 5))
+                        Math.min(1000, (Number(configStake) || 0.5) * Math.pow(Math.min(5, Math.max(1, Number(configMartingale) || 2)), 5))
                     ),
                 }));
             } else {
@@ -436,7 +436,7 @@ const FloatingAIScanner = () => {
                 durationType: 't',
                 duration: Math.max(1, Number(configDuration) || 1),
                 stake: Math.max(0.01, Number(configStake) || 0.5),
-                multiplier: Math.max(1, Number(configMartingale) || 2),
+                multiplier: Math.min(5, Math.max(1, Number(configMartingale) || 2)),
                 profit: Math.max(0, Number(configTakeProfit) || 5),
                 loss: Math.max(0, Number(configStopLoss) || 10),
                 martingale: true,
@@ -478,7 +478,7 @@ const FloatingAIScanner = () => {
                         <label>Ticks<input type='number' value={configDuration} onChange={e => setConfigDuration(e.target.value)} min='1' step='1' /></label>
                     </div>
                     <div className='ai-scanner__config-row'>
-                        <label>Martingale<input type='number' value={configMartingale} onChange={e => setConfigMartingale(e.target.value)} min='1' step='0.1' /></label>
+                        <label>Martingale<input type='number' value={configMartingale} onChange={e => setConfigMartingale(e.target.value)} min='1' max='5' step='0.1' /></label>
                         <label>Stop loss<input type='number' value={configStopLoss} onChange={e => setConfigStopLoss(e.target.value)} min='0' step='0.1' /></label>
                         <label>Take profit<input type='number' value={configTakeProfit} onChange={e => setConfigTakeProfit(e.target.value)} min='0' step='0.1' /></label>
                         <button type='button' className={'ai-scanner__recovery-toggle' + (recoveryExpanded ? ' is-expanded' : '')} onClick={() => setRecoveryExpanded(value => !value)} aria-expanded={recoveryExpanded} >Recovery Mode — Even Trade <span>{recoveryExpanded ? '−' : '+'}</span></button>
