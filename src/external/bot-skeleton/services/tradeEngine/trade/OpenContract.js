@@ -69,15 +69,20 @@ export default Engine =>
                             const currentStake = Math.max(baseStake, Number(this.tradeOptions.amount) || baseStake);
                             const profit = Number(contract.profit);
                             if (settings.recoveryOnlyAfterLoss) {
-                                this.analysisRecoveryPending = profit < 0;
+                                // A Digit Even recovery is one-shot. Regardless of its
+                                // result, the next purchase returns to the configured primary
+                                // Over/Under contract; only a later primary-contract loss
+                                // arms another recovery attempt.
+                                const isEvenRecovery = this.analysisRecoveryTradeInProgress &&
+                                    String(contract.contract_type || '').toUpperCase() === 'DIGITEVEN';
+                                this.analysisRecoveryPending = isEvenRecovery ? false : profit < 0;
                                 try {
-                                    if (profit < 0) {
+                                    if (this.analysisRecoveryPending) {
                                         window.localStorage.setItem('vinteltool-recovery-analysis-state', JSON.stringify({
                                             pending: true,
                                             symbol: String(contract.underlying_symbol || contract.underlying || this.symbol || ''),
                                             contractId: String(contract.contract_id),
-                                            streak: Math.max(2, Math.min(30, Number(settings.streak) || 2)),
-                                            mode: 'even-odd',
+                                            mode: 'even-trade',
                                         }));
                                     } else {
                                         window.localStorage.removeItem('vinteltool-recovery-analysis-state');
