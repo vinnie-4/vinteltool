@@ -70,23 +70,22 @@ window.Blockly.Blocks.purchase = {
             const purchase_type_list = this.getField('PURCHASE_LIST');
             const purchase_type = purchase_type_list.getValue();
             const contract_type_options = getContractTypeOptions(contract_type, trade_type);
-            // The AI Scanner's recovery branch is a deliberate cross-contract switch:
-            // its primary strategy can be Over/Under, but after a loss it may purchase
-            // Digit Even when the one permitted latest-digit check is even. Preserve
-            // the explicit EVEN option for that generated recovery block; normal
-            // Blockly purchase blocks keep the standard contract-type restrictions.
+            // The AI Scanner recovery block must be allowed to purchase Digit Even
+            // even when the primary trade definition is Over/Under (for example Under 7).
+            // Force the recovery field to DIGITEVEN so Blockly cannot silently replace it
+            // with the primary contract when rebuilding its dropdown options.
             let scannerRecoveryEnabled = false;
             try {
                 const settings = JSON.parse(window.localStorage.getItem('vinteltool-analysis-recovery-settings') || 'null');
                 scannerRecoveryEnabled = Boolean(settings?.enabled && settings?.recovery && settings?.mode === 'even-trade');
             } catch {}
-            if (this.id === 'vintel_qbb_purchase_even' && scannerRecoveryEnabled &&
-                !contract_type_options.some(option => option[1] === 'EVEN')) {
+            const isScannerRecoveryBlock = this.id === 'vintel_qbb_purchase_even' && scannerRecoveryEnabled;
+            if (isScannerRecoveryBlock && !contract_type_options.some(option => option[1] === 'DIGITEVEN')) {
                 contract_type_options.push(['Even', 'DIGITEVEN']);
             }
 
             purchase_type_list.updateOptions(contract_type_options, {
-                default_value: purchase_type,
+                default_value: isScannerRecoveryBlock ? 'DIGITEVEN' : purchase_type,
                 event_group: event.group,
                 should_pretend_empty: true,
             });
