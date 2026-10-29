@@ -204,7 +204,9 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             const recoveryPurchase = String(cfg.recoveryPurchase || purchase);
             const recoveryPurchaseCode = contractMap[recoveryPurchase] || purchaseMap[recoveryPurchase] || purchaseCode;
             const prediction = Math.max(0, Math.min(9, Number(cfg.prediction ?? 5)));
-            const recoveryPrediction = Math.max(0, Math.min(9, Number(cfg.recoveryPrediction ?? prediction)));
+            // Keep the Blockly prediction valid (1–9) even for Even/Odd recovery,
+            // whose contract itself does not use a barrier.
+            const recoveryPrediction = Math.max(1, Math.min(9, Number(cfg.recoveryPrediction ?? prediction) || prediction || 1));
             const recoveryEnabled = Boolean(cfg.recoveryMode);
             const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <xml xmlns="http://www.w3.org/1999/xhtml" is_dbot="true" collection="false">
