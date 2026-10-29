@@ -197,7 +197,7 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
                 Even: 'DIGITEVEN', Odd: 'DIGITODD', Over: 'DIGITOVER', Under: 'DIGITUNDER',
                 Rise: 'CALL', Fall: 'PUT', Matches: 'DIGITMATCH', Differs: 'DIGITDIFF',
             };
-            const purchaseCode = contractMap[contract] || purchaseMap[purchase] || 'EVEN';
+            const purchaseCode = contractMap[contract] || purchaseMap[purchase] || 'DIGITEVEN';
             const marketCode = marketGroup === 'Derived' ? 'synthetic_index' : marketGroup === 'Forex' ? 'forex' : 'commodities';
             const submarketCode = marketGroup === 'Derived' ? 'random_index' : marketGroup === 'Forex' ? 'major_pairs' : 'metals';
             const safe = (value: string) => value.replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[ch] || ch));
