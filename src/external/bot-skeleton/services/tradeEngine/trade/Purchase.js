@@ -30,7 +30,7 @@ export default Engine =>
         async waitForAnalysisSignal(contract_type) {
             const settings = readAnalysisSettings();
             const type = String(contract_type || '').toUpperCase();
-            if (!settings || !this.symbol || !['DIGITEVEN', 'DIGITODD', 'DIGITOVER', 'DIGITUNDER'].includes(type)) return true;
+            if (!settings || settings.mode === 'even-trade' || !this.symbol || !['DIGITEVEN', 'DIGITODD', 'DIGITOVER', 'DIGITUNDER'].includes(type)) return true;
             const mode = settings.mode === 'over-under' ? 'over-under' : 'even-odd';
             const isEvenOddType = type === 'DIGITEVEN' || type === 'DIGITODD';
             const isOverUnderType = type === 'DIGITOVER' || type === 'DIGITUNDER';
@@ -64,6 +64,15 @@ export default Engine =>
         async waitForRecoveryContractType(contract_type) {
             const settings = readAnalysisSettings();
             if (!settings?.enabled || !settings?.recovery || !settings?.recoveryOnlyAfterLoss || !this.analysisRecoveryPending) return contract_type;
+            if (settings.mode === 'even-trade') {
+                this.analysisRecoveryPending = false;
+                this.analysisRecoveryTradeInProgress = true;
+                try {
+                    window.localStorage.setItem('vinteltool-analysis-win-beep-eligible', 'true');
+                    window.localStorage.removeItem('vinteltool-recovery-analysis-state');
+                } catch {}
+                return 'DIGITEVEN';
+            }
             const streakLength = Math.max(2, Math.min(30, Number(settings.streak) || 2));
             const checkStreak = async () => {
                 const digits = await this.getLastDigitList();
@@ -160,7 +169,7 @@ export default Engine =>
                 });
             };
 
-            if (this.is_proposal_subscription_required) {
+            if (this.is_proposal_subscription_required && !this.analysisRecoveryTradeInProgress) {
                 const { id, askPrice } = this.selectProposal(contract_type);
 
                 const action = () => api_base.api.send({ buy: id, price: askPrice });
@@ -198,7 +207,10 @@ export default Engine =>
                     delayIndex++
                 ).then(onSuccess);
             }
-            const trade_option = tradeOptionToBuy(contract_type, this.tradeOptions);
+            const purchaseOptions = this.analysisRecoveryTradeInProgress && contract_type === 'DIGITEVEN'
+                ? { ...this.tradeOptions, prediction: undefined, barrierOffset: undefined, secondBarrierOffset: undefined }
+                : this.tradeOptions;
+            const trade_option = tradeOptionToBuy(contract_type, purchaseOptions);
             const action = () => api_base.api.send(trade_option);
 
             this.isSold = false;
