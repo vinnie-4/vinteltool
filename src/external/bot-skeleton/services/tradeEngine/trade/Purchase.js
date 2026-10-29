@@ -78,7 +78,11 @@ export default Engine =>
                 if (latestDigit === null || latestDigit % 2 !== 0) {
                     this.analysisRecoveryTradeInProgress = false;
                     try { window.localStorage.removeItem('vinteltool-recovery-analysis-state'); } catch {}
-                    return contract_type;
+                    // The Recovery Even Blockly block invokes this hook with EVEN.
+                    // If the one permitted digit check is odd, fall back to the
+                    // configured primary Over/Under contract for this cycle.
+                    const primaryType = String(settings.primaryContractType || '').toUpperCase();
+                    return ['DIGITOVER', 'DIGITUNDER'].includes(primaryType) ? primaryType : contract_type;
                 }
                 this.analysisRecoveryTradeInProgress = true;
                 try {
