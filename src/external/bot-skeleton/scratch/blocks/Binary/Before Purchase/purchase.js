@@ -82,7 +82,7 @@ window.Blockly.Blocks.purchase = {
             } catch {}
             if (this.id === 'vintel_qbb_purchase_even' && scannerRecoveryEnabled &&
                 !contract_type_options.some(option => option[1] === 'EVEN')) {
-                contract_type_options.push(['Even', 'EVEN']);
+                contract_type_options.push(['Even', 'DIGITEVEN']);
             }
 
             purchase_type_list.updateOptions(contract_type_options, {
