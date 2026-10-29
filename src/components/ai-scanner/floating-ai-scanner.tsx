@@ -413,8 +413,13 @@ const FloatingAIScanner = () => {
                     mode: 'even-trade',
                     recovery: true,
                     recoveryOnlyAfterLoss: true,
+                    primaryContractType: side === 'Over' ? 'DIGITOVER' : 'DIGITUNDER',
+                    primaryPrediction: prediction,
                     multiplier: Math.max(1, Number(configMartingale) || 2),
-                    maxStake: Math.max(Number(configStake) || 0.5, Number(configStake || 0.5) * (Number(configMartingale) || 2)),
+                    maxStake: Math.max(
+                        Number(configStake) || 0.5,
+                        Math.min(1000, (Number(configStake) || 0.5) * Math.pow(Math.max(1, Number(configMartingale) || 2), 5))
+                    ),
                 }));
             } else {
                 localStorage.setItem('vinteltool-analysis-recovery-settings', JSON.stringify({ enabled: false, recovery: false }));
