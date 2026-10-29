@@ -405,7 +405,7 @@ const FloatingAIScanner = () => {
                 enabled: true,
                 takeProfit: Math.max(0, Number(configTakeProfit) || 0),
                 stopLoss: Math.max(0, Number(configStopLoss) || 0),
-                stopAfterRecoveryWin: configRecoveryEnabled,
+                stopAfterRecoveryWin: false,
             }));
             if (configRecoveryEnabled) {
                 localStorage.setItem('vinteltool-analysis-recovery-settings', JSON.stringify({
