@@ -442,7 +442,7 @@ const FloatingAIScanner = () => {
                 martingale: true,
                 recoveryMode: configRecoveryEnabled,
                 recoveryPurchase: 'Trade Even',
-                recoveryPrediction: 0,
+                recoveryPrediction: prediction,
             });
             setOpen(false);
             setShowLoadConfig(false);
@@ -493,7 +493,7 @@ const FloatingAIScanner = () => {
                     </button>
                     {recoveryExpanded && <div className='ai-scanner__recovery-options'>
                         <strong>Recovery Mode — Even Trade</strong>
-                        <p>After a losing trade, the next recovery trade uses an Even contract. No consecutive-digit analysis is used.</p>
+                        <p>After a loss, the bot repeats Digit Even recovery trades until one wins, then resumes the scanned market's normal contract.</p>
                     </div>}
                     {error && <p className='ai-scanner__error' role='alert'>{error}</p>}
                     {scanMessage && <p className='ai-scanner__status' aria-live='polite'>{scanMessage}</p>}
