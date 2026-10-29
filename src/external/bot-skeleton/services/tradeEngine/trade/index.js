@@ -136,8 +136,11 @@ export default class TradeEngine extends Balance(Purchase(Sell(OpenContract(Prop
         this.tradeOptions = { ...validated_trade_options, symbol: this.options.symbol };
         this.analysisRecoveryBaseStake = Number(validated_trade_options.amount) || 0;
         this.analysisRecoveryLastContractId = null;
+        this.analysisRecoveryPending = false;
+        this.analysisRecoveryTradeInProgress = false;
         this.scannerRiskLimits = null;
         this.scannerSessionProfit = 0;
+        this.scannerRiskStopTriggered = false;
         try {
             const scannerLimits = JSON.parse(window.localStorage.getItem('vinteltool-scanner-risk-limits') || 'null');
             if (scannerLimits?.enabled) {
