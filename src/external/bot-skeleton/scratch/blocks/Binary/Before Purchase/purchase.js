@@ -70,6 +70,20 @@ window.Blockly.Blocks.purchase = {
             const purchase_type_list = this.getField('PURCHASE_LIST');
             const purchase_type = purchase_type_list.getValue();
             const contract_type_options = getContractTypeOptions(contract_type, trade_type);
+            // The AI Scanner's recovery branch is a deliberate cross-contract switch:
+            // its primary strategy can be Over/Under, but after a loss it may purchase
+            // Digit Even when the one permitted latest-digit check is even. Preserve
+            // the explicit EVEN option for that generated recovery block; normal
+            // Blockly purchase blocks keep the standard contract-type restrictions.
+            let scannerRecoveryEnabled = false;
+            try {
+                const settings = JSON.parse(window.localStorage.getItem('vinteltool-analysis-recovery-settings') || 'null');
+                scannerRecoveryEnabled = Boolean(settings?.enabled && settings?.recovery && settings?.mode === 'even-trade');
+            } catch {}
+            if (this.id === 'vintel_qbb_purchase_even' && scannerRecoveryEnabled &&
+                !contract_type_options.some(option => option[1] === 'EVEN')) {
+                contract_type_options.push(['Even', 'EVEN']);
+            }
 
             purchase_type_list.updateOptions(contract_type_options, {
                 default_value: purchase_type,
