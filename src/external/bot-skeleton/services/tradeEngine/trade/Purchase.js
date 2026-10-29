@@ -63,7 +63,7 @@ export default Engine =>
 
         async waitForRecoveryContractType(contract_type) {
             const settings = readAnalysisSettings();
-            if (!settings?.enabled || !settings?.recovery || !settings?.recoveryOnlyAfterLoss || !this.analysisRecoveryPending) return contract_type;
+            if (!settings?.enabled || !settings?.recovery || !settings?.recoveryOnlyAfterLoss) return contract_type;
             if (settings.mode === 'even-trade' && !this.analysisRecoveryPending) {
                 // After the one Even recovery purchase settles, resume the configured
                 // primary Over/Under contract even if Blockly still selects its recovery branch.
@@ -75,6 +75,7 @@ export default Engine =>
                 }
                 return contract_type;
             }
+            if (!this.analysisRecoveryPending) return contract_type;
             if (settings.mode === 'even-trade') {
                 // One-shot check: inspect only the latest available digit after a loss.
                 let latestDigit = null;
