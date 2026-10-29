@@ -189,12 +189,12 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             const category = tradeFamily === 'Up/Down' || tradeType === 'Rise/Fall' ? 'callput' : 'digits';
             const tradeTypeCode = tradeType === 'Over/Under' ? 'overunder' : tradeType === 'Matches/Differs' ? 'matchdiff' : tradeType === 'Rise/Fall' ? 'callput' : 'evenodd';
             const purchaseMap: Record<string, string> = {
-                'Trade Even': 'EVEN', Even: 'EVEN', 'Trade Odd': 'ODD', Odd: 'ODD',
+                'Trade Even': 'DIGITEVEN', Even: 'DIGITEVEN', 'Trade Odd': 'DIGITODD', Odd: 'DIGITODD',
                 Over: 'DIGITOVER', Under: 'DIGITUNDER', Matches: 'DIGITMATCH', Differs: 'DIGITDIFF',
                 'Trade Rise': 'CALL', Rise: 'CALL', 'Trade Fall': 'PUT', Fall: 'PUT',
             };
             const contractMap: Record<string, string> = {
-                Even: 'EVEN', Odd: 'ODD', Over: 'DIGITOVER', Under: 'DIGITUNDER',
+                Even: 'DIGITEVEN', Odd: 'DIGITODD', Over: 'DIGITOVER', Under: 'DIGITUNDER',
                 Rise: 'CALL', Fall: 'PUT', Matches: 'DIGITMATCH', Differs: 'DIGITDIFF',
             };
             const purchaseCode = contractMap[contract] || purchaseMap[purchase] || 'EVEN';
