@@ -77,25 +77,9 @@ export default Engine =>
             }
             if (!this.analysisRecoveryPending) return contract_type;
             if (settings.mode === 'even-trade') {
-                // One-shot check: inspect only the latest available digit after a loss.
-                let latestDigit = null;
-                try {
-                    const digits = await this.getLastDigitList();
-                    if (Array.isArray(digits) && digits.length) {
-                        const value = Number(digits[digits.length - 1]);
-                        if (Number.isInteger(value) && value >= 0 && value <= 9) latestDigit = value;
-                    }
-                } catch {}
+                // Recovery is contract-based, not digit-filtered: after a loss,
+                // keep purchasing Digit Even until a recovery contract wins.
                 this.analysisRecoveryPending = false;
-                if (latestDigit === null || latestDigit % 2 !== 0) {
-                    this.analysisRecoveryTradeInProgress = false;
-                    try { window.localStorage.removeItem('vinteltool-recovery-analysis-state'); } catch {}
-                    // The Recovery Even Blockly block invokes this hook with EVEN.
-                    // If the one permitted digit check is odd, fall back to the
-                    // configured primary Over/Under contract for this cycle.
-                    const primaryType = String(settings.primaryContractType || '').toUpperCase();
-                    return ['DIGITOVER', 'DIGITUNDER'].includes(primaryType) ? primaryType : contract_type;
-                }
                 this.analysisRecoveryTradeInProgress = true;
                 try {
                     window.localStorage.setItem('vinteltool-analysis-win-beep-eligible', 'true');
