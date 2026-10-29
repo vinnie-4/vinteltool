@@ -65,7 +65,21 @@ export default Engine =>
             const settings = readAnalysisSettings();
             if (!settings?.enabled || !settings?.recovery || !settings?.recoveryOnlyAfterLoss || !this.analysisRecoveryPending) return contract_type;
             if (settings.mode === 'even-trade') {
+                // One-shot check: inspect only the latest available digit after a loss.
+                let latestDigit = null;
+                try {
+                    const digits = await this.getLastDigitList();
+                    if (Array.isArray(digits) && digits.length) {
+                        const value = Number(digits[digits.length - 1]);
+                        if (Number.isInteger(value) && value >= 0 && value <= 9) latestDigit = value;
+                    }
+                } catch {}
                 this.analysisRecoveryPending = false;
+                if (latestDigit === null || latestDigit % 2 !== 0) {
+                    this.analysisRecoveryTradeInProgress = false;
+                    try { window.localStorage.removeItem('vinteltool-recovery-analysis-state'); } catch {}
+                    return contract_type;
+                }
                 this.analysisRecoveryTradeInProgress = true;
                 try {
                     window.localStorage.setItem('vinteltool-analysis-win-beep-eligible', 'true');
