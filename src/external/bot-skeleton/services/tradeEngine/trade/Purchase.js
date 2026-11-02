@@ -64,10 +64,40 @@ export default Engine =>
         async waitForRecoveryContractType(contract_type) {
             const settings = readAnalysisSettings();
             if (!settings?.enabled || !settings?.recovery || !settings?.recoveryOnlyAfterLoss) return contract_type;
-            if (settings.mode === 'even-trade' && !this.analysisRecoveryPending) {
-                // After the one Even recovery purchase settles, resume the configured
-                // primary Over/Under contract even if Blockly still selects its recovery branch.
+
+            // Engine flags are fast in-memory state; the persisted marker is the
+            // durable fallback if Blockly rebuilds the purchase branch or an event
+            // arrives before the next purchase callback reads the engine flag.
+            let recoveryState = null;
+            try {
+                recoveryState = JSON.parse(window.localStorage.getItem('vinteltool-recovery-analysis-state') || 'null');
+            } catch {}
+            const recoveryPending = Boolean(this.analysisRecoveryPending || recoveryState?.pending);
+            const recoveryInProgress = Boolean(this.analysisRecoveryTradeInProgress || recoveryState?.inProgress);
+
+            if (settings.mode === 'even-trade') {
                 const primaryType = String(settings.primaryContractType || '').toUpperCase();
+                if (recoveryPending) {
+                    // Always override the Blockly purchase type after a loss.
+                    this.analysisRecoveryPending = false;
+                    this.analysisRecoveryTradeInProgress = true;
+                    try {
+                        window.localStorage.setItem('vinteltool-recovery-analysis-state', JSON.stringify({
+                            ...(recoveryState || {}),
+                            pending: false,
+                            inProgress: true,
+                            mode: 'even-trade',
+                        }));
+                        window.localStorage.setItem('vinteltool-analysis-win-beep-eligible', 'true');
+                    } catch {}
+                    return 'DIGITEVEN';
+                }
+                if (recoveryInProgress) {
+                    // While recovery is active, do not allow the primary contract
+                    // to leak through, even if Blockly supplies Under/Over again.
+                    this.analysisRecoveryTradeInProgress = true;
+                    return 'DIGITEVEN';
+                }
                 if (String(contract_type || '').toUpperCase() === 'DIGITEVEN' &&
                     ['DIGITOVER', 'DIGITUNDER'].includes(primaryType)) {
                     this.analysisRecoveryTradeInProgress = false;
@@ -75,18 +105,7 @@ export default Engine =>
                 }
                 return contract_type;
             }
-            if (!this.analysisRecoveryPending) return contract_type;
-            if (settings.mode === 'even-trade') {
-                // Recovery is contract-based, not digit-filtered: after a loss,
-                // keep purchasing Digit Even until a recovery contract wins.
-                this.analysisRecoveryPending = false;
-                this.analysisRecoveryTradeInProgress = true;
-                try {
-                    window.localStorage.setItem('vinteltool-analysis-win-beep-eligible', 'true');
-                    window.localStorage.removeItem('vinteltool-recovery-analysis-state');
-                } catch {}
-                return 'DIGITEVEN';
-            }
+            if (!recoveryPending) return contract_type;
             const streakLength = Math.max(2, Math.min(30, Number(settings.streak) || 2));
             const checkStreak = async () => {
                 const digits = await this.getLastDigitList();

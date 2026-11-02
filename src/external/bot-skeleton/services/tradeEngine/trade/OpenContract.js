@@ -79,12 +79,15 @@ export default Engine =>
                                     if (this.analysisRecoveryPending) {
                                         window.localStorage.setItem('vinteltool-recovery-analysis-state', JSON.stringify({
                                             pending: true,
+                                            inProgress: isEvenRecovery,
                                             symbol: String(contract.underlying_symbol || contract.underlying || this.symbol || ''),
                                             contractId: String(contract.contract_id),
                                             mode: 'even-trade',
                                         }));
                                     } else {
+                                        // A winning Even contract completes recovery.
                                         window.localStorage.removeItem('vinteltool-recovery-analysis-state');
+                                        this.analysisRecoveryTradeInProgress = false;
                                     }
                                 } catch {}
                             }
