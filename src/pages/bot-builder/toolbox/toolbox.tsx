@@ -11,10 +11,7 @@ import { useDevice } from '@deriv-com/ui';
 /* [/AI] */
 import ToolbarButton from '../toolbar/toolbar-button';
 import SearchBox from './search-box';
-import AnalysisTool from '@/pages/analysis-tool';
 import { ToolboxItems } from './toolbox-items';
-import LastDigitLivePanel from '@/components/last-digit-live-panel/last-digit-live-panel';
-import AnalysisRecoveryControls from './analysis-recovery-controls';
 
 const Toolbox = observer(() => {
     const { isDesktop } = useDevice();
@@ -38,7 +35,6 @@ const Toolbox = observer(() => {
 
     const toolbox_ref = React.useRef(ToolboxItems());
     const [is_open, setOpen] = React.useState(isDesktop);
-    const [is_last_digit_open, setLastDigitOpen] = React.useState(false);
     const [pending_selection] = React.useState<string | null>(null);
 
     React.useEffect(() => {
@@ -97,7 +93,7 @@ const Toolbox = observer(() => {
                             onSearchClear={onSearchClear}
                             onSearchKeyUp={onSearchKeyUp}
                         />
-                        <div className={`db-toolbox__category-menu${is_last_digit_open ? ' db-toolbox__category-menu--analysis-open' : ''}`}>
+                        <div className='db-toolbox__category-menu'>
                             {toolbox_dom &&
                                 Array.from(toolbox_dom.childNodes as HTMLElement[]).map((category, index) => {
                                     if (category.tagName.toUpperCase() === 'CATEGORY') {
@@ -176,14 +172,6 @@ const Toolbox = observer(() => {
                                     return null;
                                 })}
                         </div>
-                        <div className={`db-toolbox__last-digit${is_last_digit_open ? ' db-toolbox__last-digit--open' : ''}`}>
-                            <button type='button' className='db-toolbox__last-digit-toggle' aria-expanded={is_last_digit_open} onClick={() => setLastDigitOpen(open => !open)}>
-                                <span>Last digit · Even/Odd</span><span>{is_last_digit_open ? '−' : '+'}</span>
-                            </button>
-                            {is_last_digit_open && <AnalysisTool showLegend={false} showStreak showSubtabs={false} showControls={false} showPrice={false} showContractProbabilities={false} windowSize={20} />}
-                        </div>
-                        <LastDigitLivePanel compact />
-                        <AnalysisRecoveryControls />
                     </div>
                 </div>
             </div>

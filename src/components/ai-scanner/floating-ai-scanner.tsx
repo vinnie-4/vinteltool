@@ -302,11 +302,6 @@ const FloatingAIScanner = () => {
 
     const analysis = useMemo(() => analyseTicks(ticks.slice(-tickWindow), tickWindow, selectedTradeType), [ticks, tickWindow, selectedTradeType]);
 
-    // Recovery readiness is derived from the final single digit of the newest tick.
-    const latestDigit = ticks.length ? ticks[ticks.length - 1].digit : null;
-    const evenRecoveryReady = latestDigit !== null && latestDigit % 2 === 0;
-
-
     useEffect(() => setConfidence(analysis.confidence), [analysis.confidence]);
 
     const scanMarkets = useCallback(async () => {
@@ -554,10 +549,6 @@ const FloatingAIScanner = () => {
                 {!scanning && !scanComplete && (error ? <p className='ai-scanner__error'>{error}</p> : <div className='ai-scanner__status' aria-live='polite'>Not scanned yet</div>)}
 
                 {scanComplete && <>
-                    <div className={'ai-scanner__even-recovery-status' + (evenRecoveryReady ? ' is-ready' : ' is-waiting')} aria-live='polite'>
-                        <span className='ai-scanner__even-recovery-label'>LAST DIGIT CHECK</span>
-                        <strong>{latestDigit === null ? 'Waiting for tick data' : evenRecoveryReady ? 'Even digit ' + latestDigit + ' detected — Even recovery ready for the next tick' : 'Odd digit ' + latestDigit + ' detected — continue waiting for an even digit'}</strong>
-                    </div>
                     <div className='ai-scanner__result-table' role='table' aria-label='Best market scan result'>
                         <div role='row'><span role='columnheader'>BEST MARKET</span><span role='columnheader'>TRADE TYPE</span><span role='columnheader'>AI SCORE</span><span role='columnheader'>WIN RATE</span><span role='columnheader'>TICKS</span></div>
                         <div role='row'><strong role='cell'>{market.name}</strong><strong role='cell'>{analysis.signal}</strong><strong role='cell'>{analysis.confidence}%</strong><strong role='cell'>{analysis.winRate.toFixed(1)}%</strong><strong role='cell'>{analysis.total}/{tickWindow}</strong></div>
