@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api_base } from '@/external/bot-skeleton';
+import { useStore } from '@/hooks/useStore';
+import { DBOT_TABS } from '@/constants/bot-contents';
 import './floating-ai-scanner.scss';
 
 type Tick = { quote: number; digit: number };
@@ -121,6 +123,7 @@ const analyseTicks = (ticks: Tick[], windowSize = DEFAULT_TICK_WINDOW, requested
 const AI_SCANNER_OWNER_KEY = '__vinteltoolFloatingAiScannerOwner';
 
 const FloatingAIScanner = () => {
+    const { quick_strategy, dashboard } = useStore();
     const [isDuplicateInstance, setIsDuplicateInstance] = useState(false);
     useEffect(() => {
         const host = window as any;
@@ -137,6 +140,14 @@ const FloatingAIScanner = () => {
         };
     }, []);
     const [open, setOpen] = useState(false);
+    const [showLoadConfig, setShowLoadConfig] = useState(false);
+    const [recoveryExpanded, setRecoveryExpanded] = useState(false);
+    const [configStake, setConfigStake] = useState('0.5');
+    const [configDuration, setConfigDuration] = useState('1');
+    const [configMartingale, setConfigMartingale] = useState('2');
+    const [configStopLoss, setConfigStopLoss] = useState('10');
+    const [configTakeProfit, setConfigTakeProfit] = useState('5');
+    const [configRecoveryEnabled, setConfigRecoveryEnabled] = useState(true);
     const [selectedTradeType, setSelectedTradeType] = useState<(typeof SCAN_TRADE_TYPES)[number]>('Over1 / Under8');
     const [fabPosition, setFabPosition] = useState<{ x: number; y: number } | null>(null);
     const fabDragRef = useRef<{ pointerX: number; pointerY: number; left: number; top: number; moved: boolean } | null>(null);
@@ -180,6 +191,8 @@ const FloatingAIScanner = () => {
 
     const closeScanner = useCallback(() => {
         setOpen(false);
+        setShowLoadConfig(false);
+        setRecoveryExpanded(false);
         resetScan();
     }, [resetScan]);
 
@@ -189,6 +202,8 @@ const FloatingAIScanner = () => {
             return;
         }
         resetScan();
+        setShowLoadConfig(false);
+        setRecoveryExpanded(false);
         setOpen(true);
     };
     const [market, setMarket] = useState(MARKETS[8]);
@@ -287,6 +302,11 @@ const FloatingAIScanner = () => {
 
     const analysis = useMemo(() => analyseTicks(ticks.slice(-tickWindow), tickWindow, selectedTradeType), [ticks, tickWindow, selectedTradeType]);
 
+    // Recovery readiness is derived from the final single digit of the newest tick.
+    const latestDigit = ticks.length ? ticks[ticks.length - 1].digit : null;
+    const evenRecoveryReady = latestDigit !== null && latestDigit % 2 === 0;
+
+
     useEffect(() => setConfidence(analysis.confidence), [analysis.confidence]);
 
     const scanMarkets = useCallback(async () => {
@@ -369,22 +389,79 @@ const FloatingAIScanner = () => {
         }
     }, [disconnect, connectMarket, tickWindow, selectedTradeType]);
 
-    const trailingDigitStreak = (digit: number | null) => {
-        if (digit === null) return 0;
-        let streak = 0;
-        for (let index = ticks.length - 1; index >= 0; index -= 1) {
-            if (ticks[index].digit !== digit) break;
-            streak += 1;
+    const loadScannerBot = useCallback(async () => {
+        const match = /^(Over|Under) (\d)$/.exec(analysis.signal);
+        if (!match || analysis.signal === 'Waiting') {
+            setError('The current tick sample has no usable Over/Under signal yet. Try scanning again.');
+            return;
         }
-        return streak;
-    };
-    const hotStreak = trailingDigitStreak(analysis.hot);
-    const coldStreak = trailingDigitStreak(analysis.cold);
 
-    // Recovery analysis uses exactly the final single digit of the latest tick.
-    // Odd digits keep the scanner waiting; an even digit arms the next-tick signal.
-    const latestDigit = ticks.length ? ticks[ticks.length - 1].digit : null;
-    const evenRecoveryReady = latestDigit !== null && latestDigit % 2 === 0;
+        const side = match[1];
+        const prediction = Number(match[2]);
+        setError('');
+        setScanMessage('Loading scanner strategy into Blockly…');
+
+        try {
+            // Build native Deriv Blockly blocks directly. Do not open Quick Strategy.
+            // loadConfiguredQuickBot creates the trade-definition, purchase, and
+            // Martingale result-handling blocks in the active Bot Builder workspace.
+            dashboard.setActiveTab(DBOT_TABS.BOT_BUILDER);
+            localStorage.setItem('vinteltool-scanner-risk-limits', JSON.stringify({
+                enabled: true,
+                takeProfit: Math.max(0, Number(configTakeProfit) || 0),
+                stopLoss: Math.max(0, Number(configStopLoss) || 0),
+                stopAfterRecoveryWin: false,
+            }));
+            if (configRecoveryEnabled) {
+                localStorage.setItem('vinteltool-analysis-recovery-settings', JSON.stringify({
+                    enabled: true,
+                    mode: 'even-trade',
+                    recovery: true,
+                    recoveryOnlyAfterLoss: true,
+                    primaryContractType: side === 'Over' ? 'DIGITOVER' : 'DIGITUNDER',
+                    primaryPrediction: prediction,
+                    multiplier: Math.min(5, Math.max(1, Number(configMartingale) || 2)),
+                    maxStake: Math.max(
+                        Number(configStake) || 0.5,
+                        Math.min(1000, (Number(configStake) || 0.5) * Math.pow(Math.min(5, Math.max(1, Number(configMartingale) || 2)), 5))
+                    ),
+                }));
+            } else {
+                localStorage.setItem('vinteltool-analysis-recovery-settings', JSON.stringify({ enabled: false, recovery: false }));
+            }
+            await quick_strategy.loadConfiguredQuickBot({
+                marketGroup: 'Derived',
+                marketType: 'Continuous Indices',
+                symbol: market.symbol,
+                tradeFamily: 'Digits',
+                tradeType: 'Over/Under',
+                purchase: side,
+                contract: side,
+                prediction,
+                durationType: 't',
+                duration: Math.max(1, Number(configDuration) || 1),
+                stake: Math.max(0.35, Number(configStake) || 0.5),
+                maxStake: Math.max(0.35, (Number(configStake) || 0.5) * Math.pow(Math.min(5, Math.max(1, Number(configMartingale) || 2)), 5)),
+                multiplier: Math.min(5, Math.max(1, Number(configMartingale) || 2)),
+                profit: Math.max(0, Number(configTakeProfit) || 5),
+                loss: Math.max(0, Number(configStopLoss) || 10),
+                martingale: true,
+                recoveryMode: configRecoveryEnabled,
+                recoveryPurchase: 'Trade Even',
+                recoveryPrediction: prediction,
+            });
+            setOpen(false);
+            setShowLoadConfig(false);
+            setRecoveryExpanded(false);
+        } catch (e: any) {
+            console.error('AI Scanner Blockly load failed:', e);
+            const message = typeof e?.message === 'string' && e.message.trim()
+                ? e.message
+                : 'Unknown Blockly loading error. Open Bot Builder and try again.';
+            setError(`Could not load scanner bot: ${message}`);
+            setScanMessage('Scanner bot load failed');
+        }
+    }, [analysis.signal, configDuration, configMartingale, configStake, configStopLoss, configTakeProfit, configRecoveryEnabled, dashboard, market, quick_strategy]);
 
     if (isDuplicateInstance) return null;
 
@@ -395,13 +472,44 @@ const FloatingAIScanner = () => {
             <header className='ai-scanner__header'>
                 <div>
                     <span className='ai-scanner__spark'>✦</span>
-                    <strong>AI SCANNER</strong>
+                    <strong>{showLoadConfig ? 'SCANNER BOT CONFIGURATION' : 'AI SCANNER'}</strong>
                 </div>
                 <button type='button' onClick={closeScanner} aria-label='Close scanner'>×</button>
             </header>
 
             <div className='ai-scanner__body'>
-                <>
+                {showLoadConfig ? <section className='ai-scanner__config-layout' aria-label='Scanner bot configuration'>
+                    <div className='ai-scanner__config-row'>
+                        <label>Stake<input type='number' value={configStake} onChange={e => setConfigStake(e.target.value)} min='0.35' step='0.01' /></label>
+                        <label>Ticks<input type='number' value={configDuration} onChange={e => setConfigDuration(e.target.value)} min='1' step='1' /></label>
+                    </div>
+                    <div className='ai-scanner__config-row'>
+                        <label>Martingale<input type='number' value={configMartingale} onChange={e => setConfigMartingale(e.target.value)} min='1' max='5' step='0.1' /></label>
+                        <label>Stop loss<input type='number' value={configStopLoss} onChange={e => setConfigStopLoss(e.target.value)} min='0' step='0.1' /></label>
+                        <label>Take profit<input type='number' value={configTakeProfit} onChange={e => setConfigTakeProfit(e.target.value)} min='0' step='0.1' /></label>
+                        <button type='button' className={'ai-scanner__recovery-toggle' + (recoveryExpanded ? ' is-expanded' : '')} onClick={() => setRecoveryExpanded(value => !value)} aria-expanded={recoveryExpanded} >Recovery Mode — Even Trade <span>{recoveryExpanded ? '−' : '+'}</span></button>
+                    </div>
+                    <button
+                        type='button'
+                        className={'ai-scanner__recovery-switch' + (configRecoveryEnabled ? ' is-enabled' : ' is-disabled')}
+                        aria-pressed={configRecoveryEnabled}
+                        onClick={() => setConfigRecoveryEnabled(enabled => !enabled)}
+                    >
+                        Recovery Mode (Even Trade): {configRecoveryEnabled ? 'ENABLED' : 'DISABLED'}
+                    </button>
+                    {recoveryExpanded && <div className='ai-scanner__recovery-options'>
+                        <strong>Recovery Mode — Even Trade</strong>
+                        <p>After a loss, the bot repeats Digit Even recovery trades until one wins, then resumes the scanned market's normal contract.</p>
+                    </div>}
+                    {error && <p className='ai-scanner__error' role='alert'>{error}</p>}
+                    {scanMessage && <p className='ai-scanner__status' aria-live='polite'>{scanMessage}</p>}
+                    <div className='ai-scanner__config-actions'>
+                        <button type='button' onClick={() => setShowLoadConfig(false)}>Back</button>
+                        <button type='button' onClick={() => void loadScannerBot()} disabled={scanMessage === 'Loading scanner strategy into Blockly…'}>
+                            {scanMessage === 'Loading scanner strategy into Blockly…' ? 'Loading…' : 'Load'}
+                        </button>
+                    </div>
+                </section> : <>
                 <div className='ai-scanner__trade-types' role='group' aria-label='Trade type to scan'>
                     {SCAN_TRADE_TYPES.map(type => (
                         <button key={type} type='button' className={'ai-scanner__trade-type' + (selectedTradeType === type ? ' is-active' : '')} aria-pressed={selectedTradeType === type} onClick={() => { if (selectedTradeType !== type) { setSelectedTradeType(type); resetScan(); } }}>{type}</button>
@@ -410,8 +518,8 @@ const FloatingAIScanner = () => {
 
                 <section className='ai-scanner__intro-card'>
                     <div>
-                        <strong>Digits Scanner</strong>
-                        <p>Scans {selectedTradeType.replace(' / ', ' and ')} across live volatility markets.</p>
+                        <strong>{selectedTradeType === 'Over1 / Under8' ? 'Digits Scanner' : selectedTradeType === 'Over2 / Under7' ? 'Digits Scanner' : 'Over3 / Under6'}</strong>
+                        
                     </div>
                     <label className='ai-scanner__ticks'>TICKS
                         <select value={tickWindow} onChange={e => setTickWindow(Number(e.target.value))}>
@@ -425,9 +533,9 @@ const FloatingAIScanner = () => {
                     <div><label>TRADE TYPE</label><strong>{scanComplete ? analysis.signal : 'Waiting for scan'}</strong></div>
                     {scanComplete && <div className='ai-scanner__result-metrics'>
                         <div><label>AI SCORE</label><strong>{analysis.confidence}%</strong></div>
-                        <div><label>WIN RATE</label><strong>{analysis.winRate.toFixed(1)}%</strong></div>
-                        <div><label>RECENT</label><strong>{Math.max(0, analysis.winRate - analysis.recentPressure).toFixed(1)}%</strong></div>
-                        <div><label>SAMPLES</label><strong>{Math.max(0, analysis.total - 1)}</strong></div>
+                        <div><label>OBSERVED WIN RATE</label><strong>{analysis.winRate.toFixed(1)}%</strong></div>
+                        <div><label>MOMENTUM</label><strong>{analysis.momentumBurst}%</strong></div>
+                        <div><label>LAST TICKS ANALYSED</label><strong>{analysis.total}/{tickWindow}</strong></div>
                     </div>}
                 </section>
 
@@ -448,20 +556,25 @@ const FloatingAIScanner = () => {
                         <div role='row'><span role='columnheader'>BEST MARKET</span><span role='columnheader'>TRADE TYPE</span><span role='columnheader'>AI SCORE</span><span role='columnheader'>WIN RATE</span><span role='columnheader'>TICKS</span></div>
                         <div role='row'><strong role='cell'>{market.name}</strong><strong role='cell'>{analysis.signal}</strong><strong role='cell'>{analysis.confidence}%</strong><strong role='cell'>{analysis.winRate.toFixed(1)}%</strong><strong role='cell'>{analysis.total}/{tickWindow}</strong></div>
                     </div>
-                    <div className='ai-scanner__heatmap' aria-live='polite'>
-                        <span>Heatmap: hottest digit {analysis.hot ?? '—'} | coldest digit {analysis.cold ?? '—'} | missing {analysis.missingDigits.length} | low streak {coldStreak} | high streak {hotStreak}</span>
-                    </div>
-                    <div className='ai-scanner__best-market'>
-                        <strong>Best market: {market.name} | {analysis.rationale.split(' recorded')[0]} | AI {analysis.confidence.toFixed(1)}%</strong>
+                    <div className='ai-scanner__digits'>
+                        {analysis.counts.map((count, digit) => (
+                            <div key={digit} className={digit === analysis.hot ? 'is-hot' : digit === analysis.secondHot ? 'is-second-hot' : digit === analysis.cold ? 'is-cold' : digit === analysis.secondCold ? 'is-second-cold' : ''}>
+                                <span>{digit}</span><b>{analysis.total ? ((count / analysis.total) * 100).toFixed(0) : 0}%</b>
+                            </div>
+                        ))}
                     </div>
                 </>}
+
                 <div className='ai-scanner__actions'>
                     <button type='button' className='ai-scanner__scan-button' disabled={scanning} onClick={() => void scanMarkets()}>
                         {scanning ? 'Scanning Markets…' : scanComplete ? 'Scan Again' : 'Scan Markets'}
                     </button>
+                    <button type='button' className='ai-scanner__load-button' disabled={!scanComplete || analysis.signal === 'Waiting'} onClick={() => { setError(''); setRecoveryExpanded(true); setShowLoadConfig(true); }}>
+                        Load Scanner Bot
+                    </button>
                 </div>
                 {error && <p className='ai-scanner__error'>{error}</p>}
-                </>
+                </>}
             </div>
         </section>}
 
