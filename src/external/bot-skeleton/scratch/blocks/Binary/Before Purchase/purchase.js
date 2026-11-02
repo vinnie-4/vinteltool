@@ -125,7 +125,7 @@ const createNumberedPurchaseBlock = label => ({
 window.Blockly.Blocks.purchase_even = {
     init() {
         this.jsonInit({
-            message0: localize('Purchase Digit Even'),
+            message0: localize('Recovery: Purchase Digit Even'),
             previousStatement: null,
             colour: window.Blockly.Colours.Special1.colour,
             colourSecondary: window.Blockly.Colours.Special1.colourSecondary,
@@ -138,8 +138,8 @@ window.Blockly.Blocks.purchase_even = {
     },
     meta() {
         return {
-            display_name: localize('Purchase Digit Even'),
-            description: localize('Fixed AI Scanner recovery purchase. It always purchases Digit Even and has no contract dropdown.'),
+            display_name: localize('Recovery: Purchase Digit Even'),
+            description: localize('After a loss, keep purchasing Digit Even until a recovery trade wins. Then resume the selected primary contract.'),
             key_words: localize('buy even recovery'),
         };
     },
@@ -152,7 +152,7 @@ window.Blockly.Blocks.purchase_even = {
 };
 
 window.Blockly.JavaScript.javascriptGenerator.forBlock.purchase_even = () => {
-    return "Bot.purchase('DIGITEVEN');\\n";
+    return "Bot.purchase('DIGITEVEN');\n";
 };
 
 window.Blockly.Blocks.purchase1 = createNumberedPurchaseBlock('Purchase 1');
