@@ -462,6 +462,7 @@ const FloatingAIScanner = () => {
                 </div>
                 {error && <p className='ai-scanner__error'>{error}</p>}
                 </>}
+                </>
             </div>
         </section>}
 
