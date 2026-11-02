@@ -201,8 +201,6 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             const marketCode = marketGroup === 'Derived' ? 'synthetic_index' : marketGroup === 'Forex' ? 'forex' : 'commodities';
             const submarketCode = marketGroup === 'Derived' ? 'random_index' : marketGroup === 'Forex' ? 'major_pairs' : 'metals';
             const safe = (value: string) => value.replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[ch] || ch));
-            const recoveryPurchase = String(cfg.recoveryPurchase || purchase);
-            const recoveryPurchaseCode = contractMap[recoveryPurchase] || purchaseMap[recoveryPurchase] || purchaseCode;
             const prediction = Math.max(0, Math.min(9, Number(cfg.prediction ?? 5)));
             // Keep the Blockly prediction valid (1–9) even for Even/Odd recovery,
             // whose contract itself does not use a barrier.
@@ -254,7 +252,7 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
     </statement>
   </block>
   <block type="before_purchase" id="vintel_qbb_before_purchase" x="20" y="620">
-    <statement name="BEFOREPURCHASE_STACK">${recoveryEnabled ? `<block type="controls_if" id="vintel_qbb_recovery_purchase"><mutation else="1"></mutation><value name="IF0"><block type="variables_get"><field name="VAR" id="vintel_qbb_recovery_even">Recovery Even</field></block></value><statement name="DO0"><block type="purchase" id="vintel_qbb_purchase_even"><field name="PURCHASE_LIST">${recoveryPurchaseCode}</field></block></statement><statement name="ELSE"><block type="purchase" id="vintel_qbb_purchase"><field name="PURCHASE_LIST">${purchaseCode}</field></block></statement></block>` : `<block type="purchase" id="vintel_qbb_purchase"><field name="PURCHASE_LIST">${purchaseCode}</field></block>`}</statement>
+    <statement name="BEFOREPURCHASE_STACK">${recoveryEnabled ? `<block type="controls_if" id="vintel_qbb_recovery_purchase"><mutation else="1"></mutation><value name="IF0"><block type="variables_get"><field name="VAR" id="vintel_qbb_recovery_even">Recovery Even</field></block></value><statement name="DO0"><block type="purchase_even" id="vintel_qbb_purchase_even"></block></statement><statement name="ELSE"><block type="purchase" id="vintel_qbb_purchase"><field name="PURCHASE_LIST">${purchaseCode}</field></block></statement></block>` : `<block type="purchase" id="vintel_qbb_purchase"><field name="PURCHASE_LIST">${purchaseCode}</field></block>`}</statement>
   </block>
   <block type="after_purchase" id="vintel_qbb_after_purchase" x="520" y="620">
     <statement name="AFTERPURCHASE_STACK"><block type="controls_if" id="vintel_qbb_result"><mutation else="1"></mutation>

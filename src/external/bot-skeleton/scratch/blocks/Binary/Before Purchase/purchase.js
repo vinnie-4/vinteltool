@@ -119,6 +119,42 @@ const createNumberedPurchaseBlock = label => ({
     },
 });
 
+
+// Dedicated AI Scanner recovery purchase. It deliberately has no contract dropdown:
+// recovery must always submit Digit Even, independently of the primary trade type.
+window.Blockly.Blocks.purchase_even = {
+    init() {
+        this.jsonInit({
+            message0: localize('Purchase Digit Even'),
+            previousStatement: null,
+            colour: window.Blockly.Colours.Special1.colour,
+            colourSecondary: window.Blockly.Colours.Special1.colourSecondary,
+            colourTertiary: window.Blockly.Colours.Special1.colourTertiary,
+            tooltip: localize('AI Scanner recovery purchase. This block always purchases Digit Even.'),
+            category: window.Blockly.Categories.Before_Purchase,
+        });
+        this.setNextStatement(false);
+        this.setDeletable(false);
+    },
+    meta() {
+        return {
+            display_name: localize('Purchase Digit Even'),
+            description: localize('Fixed AI Scanner recovery purchase. It always purchases Digit Even and has no contract dropdown.'),
+            key_words: localize('buy even recovery'),
+        };
+    },
+    customContextMenu(menu) {
+        const menu_items = [localize('Enable Block'), localize('Disable Block'), localize('Delete Block')];
+        excludeOptionFromContextMenu(menu, menu_items);
+        modifyContextMenu(menu);
+    },
+    restricted_parents: ['before_purchase'],
+};
+
+window.Blockly.JavaScript.javascriptGenerator.forBlock.purchase_even = () => {
+    return "Bot.purchase('DIGITEVEN');\\n";
+};
+
 window.Blockly.Blocks.purchase1 = createNumberedPurchaseBlock('Purchase 1');
 window.Blockly.Blocks.purchase2 = createNumberedPurchaseBlock('Purchase 2');
 
