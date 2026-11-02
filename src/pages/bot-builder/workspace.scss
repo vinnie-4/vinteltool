@@ -40,6 +40,11 @@
  */
 @media (max-width: 767px) {
     #scratch_div .injectionDiv {
+        /* Lift the Blockly canvas into the space directly beneath the app tabs.
+         * Keep the fixed toolbar and scratch container in their existing positions.
+         */
+        top: -3.5rem;
+        height: calc(100vh - 12.9rem);
         left: -19.7rem;
         width: calc(100% + 19.7rem);
         max-width: none;
