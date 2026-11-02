@@ -369,6 +369,18 @@ const FloatingAIScanner = () => {
         }
     }, [disconnect, connectMarket, tickWindow, selectedTradeType]);
 
+    const trailingDigitStreak = (digit: number | null) => {
+        if (digit === null) return 0;
+        let streak = 0;
+        for (let index = ticks.length - 1; index >= 0; index -= 1) {
+            if (ticks[index].digit !== digit) break;
+            streak += 1;
+        }
+        return streak;
+    };
+    const hotStreak = trailingDigitStreak(analysis.hot);
+    const coldStreak = trailingDigitStreak(analysis.cold);
+
     if (isDuplicateInstance) return null;
 
     return <>
@@ -393,8 +405,8 @@ const FloatingAIScanner = () => {
 
                 <section className='ai-scanner__intro-card'>
                     <div>
-                        <strong>{selectedTradeType === 'Over1 / Under8' ? 'Digits Scanner' : selectedTradeType === 'Over2 / Under7' ? 'Digits Scanner' : 'Over3 / Under6'}</strong>
-                        
+                        <strong>Digits Scanner</strong>
+                        <p>Scans {selectedTradeType.replace(' / ', ' and ')} across live volatility markets.</p>
                     </div>
                     <label className='ai-scanner__ticks'>TICKS
                         <select value={tickWindow} onChange={e => setTickWindow(Number(e.target.value))}>
@@ -408,9 +420,9 @@ const FloatingAIScanner = () => {
                     <div><label>TRADE TYPE</label><strong>{scanComplete ? analysis.signal : 'Waiting for scan'}</strong></div>
                     {scanComplete && <div className='ai-scanner__result-metrics'>
                         <div><label>AI SCORE</label><strong>{analysis.confidence}%</strong></div>
-                        <div><label>OBSERVED WIN RATE</label><strong>{analysis.winRate.toFixed(1)}%</strong></div>
-                        <div><label>MOMENTUM</label><strong>{analysis.momentumBurst}%</strong></div>
-                        <div><label>LAST TICKS ANALYSED</label><strong>{analysis.total}/{tickWindow}</strong></div>
+                        <div><label>WIN RATE</label><strong>{analysis.winRate.toFixed(1)}%</strong></div>
+                        <div><label>RECENT</label><strong>{Math.max(0, analysis.winRate - analysis.recentPressure).toFixed(1)}%</strong></div>
+                        <div><label>SAMPLES</label><strong>{Math.max(0, analysis.total - 1)}</strong></div>
                     </div>}
                 </section>
 
@@ -427,12 +439,11 @@ const FloatingAIScanner = () => {
                         <div role='row'><span role='columnheader'>BEST MARKET</span><span role='columnheader'>TRADE TYPE</span><span role='columnheader'>AI SCORE</span><span role='columnheader'>WIN RATE</span><span role='columnheader'>TICKS</span></div>
                         <div role='row'><strong role='cell'>{market.name}</strong><strong role='cell'>{analysis.signal}</strong><strong role='cell'>{analysis.confidence}%</strong><strong role='cell'>{analysis.winRate.toFixed(1)}%</strong><strong role='cell'>{analysis.total}/{tickWindow}</strong></div>
                     </div>
-                    <div className='ai-scanner__digits'>
-                        {analysis.counts.map((count, digit) => (
-                            <div key={digit} className={digit === analysis.hot ? 'is-hot' : digit === analysis.secondHot ? 'is-second-hot' : digit === analysis.cold ? 'is-cold' : digit === analysis.secondCold ? 'is-second-cold' : ''}>
-                                <span>{digit}</span><b>{analysis.total ? ((count / analysis.total) * 100).toFixed(0) : 0}%</b>
-                            </div>
-                        ))}
+                    <div className='ai-scanner__heatmap' aria-live='polite'>
+                        <span>Heatmap: hottest digit {analysis.hot ?? '—'} | coldest digit {analysis.cold ?? '—'} | missing {analysis.missingDigits.length} | low streak {coldStreak} | high streak {hotStreak}</span>
+                    </div>
+                    <div className='ai-scanner__best-market'>
+                        <strong>Best market: {market.name} | {analysis.rationale.split(' recorded')[0]} | AI {analysis.confidence.toFixed(1)}%</strong>
                     </div>
                 </>
 

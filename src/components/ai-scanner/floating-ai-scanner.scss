@@ -619,3 +619,81 @@
     pointer-events: auto !important;
   }
 }
+
+
+/* Centered Smart Scan dialog: match the supplied compact Android screenshots.
+   The same modal footprint is retained before and after scanning. */
+.ai-scanner__backdrop {
+    display: block !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 1190 !important;
+    background: rgba(0, 0, 0, .70) !important;
+}
+.ai-scanner__panel {
+    position: fixed !important;
+    z-index: 1210 !important;
+    left: 50% !important;
+    top: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
+    width: min(680px, calc(100vw - 40px)) !important;
+    max-width: calc(100vw - 40px) !important;
+    height: auto !important;
+    max-height: min(82dvh, 780px) !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    border-radius: 14px !important;
+    box-shadow: 0 18px 55px rgba(0,0,0,.32) !important;
+}
+.ai-scanner__header { position: relative !important; top: auto !important; }
+.ai-scanner__body { display: grid !important; grid-template-columns: minmax(0,1fr) !important; gap: 12px !important; }
+.ai-scanner__intro-card p { display: block !important; margin: 5px 0 0 !important; color: #607b9d !important; font-size: 14px !important; }
+.ai-scanner__market-summary { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+.ai-scanner__result-metrics { grid-template-columns: repeat(4,minmax(0,1fr)) !important; }
+.ai-scanner__heatmap, .ai-scanner__best-market {
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid #d4e2f4;
+    border-radius: 16px;
+    background: #f7faff;
+    color: #29486c;
+    font-size: 13px;
+    line-height: 1.45;
+}
+.ai-scanner__heatmap { border-left: 4px solid #35a7ef; }
+.ai-scanner__best-market strong { font-size: 13px; font-weight: 800; }
+.ai-scanner__actions { grid-template-columns: 1fr !important; }
+.ai-scanner__actions .ai-scanner__scan-button { min-height: 52px; border-radius: 16px; font-size: 13px; text-transform: none; letter-spacing: 0; }
+@media (max-width: 767px) {
+    .ai-scanner__panel {
+        left: 50% !important; right: auto !important; top: 50% !important; bottom: auto !important;
+        width: calc(100vw - 40px) !important; max-width: calc(100vw - 40px) !important;
+        height: auto !important; max-height: 82dvh !important; min-height: 0 !important;
+        transform: translate(-50%, -50%) !important;
+        border-radius: 14px !important;
+    }
+    .ai-scanner__body { padding: 12px !important; gap: 10px !important; }
+    .ai-scanner__header { padding: 14px 18px !important; }
+    .ai-scanner__market-summary { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+    .ai-scanner__result-metrics { grid-template-columns: repeat(4,minmax(0,1fr)) !important; }
+    .ai-scanner__result-metrics > div { padding: 8px 6px !important; }
+    .ai-scanner__result-metrics label { font-size: 9px !important; }
+    .ai-scanner__result-metrics strong { font-size: 12px !important; }
+}
+@media (max-width: 420px) {
+    .ai-scanner__panel { width: calc(100vw - 24px) !important; max-width: calc(100vw - 24px) !important; }
+    .ai-scanner__result-metrics { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+}
+@media (min-width: 768px) {
+    .ai-scanner__panel {
+        left: 50% !important; top: 50% !important; right: auto !important; bottom: auto !important;
+        width: min(680px, calc(100vw - 48px)) !important;
+        max-width: calc(100vw - 48px) !important;
+        max-height: 82dvh !important;
+        transform: translate(-50%, -50%) !important;
+    }
+}
