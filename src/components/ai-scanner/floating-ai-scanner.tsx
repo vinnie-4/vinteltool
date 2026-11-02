@@ -1,7 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api_base } from '@/external/bot-skeleton';
-import { useStore } from '@/hooks/useStore';
-import { DBOT_TABS } from '@/constants/bot-contents';
 import './floating-ai-scanner.scss';
 
 type Tick = { quote: number; digit: number };
@@ -123,7 +121,6 @@ const analyseTicks = (ticks: Tick[], windowSize = DEFAULT_TICK_WINDOW, requested
 const AI_SCANNER_OWNER_KEY = '__vinteltoolFloatingAiScannerOwner';
 
 const FloatingAIScanner = () => {
-    const { dashboard } = useStore();
     const [isDuplicateInstance, setIsDuplicateInstance] = useState(false);
     useEffect(() => {
         const host = window as any;
@@ -372,53 +369,6 @@ const FloatingAIScanner = () => {
         }
     }, [disconnect, connectMarket, tickWindow, selectedTradeType]);
 
-    const loadScannerBot = useCallback(async () => {
-        setError('');
-        setScanMessage('Opening an empty Bot Builder workspace…');
-        try {
-            // The scanner Load action intentionally imports no strategy, parameters,
-            // recovery settings, or Blockly purchase blocks. It only opens a clean workspace.
-            dashboard.setActiveTab(DBOT_TABS.BOT_BUILDER);
-            const startedAt = Date.now();
-            let workspace: any = null;
-            while (Date.now() - startedAt < 20000) {
-                const Blockly = (window as any).Blockly;
-                const candidate = Blockly?.derivWorkspace;
-                const container = document.getElementById('scratch_div');
-                const rect = container?.getBoundingClientRect();
-                if (candidate && container && rect && rect.width > 0 && rect.height > 0) {
-                    workspace = candidate;
-                    break;
-                }
-                await new Promise(resolve => window.setTimeout(resolve, 100));
-            }
-            if (!workspace) {
-                throw new Error('Bot Builder workspace did not become visible. Open Bot Builder and try Load again.');
-            }
-
-            await workspace.asyncClear();
-            workspace.clearUndo?.();
-            try {
-                [
-                    'vinteltool-scanner-risk-limits',
-                    'vinteltool-analysis-recovery-settings',
-                    'vinteltool-recovery-analysis-state',
-                    'vinteltool-analysis-win-beep-eligible',
-                    'vintel-quick-bot-builder-config',
-                ].forEach(key => localStorage.removeItem(key));
-            } catch {
-                // Storage may be unavailable in restricted browser contexts; workspace
-                // clearing remains the primary action.
-            }
-            setOpen(false);
-            setScanMessage('Bot Builder is empty and ready.');
-        } catch (e: any) {
-            console.error('AI Scanner empty workspace action failed:', e);
-            setError(e?.message || 'Could not clear the Bot Builder workspace.');
-            setScanMessage('Unable to clear Bot Builder workspace');
-        }
-    }, [dashboard]);
-
     if (isDuplicateInstance) return null;
 
     return <>
@@ -490,9 +440,6 @@ const FloatingAIScanner = () => {
                 <div className='ai-scanner__actions'>
                     <button type='button' className='ai-scanner__scan-button' disabled={scanning} onClick={() => void scanMarkets()}>
                         {scanning ? 'Scanning Markets…' : scanComplete ? 'Scan Again' : 'Scan Markets'}
-                    </button>
-                    <button type='button' className='ai-scanner__load-button' disabled={scanning} onClick={() => void loadScannerBot()}>
-                        Load Empty Bot Builder
                     </button>
                 </div>
                 {error && <p className='ai-scanner__error'>{error}</p>}
