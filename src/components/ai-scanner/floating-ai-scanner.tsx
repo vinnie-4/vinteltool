@@ -454,8 +454,6 @@ const FloatingAIScanner = () => {
                     <div className='ai-scanner__best-market'>
                         <strong>Best market: {market.name} | {analysis.rationale.split(' recorded')[0]} | AI {analysis.confidence.toFixed(1)}%</strong>
                     </div>
-                </>
-
 
                 <div className='ai-scanner__actions'>
                     <button type='button' className='ai-scanner__scan-button' disabled={scanning} onClick={() => void scanMarkets()}>
