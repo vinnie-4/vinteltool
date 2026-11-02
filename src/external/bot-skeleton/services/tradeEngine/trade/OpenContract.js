@@ -126,7 +126,8 @@ export default Engine =>
                                     scannerStopReason = 'Stop loss reached';
                                 }
                             }
-                            this.analysisRecoveryTradeInProgress = false;
+                            // Do not clear the active Even-recovery state here.
+                            // It is cleared only when a finalized Even recovery wins.
                             if (scannerStopReason) {
                                 this.scannerRiskStopTriggered = true;
                                 try {

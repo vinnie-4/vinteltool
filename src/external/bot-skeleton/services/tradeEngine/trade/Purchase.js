@@ -65,82 +65,42 @@ export default Engine =>
             const settings = readAnalysisSettings();
             if (!settings?.enabled || !settings?.recovery || !settings?.recoveryOnlyAfterLoss) return contract_type;
 
-            // Engine flags are fast in-memory state; the persisted marker is the
-            // durable fallback if Blockly rebuilds the purchase branch or an event
-            // arrives before the next purchase callback reads the engine flag.
             let recoveryState = null;
             try {
                 recoveryState = JSON.parse(window.localStorage.getItem('vinteltool-recovery-analysis-state') || 'null');
             } catch {}
+
             const recoveryPending = Boolean(this.analysisRecoveryPending || recoveryState?.pending);
             const recoveryInProgress = Boolean(this.analysisRecoveryTradeInProgress || recoveryState?.inProgress);
 
-            if (settings.mode === 'even-trade') {
-                const primaryType = String(settings.primaryContractType || '').toUpperCase();
-                if (recoveryPending) {
-                    // Always override the Blockly purchase type after a loss.
-                    this.analysisRecoveryPending = false;
-                    this.analysisRecoveryTradeInProgress = true;
-                    try {
-                        window.localStorage.setItem('vinteltool-recovery-analysis-state', JSON.stringify({
-                            ...(recoveryState || {}),
-                            pending: false,
-                            inProgress: true,
-                            mode: 'even-trade',
-                        }));
-                        window.localStorage.setItem('vinteltool-analysis-win-beep-eligible', 'true');
-                    } catch {}
-                    return 'DIGITEVEN';
-                }
-                if (recoveryInProgress) {
-                    // While recovery is active, do not allow the primary contract
-                    // to leak through, even if Blockly supplies Under/Over again.
-                    this.analysisRecoveryTradeInProgress = true;
-                    return 'DIGITEVEN';
-                }
-                if (String(contract_type || '').toUpperCase() === 'DIGITEVEN' &&
-                    ['DIGITOVER', 'DIGITUNDER'].includes(primaryType)) {
-                    this.analysisRecoveryTradeInProgress = false;
-                    return primaryType;
-                }
-                return contract_type;
-            }
-            if (!recoveryPending) return contract_type;
-            const streakLength = Math.max(2, Math.min(30, Number(settings.streak) || 2));
-            const checkStreak = async () => {
-                const digits = await this.getLastDigitList();
-                if (!Array.isArray(digits) || digits.length < streakLength) return null;
-                const recent = digits.slice(-streakLength).map(Number);
-                if (!recent.every(digit => Number.isInteger(digit) && digit >= 0 && digit <= 9)) return null;
-                const allOdd = recent.every(digit => digit % 2 === 1);
-                const allEven = recent.every(digit => digit % 2 === 0);
-                if (allOdd) return 'DIGITEVEN';
-                if (allEven) return 'DIGITODD';
-                return null;
-            };
-            const matched = await checkStreak();
-            if (matched) {
+            // AI Scanner recovery is unconditional Digit Even: never inspect ticks,
+            // last digits, parity streaks, or wait for an analysis signal after a loss.
+            if (recoveryPending) {
                 this.analysisRecoveryPending = false;
                 this.analysisRecoveryTradeInProgress = true;
                 try {
-                    window.localStorage.setItem('vinteltool-analysis-win-beep-eligible', 'true');
-                    window.localStorage.removeItem('vinteltool-recovery-analysis-state');
+                    window.localStorage.setItem('vinteltool-recovery-analysis-state', JSON.stringify({
+                        ...(recoveryState || {}),
+                        pending: false,
+                        inProgress: true,
+                        mode: 'even-trade',
+                    }));
                 } catch {}
-                return matched;
+                return 'DIGITEVEN';
             }
-            return new Promise(resolve => {
-                let finished = false;
-                let previousTick = this.store.getState().newTick;
-                let unsubscribe;
-                const finish = value => { if (finished) return; finished = true; unsubscribe?.(); resolve(value); };
-                unsubscribe = this.store.subscribe(() => {
-                    const state = this.store.getState();
-                    if (state.scope === 'STOP') { finish(null); return; }
-                    if (state.newTick === previousTick) return;
-                    previousTick = state.newTick;
-                    checkStreak().then(type => { if (type) { this.analysisRecoveryPending = false; this.analysisRecoveryTradeInProgress = true; try { window.localStorage.setItem('vinteltool-analysis-win-beep-eligible', 'true'); window.localStorage.removeItem('vinteltool-recovery-analysis-state'); } catch {} finish(type); } }).catch(() => {});
-                });
-            });
+
+            if (recoveryInProgress) {
+                this.analysisRecoveryTradeInProgress = true;
+                return 'DIGITEVEN';
+            }
+
+            const primaryType = String(settings.primaryContractType || '').toUpperCase();
+            if (String(contract_type || '').toUpperCase() === 'DIGITEVEN' &&
+                ['DIGITOVER', 'DIGITUNDER'].includes(primaryType)) {
+                this.analysisRecoveryTradeInProgress = false;
+                return primaryType;
+            }
+            return contract_type;
         }
         async purchase(contract_type) {
             // After a loss, optionally switch this scanner's next recovery trade to Even/Odd
@@ -151,7 +111,11 @@ export default Engine =>
             // Recovery purchases are immediate: once a loss activates Even recovery,
             // do not run any last-digit/streak analysis before buying DIGITEVEN.
             // Analysis gating remains available only for ordinary non-recovery purchases.
-            if (!this.analysisRecoveryTradeInProgress && !(await this.waitForAnalysisSignal(contract_type))) {
+            // Scanner recovery configurations never run digit analysis before purchase.
+            const scannerRecoverySettings = readAnalysisSettings();
+            if (!scannerRecoverySettings?.recoveryOnlyAfterLoss &&
+                !this.analysisRecoveryTradeInProgress &&
+                !(await this.waitForAnalysisSignal(contract_type))) {
                 return Promise.resolve();
             }
             // Prevent calling purchase twice
