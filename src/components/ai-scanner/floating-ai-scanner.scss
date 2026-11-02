@@ -697,3 +697,59 @@
         transform: translate(-50%, -50%) !important;
     }
 }
+
+
+/* AI Scanner opening presentation only — preserve all scan and analysis behavior. */
+.ai-scanner__backdrop {
+  display: block !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10040 !important;
+  background: rgba(0, 0, 0, .70) !important;
+}
+.ai-scanner__panel {
+  position: fixed !important;
+  inset: 50% auto auto 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: min(680px, calc(100vw - 40px)) !important;
+  max-width: calc(100vw - 40px) !important;
+  height: auto !important;
+  max-height: min(82dvh, 780px) !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  border-radius: 16px !important;
+  background: #fff !important;
+  color: #243b57 !important;
+  box-shadow: 0 18px 55px rgba(0, 0, 0, .32) !important;
+  z-index: 10050 !important;
+}
+.ai-scanner__panel .ai-scanner__header {
+  position: relative !important;
+  top: auto !important;
+  border-radius: 16px 16px 0 0 !important;
+}
+.ai-scanner__panel .ai-scanner__body {
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+@media (max-width: 767px) {
+  .ai-scanner__panel {
+    inset: 50% auto auto 50% !important;
+    width: calc(100vw - 40px) !important;
+    max-width: calc(100vw - 40px) !important;
+    max-height: 82dvh !important;
+    transform: translate(-50%, -50%) !important;
+    border-radius: 16px !important;
+  }
+}
+@media (min-width: 768px) {
+  .ai-scanner__panel {
+    inset: 50% auto auto 50% !important;
+    width: min(680px, calc(100vw - 48px)) !important;
+    max-width: calc(100vw - 48px) !important;
+    max-height: 82dvh !important;
+    transform: translate(-50%, -50%) !important;
+  }
+}
