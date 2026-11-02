@@ -148,8 +148,12 @@ export default Engine =>
             const recoveryContractType = await this.waitForRecoveryContractType(contract_type);
             if (!recoveryContractType) return Promise.resolve();
             contract_type = recoveryContractType;
-            // Analysis mode waits for the configured live streak before allowing the opposite-side digit contract.
-            if (!(await this.waitForAnalysisSignal(contract_type))) return Promise.resolve();
+            // Recovery purchases are immediate: once a loss activates Even recovery,
+            // do not run any last-digit/streak analysis before buying DIGITEVEN.
+            // Analysis gating remains available only for ordinary non-recovery purchases.
+            if (!this.analysisRecoveryTradeInProgress && !(await this.waitForAnalysisSignal(contract_type))) {
+                return Promise.resolve();
+            }
             // Prevent calling purchase twice
             if (this.store.getState().scope !== BEFORE_PURCHASE) {
                 return Promise.resolve();
