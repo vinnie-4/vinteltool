@@ -753,3 +753,36 @@
     transform: translate(-50%, -50%) !important;
   }
 }
+
+
+/* Single-final-digit parity signal for AI Scanner analysis only. */
+.ai-scanner__even-recovery-status {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+    padding: 13px 15px;
+    border: 1px solid #d4e2f4;
+    border-left: 4px solid #e0a12b;
+    border-radius: 14px;
+    background: #f7faff;
+    color: #29486c;
+    font-size: 13px;
+    line-height: 1.45;
+}
+.ai-scanner__even-recovery-status.is-ready {
+    border-left-color: #13a77a;
+    background: #effbf6;
+}
+.ai-scanner__even-recovery-status.is-waiting {
+    border-left-color: #e0a12b;
+}
+.ai-scanner__even-recovery-label {
+    color: #7186a1;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .07em;
+}
+.ai-scanner__even-recovery-status strong {
+    font-weight: 800;
+}
