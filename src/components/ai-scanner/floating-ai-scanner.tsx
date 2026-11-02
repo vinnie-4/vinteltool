@@ -418,6 +418,8 @@ const FloatingAIScanner = () => {
                     mode: 'even-trade',
                     recovery: true,
                     recoveryOnlyAfterLoss: true,
+                    analysisEnabled: false,
+                    analyseAfterLoss: false,
                     primaryContractType: side === 'Over' ? 'DIGITOVER' : 'DIGITUNDER',
                     primaryPrediction: prediction,
                     multiplier: Math.min(5, Math.max(1, Number(configMartingale) || 2)),
@@ -449,6 +451,10 @@ const FloatingAIScanner = () => {
                 recoveryMode: configRecoveryEnabled,
                 recoveryPurchase: 'Trade Even',
                 recoveryPrediction: prediction,
+                // The loaded Blockly bot uses its post-loss result variable to
+                // switch directly to purchase_even; no fresh analysis is run.
+                analysisEnabled: false,
+                analysisCondition: null,
             });
             setOpen(false);
             setShowLoadConfig(false);
