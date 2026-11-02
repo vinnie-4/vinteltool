@@ -10,7 +10,6 @@ import { useDevice } from '@deriv-com/ui';
 import DataList from '../data-list';
 import { TCheckedFilters, TFilterMessageValues, TJournalDataListArgs } from './journal.types';
 import { JournalItem, JournalLoader, JournalTools } from './journal-components';
-import TradeDigitStreak from '@/components/trade-digit-streak/trade-digit-streak';
 
 const Journal = observer(() => {
     const { journal, run_panel, summary_card } = useStore();
@@ -36,7 +35,6 @@ const Journal = observer(() => {
             })}
             data-testid='dt_mock_journal'
         >
-            <TradeDigitStreak contract={summary_card.contract_info} active={active_index === 2} />
             <JournalTools
                 checked_filters={checked_filters}
                 filters={filters}
