@@ -208,6 +208,9 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
             // whose contract itself does not use a barrier.
             const recoveryPrediction = Math.max(1, Math.min(9, Number(cfg.recoveryPrediction ?? prediction) || prediction || 1));
             const recoveryEnabled = Boolean(cfg.recoveryMode);
+            const takeProfit = Math.max(0, Number(cfg.profit) || 0);
+            const stopLoss = Math.max(0, Number(cfg.loss) || 0);
+            const maxStake = Math.max(stake, Number(cfg.maxStake) || stake * Math.pow(Math.max(1, Number(cfg.multiplier) || 2), 5));
             const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <xml xmlns="http://www.w3.org/1999/xhtml" is_dbot="true" collection="false">
   <variables>
@@ -262,10 +265,10 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
         </block>
       </statement>
       <statement name="ELSE">
-        <block type="variables_set" id="vintel_qbb_loss_stake"><field name="VAR" id="vintel_qbb_stake">Stake</field><value name="VALUE"><block type="math_arithmetic"><field name="OP">MULTIPLY</field><value name="A"><block type="variables_get"><field name="VAR" id="vintel_qbb_stake">Stake</field></block></value><value name="B"><block type="variables_get"><field name="VAR" id="vintel_qbb_martingale">Martingale</field></block></value></block></value><next><block type="controls_if" id="vintel_qbb_recovery_gate"><value name="IF0"><block type="logic_boolean"><field name="BOOL">${recoveryEnabled ? 'TRUE' : 'FALSE'}</field></block></value><statement name="DO0"><block type="variables_set" id="vintel_qbb_loss_prediction"><field name="VAR" id="vintel_qbb_prediction">Prediction</field><value name="VALUE"><block type="math_number"><field name="NUM">${recoveryPrediction}</field></block></value><next><block type="variables_set" id="vintel_qbb_loss_recovery_enable"><field name="VAR" id="vintel_qbb_recovery_even">Recovery Even</field><value name="VALUE"><block type="logic_boolean"><field name="BOOL">TRUE</field></block></value></next></block></statement></block></next>
+        <block type="variables_set" id="vintel_qbb_loss_stake"><field name="VAR" id="vintel_qbb_stake">Stake</field><value name="VALUE"><block type="math_arithmetic"><field name="OP">MULTIPLY</field><value name="A"><block type="variables_get"><field name="VAR" id="vintel_qbb_stake">Stake</field></block></value><value name="B"><block type="variables_get"><field name="VAR" id="vintel_qbb_martingale">Martingale</field></block></value></block></value><next><block type="controls_if" id="vintel_qbb_stake_cap"><value name="IF0"><block type="logic_compare"><field name="OP">GT</field><value name="A"><block type="variables_get"><field name="VAR" id="vintel_qbb_stake">Stake</field></block></value><value name="B"><block type="math_number"><field name="NUM">${maxStake}</field></block></value></block></value><statement name="DO0"><block type="variables_set" id="vintel_qbb_cap_stake"><field name="VAR" id="vintel_qbb_stake">Stake</field><value name="VALUE"><block type="math_number"><field name="NUM">${maxStake}</field></block></value></block></statement><next><block type="controls_if" id="vintel_qbb_recovery_gate"><value name="IF0"><block type="logic_boolean"><field name="BOOL">${recoveryEnabled ? 'TRUE' : 'FALSE'}</field></block></value><statement name="DO0"><block type="variables_set" id="vintel_qbb_loss_recovery_enable"><field name="VAR" id="vintel_qbb_recovery_even">Recovery Even</field><value name="VALUE"><block type="logic_boolean"><field name="BOOL">TRUE</field></block></value></block></statement></block></next></block></next>
         </block>
       </statement>
-      <next><block type="trade_again" id="vintel_qbb_trade_again"></block></next>
+      <next>${takeProfit > 0 || stopLoss > 0 ? `<block type="controls_if" id="vintel_qbb_risk_gate"><mutation else="1"></mutation><value name="IF0"><block type="logic_operation"><field name="OP">OR</field><value name="A">${takeProfit > 0 ? `<block type="logic_compare"><field name="OP">GTE</field><value name="A"><block type="total_profit"></block></value><value name="B"><block type="math_number"><field name="NUM">${takeProfit}</field></block></value></block>` : `<block type="logic_boolean"><field name="BOOL">FALSE</field></block>`}</value><value name="B">${stopLoss > 0 ? `<block type="logic_compare"><field name="OP">LTE</field><value name="A"><block type="total_profit"></block></value><value name="B"><block type="math_single"><field name="OP">NEG</field><value name="NUM"><block type="math_number"><field name="NUM">${stopLoss}</field></block></value></block></value></block>` : `<block type="logic_boolean"><field name="BOOL">FALSE</field></block>`}</value></block></value><statement name="ELSE"><block type="trade_again" id="vintel_qbb_trade_again"></block></statement></block>` : `<block type="trade_again" id="vintel_qbb_trade_again"></block>`}</next>
     </block></statement>
   </block>
 </xml>`;
@@ -308,8 +311,8 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
                 stake: String(stake),
                 durationtype: durationType,
                 duration: String(duration),
-                profit: String(Math.max(0, Number(cfg.profit) || 0)),
-                loss: String(Math.max(0, Number(cfg.loss) || 0)),
+                profit: String(takeProfit),
+                loss: String(stopLoss),
                 last_digit_prediction: String(prediction),
                 action: 'EDIT',
             };
@@ -318,6 +321,7 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
                 const saved = JSON.parse(localStorage.getItem('qs-fields') || '{}');
                 localStorage.setItem('qs-fields', JSON.stringify({ ...saved, ...nativeFormData }));
                 localStorage.setItem('vintel-quick-bot-builder-config', JSON.stringify(cfg));
+                localStorage.setItem('vinteltool-scanner-risk-limits', JSON.stringify({ enabled: takeProfit > 0 || stopLoss > 0, takeProfit, stopLoss }));
             } catch (error) {
                 console.warn('Could not persist Quick Bot Builder parameters:', error);
             }
@@ -326,8 +330,9 @@ export default class QuickStrategyStore implements IQuickStrategyStore {
                 quick_bot_builder_parameters: {
                     symbol, tradeType: tradeTypeCode, contractType: purchaseCode,
                     stake, durationType, duration,
-                    takeProfit: Math.max(0, Number(cfg.profit) || 0),
-                    stopLoss: Math.max(0, Number(cfg.loss) || 0),
+                    takeProfit,
+                    stopLoss,
+                    maxStake,
                     martingale: Boolean(cfg.martingale || cfg.recoveryMode),
                     recoveryMode: Boolean(cfg.recoveryMode),
                     martingaleMultiplier: Math.max(1, Number(cfg.multiplier) || 2),

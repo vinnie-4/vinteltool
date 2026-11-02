@@ -435,7 +435,8 @@ const FloatingAIScanner = () => {
                 prediction,
                 durationType: 't',
                 duration: Math.max(1, Number(configDuration) || 1),
-                stake: Math.max(0.01, Number(configStake) || 0.5),
+                stake: Math.max(0.35, Number(configStake) || 0.5),
+                maxStake: Math.max(0.35, (Number(configStake) || 0.5) * Math.pow(Math.min(5, Math.max(1, Number(configMartingale) || 2)), 5)),
                 multiplier: Math.min(5, Math.max(1, Number(configMartingale) || 2)),
                 profit: Math.max(0, Number(configTakeProfit) || 5),
                 loss: Math.max(0, Number(configStopLoss) || 10),
@@ -474,7 +475,7 @@ const FloatingAIScanner = () => {
             <div className='ai-scanner__body'>
                 {showLoadConfig ? <section className='ai-scanner__config-layout' aria-label='Scanner bot configuration'>
                     <div className='ai-scanner__config-row'>
-                        <label>Stake<input type='number' value={configStake} onChange={e => setConfigStake(e.target.value)} min='0.01' step='0.01' /></label>
+                        <label>Stake<input type='number' value={configStake} onChange={e => setConfigStake(e.target.value)} min='0.35' step='0.01' /></label>
                         <label>Ticks<input type='number' value={configDuration} onChange={e => setConfigDuration(e.target.value)} min='1' step='1' /></label>
                     </div>
                     <div className='ai-scanner__config-row'>
